@@ -74,6 +74,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814987951
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817266831
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817548386
       }
     ],
     "3.1 Write `P22` and the config examples first": [
@@ -159,6 +169,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988210
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817268011
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817554100
       }
     ],
     "5.2 Implement `command/{types,parse,print}.ts`": [
@@ -166,6 +186,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988256
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817568204
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817799210
       }
     ],
     "6.1 Write `P4`, `P5` and wrap/sanitize examples first": [
@@ -173,6 +203,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988308
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817269211
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817555490
       }
     ],
     "6.2 Implement `text/sanitize.ts` and `text/wrap.ts`": [
@@ -180,6 +220,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988349
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817567249
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817798396
       }
     ],
     "7.1 Write `P6` and phrase examples first": [
@@ -187,6 +237,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988379
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817270297
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817556439
       }
     ],
     "7.2 Implement `voice/voice-table.ts` and `voice/phrases.ts`": [
@@ -194,6 +254,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988421
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817566140
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817796946
       }
     ],
     "8.1 Write `P17` and block/line examples first": [
@@ -271,6 +341,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989147
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817271239
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817557453
       }
     ],
     "13.2 Implement `sound/sound-reducer.ts`": [
@@ -278,6 +358,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989195
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817564757
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817795560
       }
     ],
     "14.1 Write pinned-ref and catalog examples first": [
@@ -572,6 +662,41 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793817044974
+      }
+    ],
+    "2. `@necro/oracle/client` Client_Safe_Entry and import-closure guards": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817548420
+      }
+    ],
+    "13. Sound reducer": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817795612
+      }
+    ],
+    "7. Voice table and fixed phrases": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817796978
+      }
+    ],
+    "6. Text sanitizing and 72-column wrapping": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817798446
+      }
+    ],
+    "5. Command parser and printer": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817799241
       }
     ]
   }

@@ -23,6 +23,13 @@
 // parser's lazy, Node-only grammar-resolution path (dynamic `import(...)`); the
 // browser bundle never pulls them in, so they are marked external here as well
 // to keep the bundler from trying to resolve Node builtins for a browser target.
+//
+// The second entry measures the browser-safe Client_Safe_Entry
+// (`dist/client.js`, i.e. `@necro/oracle/client`) under R16.1. Unlike the main
+// entry, zod is NOT ignored here: the terminal web bundle ships the schemas and
+// the card registry together with their zod dependency, so the budget must
+// reflect the real payload the browser downloads. The `25 KB` gzipped limit is
+// a starting estimate to be tuned once the first measurement exists.
 module.exports = [
   {
     name: "@necro/oracle main entry (dist/index.js, gzipped)",
@@ -37,5 +44,11 @@ module.exports = [
       "node:module",
       "node:url",
     ],
+  },
+  {
+    name: "@necro/oracle client entry (dist/client.js, gzipped, zod included)",
+    path: "dist/client.js",
+    limit: "25 KB",
+    gzip: true,
   },
 ];

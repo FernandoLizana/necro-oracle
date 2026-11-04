@@ -29,7 +29,7 @@ Conventions that apply to every task:
     - Success criteria: the handler builds and runs on a Vercel preview with WASM resolvable; the resolved dev-condition behaviour and the confirmed WASM tracing glob are recorded in the design's "Next configuration" section. Do not start task 2 until both 1.1 and 1.2 success criteria are met.
     - _Requirements: R16.2, R16.6_
 
-- [ ] 2. `@necro/oracle/client` Client_Safe_Entry and import-closure guards
+- [x] 2. `@necro/oracle/client` Client_Safe_Entry and import-closure guards
   - [x] 2.1 Write the source-level import-closure guard test first
     - Add `packages/oracle/src/client.guard.test.ts`: walk the static import graph from `src/client.ts` with `ts.preProcessFile`, resolving `.js` to `.ts`. Fail if any reachable file is outside `{ registry/schema, registry/cards, snapshot/types, reading/schema, util/errors }`, has a bare import other than `zod`, imports `node:*`/`web-tree-sitter`/`tree-sitter-python`/`smol-toml`, or contains a dynamic `import(`. Confirm it fails before `client.ts` exists.
     - _Requirements: R16.3, R16.5_
@@ -37,7 +37,7 @@ Conventions that apply to every task:
     - Create `packages/oracle/src/client.ts` exporting only schemas, inferred types, `CARD_REGISTRY`, `getCard`, `RepoRefSchema`/`RepoRef`, `SpreadKindSchema`/`ReadingSchema`/`SpreadKind`/`Reading`, and `NecroError`/`NecroErrorCodeSchema`/`NecroErrorCode`.
     - Add the `./client` entry to `packages/oracle/package.json` exports (same shape as `./node`: `types`, `development`, `import`, `default`).
     - _Requirements: R16.3, R16.5_
-  - [~] 2.3 Write the dist-level guard test first, then wire the size-limit entry
+  - [x] 2.3 Write the dist-level guard test first, then wire the size-limit entry
     - Add a `dist`-level guard (runs after `pnpm --filter @necro/oracle build`) that reads `dist/client.js` and its relative closure and applies the same allowlist and forbidden-import rules as 2.1. Confirm it fails for the expected reason before the build output exists.
     - Add a second `.size-limit.cjs` entry for `dist/client.js` with zod included, limit `25 KB` gzipped.
     - _Requirements: R16.1, R16.5_
@@ -60,29 +60,29 @@ Conventions that apply to every task:
     - Add `src/protocol.ts` (types only, `exactOptionalPropertyTypes`-safe), `src/ports.ts` (`StoragePort`, `MediaPort`, `VisibilityPort`, `FramePort`, `DemoPort`, `SoundLoaderPort`, `SoundEngine`, `TerminalPorts`), and wire `src/index.ts`.
     - _Requirements: R16.3, R16.7_
 
-- [ ] 5. Command parser and printer
-  - [~] 5.1 Write `P1`, `P2`, `P3` and parser examples first
+- [x] 5. Command parser and printer
+  - [x] 5.1 Write `P1`, `P2`, `P3` and parser examples first
     - Add `command/round-trip.pbt.test.ts` for **Property 1 (R2.7, R2.8, R2.14, R2.15)**, `command/totality.pbt.test.ts` for **Property 2 (R2.12, R2.16)**, and `command/whitespace.pbt.test.ts` for **Property 3 (R2.9)**.
     - Add example tests: each name/arg form (R2.1, R2.3-R2.6), bare-token summon (R2.3), empty/whitespace → `null` (R2.10), `unknown` carries the raw entry (R2.11), case-insensitive names (R2.1), and a `Command` arbitrary in `testing/arbitraries.ts`. Confirm all fail first.
     - _Requirements: R2.1, R2.2, R2.3, R2.4, R2.5, R2.6, R2.7, R2.8, R2.9, R2.10, R2.11, R2.12, R2.14, R2.15, R2.16_
-  - [~] 5.2 Implement `command/{types,parse,print}.ts`
+  - [x] 5.2 Implement `command/{types,parse,print}.ts`
     - Implement `parseCommand` (total, `null` for empty/whitespace), `printCommand`, and the internal `looksLikeRepoRef`; no network, clock, env, or DOM access.
     - _Requirements: R2.1, R2.2, R2.3, R2.4, R2.5, R2.6, R2.11, R2.13, R2.14, R2.16_
 
-- [ ] 6. Text sanitizing and 72-column wrapping
-  - [~] 6.1 Write `P4`, `P5` and wrap/sanitize examples first
+- [x] 6. Text sanitizing and 72-column wrapping
+  - [x] 6.1 Write `P4`, `P5` and wrap/sanitize examples first
     - Add `text/sanitize.pbt.test.ts` for **Property 5 (R14.2, R14.3)** (no C0/C1 except `\n`, no ANSI, no bidi override/isolate, idempotent) and `text/wrap.pbt.test.ts` for **Property 4 (R17.1, R17.3)** (≤ 72 columns, non-whitespace preserved in order, over-long tokens cut by code point). Add Unicode/control/ANSI/bidi arbitraries. Confirm they fail first.
     - _Requirements: R14.2, R14.3, R17.1, R17.3_
-  - [~] 6.2 Implement `text/sanitize.ts` and `text/wrap.ts`
+  - [x] 6.2 Implement `text/sanitize.ts` and `text/wrap.ts`
     - Implement `sanitizeText`, `wrapText`, `wrapSegments`, `Segment`, and `LINE_WIDTH = 72`.
     - _Requirements: R14.2, R14.3, R17.1, R17.3_
 
-- [ ] 7. Voice table and fixed phrases
-  - [~] 7.1 Write `P6` and phrase examples first
+- [x] 7. Voice table and fixed phrases
+  - [x] 7.1 Write `P6` and phrase examples first
     - Add `voice/voice-table.pbt.test.ts` for **Property 6 (R7.3, R7.4)** — for every `CardId` and both orientations exactly one non-empty mystical line of ≤ 16 words, upright present tense / reversed latent tense, and the rendered heading uses the uppercase `CARD_REGISTRY` name.
     - Add examples for `BOOT_PHRASE`, `PRE_READING_PHRASE`, `DEMO_LABEL`, `PHASE_VOICE` (one entry per `ReadingPhase`), `EXTERNAL_SKIP_NOTE`, and `vitalityVoice` bands (≤ 16 words). Confirm they fail first.
     - _Requirements: R7.3, R7.4, R6.15, R6.21_
-  - [~] 7.2 Implement `voice/voice-table.ts` and `voice/phrases.ts`
+  - [x] 7.2 Implement `voice/voice-table.ts` and `voice/phrases.ts`
     - Implement `VOICE_TABLE` (`Record<CardId, Record<Orientation, string>>`, exhaustive from the `oracle-voice` steering), `PHASE_VOICE`, `EXTERNAL_SKIP_NOTE`, `vitalityVoice`, and the fixed phrases.
     - _Requirements: R7.3, R7.4, R6.15, R6.21_
 
@@ -127,11 +127,11 @@ Conventions that apply to every task:
     - Implement `historyPush`, `historyPrev`, `historyNext`, `appendBlocks`, and the `HISTORY_MAX`/`LOG_MAX_LINES` constants.
     - _Requirements: R3.2, R3.3, R17.6_
 
-- [ ] 13. Sound reducer
-  - [~] 13.1 Write `P26` first
+- [x] 13. Sound reducer
+  - [x] 13.1 Write `P26` first
     - Add `sound/sound-reducer.pbt.test.ts` for **Property 26 (R19.1, R19.2, R19.7, R19.8, R19.13, R19.16)** — inactive until `gesture` after `load` (no sound at load even when stored preference is `on`), hum/click active exactly when `preference === "on" && gesture && visible`, both inactive after `sound_off` regardless of later events. Add sound-event arbitraries. Confirm it fails first.
     - _Requirements: R19.1, R19.2, R19.7, R19.8, R19.13, R19.16_
-  - [~] 13.2 Implement `sound/sound-reducer.ts`
+  - [x] 13.2 Implement `sound/sound-reducer.ts`
     - Implement `SoundState`, `SoundEvent`, `soundReducer` (`load` resets `gesture: false`), and `soundActivity`.
     - _Requirements: R19.1, R19.2, R19.7, R19.8, R19.13, R19.16_
 
