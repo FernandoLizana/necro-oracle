@@ -17,13 +17,13 @@ Conventions that apply to every task:
 
 ## Tasks
 
-- [ ] 1. Q8 spike plus behaviour-preserving oracle schema split (FIRST; nothing else starts until its success criteria are met)
+- [x] 1. Q8 spike plus behaviour-preserving oracle schema split (FIRST; nothing else starts until its success criteria are met)
   - [x] 1.1 Split the Reading schemas out of the orchestrator (behaviour-preserving)
     - First confirm `pnpm --filter @necro/oracle test` is green as a baseline, then move `SpreadKindSchema`, `ReadingOptsSchema`, `ReadingSchema` and their inferred types verbatim from `packages/oracle/src/reading/run.ts` into new `packages/oracle/src/reading/schema.ts`.
     - Make `run.ts` import from `./schema.js` and re-export the same names (`SpreadKindSchema`, `ReadingOptsSchema`, `ReadingSchema`, `type SpreadKind`, `type ReadingOpts`, `type Reading`) so `src/index.ts` and every existing test keep their exports unchanged.
     - Success criterion: `pnpm --filter @necro/oracle test` is green with no test edits.
     - _Requirements: R16.5_
-  - [~] 1.2 Next `development` export-condition and Vercel tree-sitter WASM file-tracing spike
+  - [x] 1.2 Next `development` export-condition and Vercel tree-sitter WASM file-tracing spike
     - Stand up a minimal `/api/readings` handler in `apps/web` that imports `runReading` from `@necro/oracle`; verify on a Vercel preview that the grammar WASM resolves at runtime (no `createRequire(...).resolve` failure).
     - Determine whether Next's webpack dev server activates the `development` export condition (resolving `@necro/oracle` to raw TypeScript in dev); record the outcome and either keep the dev branch in `next.config.ts` or drop it and transpile instead.
     - Success criteria: the handler builds and runs on a Vercel preview with WASM resolvable; the resolved dev-condition behaviour and the confirmed WASM tracing glob are recorded in the design's "Next configuration" section. Do not start task 2 until both 1.1 and 1.2 success criteria are met.

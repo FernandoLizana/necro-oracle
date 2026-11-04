@@ -905,18 +905,54 @@ export function createUpstashLimiter(opts: { redis: Redis; clock: ClockPort; dai
 
 **Next configuration** (`next.config.ts`), as a function of the phase:
 
+The configuration below is the resolved shape **after the task 1.2 spike** (see "Spike outcome" immediately after). The same config is used in development and production — there is no env-dependent branch.
+
 ```typescript
-const base = {
-  transpilePackages: ["@necro/ui-crt", "@necro/config", "@necro/github"],   // these export raw src/index.ts
+// Server packages kept external (not webpack-bundled) so their runtime WASM
+// resolution survives: @necro/oracle (from its built dist), web-tree-sitter,
+// tree-sitter-python.
+const SERVER_EXTERNAL_PACKAGES = ["@necro/oracle", "web-tree-sitter", "tree-sitter-python"];
+
+const nextConfig = {
+  transpilePackages: ["@necro/ui-crt", "@necro/config", "@necro/github"], // raw src/index.ts; NOT @necro/oracle
   outputFileTracingRoot: path.join(__dirname, "../../"),
-  outputFileTracingIncludes: { "/api/readings": [/* tree-sitter-python and web-tree-sitter .wasm files, via .pnpm globs */] },
+  outputFileTracingIncludes: {
+    "/api/readings": [
+      "node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm",
+      "node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm",
+      "node_modules/tree-sitter-python/*.wasm",
+      "node_modules/web-tree-sitter/*.wasm",
+      "node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
+      "node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
+    ],
+  },
+  // No-op on the workspace oracle, kept for the two real node packages.
+  serverExternalPackages: ["web-tree-sitter", "tree-sitter-python"],
+  // The reliable lever: externalise all three on the SERVER build so bare
+  // imports become runtime `import("<spec>")` resolved from node_modules.
+  webpack(config, { isServer }) {
+    if (isServer) {
+      config.externals = [...asArray(config.externals), (data, cb) =>
+        SERVER_EXTERNAL_PACKAGES.some((p) => data.request === p || data.request?.startsWith(`${p}/`))
+          ? cb(undefined, `module ${data.request}`)
+          : cb()];
+    }
+    return config;
+  },
   async headers() { return [{ source: "/:path*", headers: [/* nosniff, referrer-policy */] }]; },
 };
-// production: serverExternalPackages: ["@necro/oracle", "web-tree-sitter", "tree-sitter-python"]
-// development: add "@necro/oracle" to transpilePackages instead (a package may not be in both lists)
 ```
 
-Production runs the server half of the oracle from its built `dist` (CI already builds the oracle before typecheck), so `createRequire(import.meta.url).resolve("tree-sitter-python/…wasm")` resolves from the oracle's own `node_modules`. The browser half (`@necro/oracle/client`) resolves to `dist/client.js`. If the spike (Q8) shows that Next does not activate the `development` condition, the development branch is dropped. The glob for the WASM files is confirmed in the spike with a Vercel preview build.
+**Spike outcome (task 1.2 / Q8b), recorded against a real local production build and a local dev run (a live Vercel preview could not be run from the build environment — see residual risk):**
+
+- **The grammar WASM resolves at runtime.** A minimal `GET /api/readings` handler that imports `runReading` from `@necro/oracle` and parses Python 2 source returns `200` with `{legacyDetected:true, drawCount:6}` on both `next build && next start` and `next dev`. The oracle's `createRequire(import.meta.url).resolve("tree-sitter-python/tree-sitter-python.wasm")` and web-tree-sitter's `new URL("web-tree-sitter.wasm", import.meta.url)` both resolve against real on-disk files; no `createRequire(...).resolve` failure.
+- **`serverExternalPackages` alone does NOT work here, so it is not the mechanism.** Two things were observed in the spike: (1) Next's `serverExternalPackages` does not externalise a **workspace** package (`@necro/oracle` is a `workspace:*` symlink), and (2) once `@necro/oracle` is added to `transpilePackages`, webpack follows and inlines its `web-tree-sitter`/`tree-sitter-python` imports too, bundling the mangled `createRequire`/dynamic-`import("node:module")` path — which then throws `TypeError: a is not a function` → `PARSER_INIT_FAILED` at runtime. The route bundle was ~126 KB (fully inlined) and failed. The fix is the **webpack `externals` hook** above, which externalises all three (including the workspace oracle); the route bundle then drops to ~8 KB and `route.js` contains a runtime `import("@necro/oracle")`. `@necro/oracle` is therefore NOT in `transpilePackages`.
+- **The `development` export condition is NOT activated — the dev branch is DROPPED.** Because the oracle is externalised via the webpack hook in *both* dev and production, webpack never resolves the oracle's entry and never selects an export condition; Node resolves the runtime `import("@necro/oracle")` itself, which uses the `import`/`default` condition and loads `packages/oracle/dist/index.js` (verified: `createRequire(...).resolve("@necro/oracle")` → `…/oracle/dist/index.js`). The `development` condition in the oracle's exports map plays no part in the web app's resolution. Consequently there is **no** env-conditional `transpilePackages`/`serverExternalPackages` split, and the previously-proposed "add @necro/oracle to transpilePackages in development" branch is removed.
+- **The confirmed WASM tracing globs** are the six entries listed in `outputFileTracingIncludes["/api/readings"]` above. The two that actually matched the files in this pnpm layout are `node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm` and `node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm`; the non-`.pnpm` and nested globs are kept as belt-and-braces for hoisted/nested copies. The produced `route.js.nft.json` lists both `tree-sitter-python.wasm` and `web-tree-sitter.wasm`, confirming they are packaged into the function.
+
+**Dev consequence (accepted):** since the oracle is externalised to its `dist` in dev too, the web dev server does not hot-reload edits to `@necro/oracle` source — the oracle must be built (`pnpm --filter @necro/oracle build`) for `next dev` to pick up oracle changes. CI already builds the oracle before typecheck, and this matches the production behaviour (one code path for both). `@necro/oracle/client` (the browser half) still resolves to `dist/client.js`.
+
+**Residual Vercel-only risk:** this spike was verified on a local production build + `next start` and on `next dev`, not on an actual Vercel deployment (the build environment has no Vercel access). The webpack `externals` + `outputFileTracingIncludes` approach is exactly what Vercel's `@vercel/nft` consumes, and the `.nft.json` already lists the WASM files, so the risk is low; but the first real Vercel preview deploy of `/api/readings` must be smoke-tested once (a single `GET` returning `200`) to confirm the traced WASM files land in the deployed Lambda under Vercel's own pnpm install and output-tracing. If a WASM file is missing there, widen the `outputFileTracingIncludes` glob (Vercel may hoist differently) rather than changing the externalisation strategy.
 
 **Middleware** (`src/middleware.ts`): `matcher` excludes `/_next/static`, `/_next/image`, `/favicon.ico` and `/api`. It generates the nonce, builds the CSP string, sets it on the request headers (`x-nonce`, `content-security-policy`) and on the response.
 
