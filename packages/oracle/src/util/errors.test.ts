@@ -49,6 +49,56 @@ describe("R1.3: NecroError", () => {
     expect(err.cause).toBeUndefined();
   });
 
+  it("registers exactly the eight original codes plus the ten GitHub Summoner codes (R7.1)", () => {
+    const existing = [
+      "REGISTRY_INVALID",
+      "CARD_NOT_FOUND",
+      "PARSER_INIT_FAILED",
+      "FILE_TOO_LARGE",
+      "INVALID_QUERY_PATTERN",
+      "SNAPSHOT_DIR_NOT_FOUND",
+      "INVALID_REPO_META",
+      "DETECTOR_FAILED",
+    ];
+    const added = [
+      "INVALID_REPO_URL",
+      "REPO_NOT_FOUND",
+      "REPO_PRIVATE",
+      "RATE_LIMITED",
+      "NETWORK_TIMEOUT",
+      "DOWNLOAD_TOO_LARGE",
+      "VALIDATION_FAILED",
+      "REF_NOT_FOUND",
+      "AUTH_INVALID",
+      "UPSTREAM_UNAVAILABLE",
+    ];
+    const options: readonly string[] = NecroErrorCodeSchema.options;
+    expect([...options].sort()).toEqual([...existing, ...added].sort());
+    expect(options).toHaveLength(18);
+  });
+
+  it("constructs a NecroError for each new GitHub Summoner code (R7.1)", () => {
+    const added = [
+      "INVALID_REPO_URL",
+      "REPO_NOT_FOUND",
+      "REPO_PRIVATE",
+      "RATE_LIMITED",
+      "NETWORK_TIMEOUT",
+      "DOWNLOAD_TOO_LARGE",
+      "VALIDATION_FAILED",
+      "REF_NOT_FOUND",
+      "AUTH_INVALID",
+      "UPSTREAM_UNAVAILABLE",
+    ];
+    for (const code of added) {
+      expect(NecroErrorCodeSchema.safeParse(code).success).toBe(true);
+      const err = new NecroError(code as never, `An omen: ${code}.`);
+      expect(err.code).toBe(code);
+      expect(err.userMessage).toBe(`An omen: ${code}.`);
+      expect(err.name).toBe("NecroError");
+    }
+  });
+
   it("accepts every registered error code and preserves its fields", () => {
     for (const code of NecroErrorCodeSchema.options) {
       const userMessage = `A dark omen: ${code}.`;

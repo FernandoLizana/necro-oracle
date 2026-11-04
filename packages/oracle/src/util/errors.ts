@@ -12,6 +12,16 @@ export const NecroErrorCodeSchema = z.enum([
   "SNAPSHOT_DIR_NOT_FOUND",
   "INVALID_REPO_META",
   "DETECTOR_FAILED",
+  "INVALID_REPO_URL",
+  "REPO_NOT_FOUND",
+  "REPO_PRIVATE",
+  "RATE_LIMITED",
+  "NETWORK_TIMEOUT",
+  "DOWNLOAD_TOO_LARGE",
+  "VALIDATION_FAILED",
+  "REF_NOT_FOUND",
+  "AUTH_INVALID",
+  "UPSTREAM_UNAVAILABLE",
 ]);
 
 export type NecroErrorCode = z.infer<typeof NecroErrorCodeSchema>;

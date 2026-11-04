@@ -34,42 +34,42 @@ Conventions that apply to every task:
     - If either finding contradicts the design (for example a pax global header surfaces as an entry, long paths are not resolved, or destroying the stream does not release the upstream reader), STOP: record the finding in `docs/KIRO_USAGE.md` and adjust `.kiro/specs/02-github-summoner/design.md` (Tarball extraction and Tar library choice sections) before starting task 2. Do not proceed on an assumption the spike disproved.
     - _Requirements: R3.1, R3.9_
 
-- [ ] 2. Scaffold the `@necro/github` package
-  - [~] 2.1 Write the scaffolding smoke test
+- [x] 2. Scaffold the `@necro/github` package
+  - [x] 2.1 Write the scaffolding smoke test
     - Add `src/setup.test.ts`: global `fetch` throws when called (proves `vitest.setup.ts` is active); `@necro/oracle` resolves under Vitest and exposes `buildSnapshotFromFileMap`, `parseAllManifests`, `NecroError`; `GitHubSnapshotBuilder` type is importable.
     - _Requirements: R9.1, R9.5, R10.7_
-  - [~] 2.2 Implement the scaffolding
+  - [x] 2.2 Implement the scaffolding
     - `packages/github/package.json`: add `@necro/oracle` (`workspace:*`), `zod` (`^3.25.76`), dev `fast-check` (`^3.23.1`), dev `@types/node` (`^22.20.5`), and `test` / `test:pbt` scripts consistent with other packages; keep the tar pins from 1.1.
     - `tsconfig.json`: add `"references": [{ "path": "../oracle" }]`.
     - Create `vitest.setup.ts` (stub `globalThis.fetch` with a function that throws) and register it in `vitest.config.ts` via `setupFiles`; if `@necro/oracle` does not resolve, add `resolve.conditions: ["development"]`.
     - Create `src/index.ts` placeholder that keeps the package compiling.
     - _Requirements: R9.1, R9.5, R10.1, R10.7_
 
-- [ ] 3. Add the ten error codes to `@necro/oracle`
-  - [~] 3.1 Write the failing test in `packages/oracle/src/util/errors.test.ts`
+- [x] 3. Add the ten error codes to `@necro/oracle`
+  - [x] 3.1 Write the failing test in `packages/oracle/src/util/errors.test.ts`
     - Assert `NecroErrorCodeSchema.options` includes exactly the ten new codes (`INVALID_REPO_URL`, `REPO_NOT_FOUND`, `REPO_PRIVATE`, `RATE_LIMITED`, `NETWORK_TIMEOUT`, `DOWNLOAD_TOO_LARGE`, `VALIDATION_FAILED`, `REF_NOT_FOUND`, `AUTH_INVALID`, `UPSTREAM_UNAVAILABLE`) in addition to the eight existing ones, and that `new NecroError(code, ...)` constructs for each.
     - _Requirements: R7.1_
-  - [~] 3.2 Add the codes to `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`
+  - [x] 3.2 Add the codes to `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`
     - Additive only: ten string literals, no logic change, no new import (Decision D1).
     - _Requirements: R7.1, R10.7_
 
-- [ ] 4. Add the `GITHUB_TOKEN` env schema to `@necro/config`
-  - [~] 4.1 Write the failing tests in `packages/config/test`
+- [x] 4. Add the `GITHUB_TOKEN` env schema to `@necro/config`
+  - [x] 4.1 Write the failing tests in `packages/config/test`
     - `loadEnv` treats missing, empty, and whitespace-only `GITHUB_TOKEN` as unset; accepts a valid token; rejects a token with whitespace or control characters with an error that lists the key name only, never the value.
     - _Requirements: R6.1, R6.5_
-  - [~] 4.2 Implement `EnvSchema` and `loadEnv` in `packages/config/src/index.ts`
+  - [x] 4.2 Implement `EnvSchema` and `loadEnv` in `packages/config/src/index.ts`
     - Add `zod` dependency (`^3.25.76`); preprocess blank to `undefined`; export `Env` type.
     - _Requirements: R6.1, R6.5_
 
-- [ ] 5. Add the lint policy for `packages/github/src`
-  - [~] 5.1 Write the failing lint-policy test in `packages/github/src/lint-policy.test.ts`
+- [x] 5. Add the lint policy for `packages/github/src`
+  - [x] 5.1 Write the failing lint-policy test in `packages/github/src/lint-policy.test.ts`
     - Using the ESLint Node API and the root `eslint.config.js`, lint code snippets with a `filePath` under `packages/github/src/`: `Date.now()`, zero-argument `new Date()`, bare `Date()`, global `fetch(...)`, `process.env.X`, `eval`, `new Function`, and imports of `node:fs`, `node:child_process`, `node:vm` are reported; `new Date(ms).toISOString()` and `import { Readable } from "node:stream"` are not. The same banned snippets under `packages/github/src/adapters/`, `src/testing/`, and in `*.test.ts` files are not reported.
     - _Requirements: R9.1, R9.2, R9.3, R3.2, R6.1_
-  - [~] 5.2 Add the restricted block to the root `eslint.config.js`
+  - [x] 5.2 Add the restricted block to the root `eslint.config.js`
     - `no-restricted-globals` (`fetch`), `no-restricted-syntax` selectors (`CallExpression[callee.object.name='Date'][callee.property.name='now']`, `NewExpression[callee.name='Date'][arguments.length=0]`, bare `Date()` call, `MemberExpression[object.name='process'][property.name='env']`), `no-restricted-imports` for `node:fs`, `node:child_process`, `node:vm`; scope to `packages/github/src/**` and exempt `adapters/**`, `testing/**`, and test files.
     - _Requirements: R9.1, R9.2, R9.3, R3.2, R6.1_
 
-- [~] 6. Checkpoint - prerequisites in place
+- [-] 6. Checkpoint - prerequisites in place
   - Ensure all tests pass (`pnpm test`), `pnpm lint` and `pnpm typecheck` are clean for oracle, config, and github; ask the user if questions arise.
 
 - [ ] 7. Build the testing helpers

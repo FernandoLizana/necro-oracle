@@ -3,7 +3,7 @@
 export default defineConfig({
   test: {
     name: "config",
-    include: ["src/**/*.test.ts", "src/**/*.pbt.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.pbt.test.ts", "test/**/*.test.ts"],
     environment: "node",
   },
 });

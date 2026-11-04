@@ -56,19 +56,35 @@ importers:
 
   packages/cli: {}
 
-  packages/config: {}
+  packages/config:
+    dependencies:
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/coven: {}
 
   packages/github:
     dependencies:
+      '@necro/oracle':
+        specifier: workspace:*
+        version: link:../oracle
       tar-stream:
         specifier: 3.2.2
         version: 3.2.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
       '@types/tar-stream':
         specifier: 3.1.5
         version: 3.1.5
+      fast-check:
+        specifier: ^3.23.1
+        version: 3.23.2
 
   packages/llm: {}
 

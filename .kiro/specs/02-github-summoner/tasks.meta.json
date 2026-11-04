@@ -52,6 +52,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877370
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773670308
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773788607
       }
     ],
     "2.2 Implement the scaffolding": [
@@ -59,6 +69,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877396
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773794139
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906172
       }
     ],
     "3.1 Write the failing test in `packages/oracle/src/util/errors.test.ts`": [
@@ -66,6 +86,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877429
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773675673
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773788699
       }
     ],
     "3.2 Add the codes to `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`": [
@@ -73,6 +103,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877483
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773794250
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906208
       }
     ],
     "4.1 Write the failing tests in `packages/config/test`": [
@@ -80,6 +120,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877510
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773676640
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773788774
       }
     ],
     "4.2 Implement `EnvSchema` and `loadEnv` in `packages/config/src/index.ts`": [
@@ -87,6 +137,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877542
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773795386
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906585
       }
     ],
     "5.1 Write the failing lint-policy test in `packages/github/src/lint-policy.test.ts`": [
@@ -94,6 +154,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877574
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773677250
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773788846
       }
     ],
     "5.2 Add the restricted block to the root `eslint.config.js`": [
@@ -101,6 +171,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877612
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773795932
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773907385
       }
     ],
     "6. Checkpoint - prerequisites in place": [
@@ -108,6 +188,11 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877646
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773926189
       }
     ],
     "7.1 Write the helper self-tests": [
@@ -731,6 +816,34 @@
         "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793773638544
+      }
+    ],
+    "2. Scaffold the `@necro/github` package": [
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906254
+      }
+    ],
+    "3. Add the ten error codes to `@necro/oracle`": [
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906306
+      }
+    ],
+    "4. Add the `GITHUB_TOKEN` env schema to `@necro/config`": [
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773906611
+      }
+    ],
+    "5. Add the lint policy for `packages/github/src`": [
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773907411
       }
     ]
   }
