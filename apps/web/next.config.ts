@@ -8,6 +8,10 @@ import type { NextConfig } from "next";
 // dependency on the full `webpack` type package.
 interface WebpackConfig {
   externals?: unknown;
+  resolve?: {
+    extensionAlias?: Record<string, string[]>;
+    [key: string]: unknown;
+  };
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -79,6 +83,19 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["web-tree-sitter", "tree-sitter-python"],
 
   webpack(config: WebpackConfig, { isServer }: { isServer: boolean }) {
+    // Resolve ESM `.js` import specifiers that point at TypeScript source.
+    // The server/route modules import siblings with explicit `.js` extensions
+    // (NodeNext/ESM style, matching `tsc` + Vitest), but webpack does not map
+    // `.js` → `.ts(x)` by default, so a bare `next build` fails to resolve
+    // `../../../server/composition.js` (a `.ts` file). `extensionAlias` makes
+    // webpack try `.ts`/`.tsx` (then the literal `.js`) for a `.js` request,
+    // the same way `moduleResolution: "bundler"` does for the type-checker.
+    config.resolve ??= {};
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      ".js": [".ts", ".tsx", ".js"],
+    };
+
     if (isServer) {
       const existing = config.externals ?? [];
       const externalsArray = Array.isArray(existing) ? existing : [existing];

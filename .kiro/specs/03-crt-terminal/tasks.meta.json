@@ -945,6 +945,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990491
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833126503
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833358362
       }
     ],
     "27.2 Implement `app/api/summon/route.ts`, `app/api/readings/route.ts`, `app/{layout,page}.tsx`, `components/TerminalScreen.tsx`, `terminal/{api-client,browser-ports}.ts`, and `src/middleware.ts`": [
@@ -952,6 +962,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990549
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833364952
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793834503410
       }
     ],
     "28.1 Write API-client examples first": [
@@ -1265,6 +1285,13 @@
         "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793833062190
+      }
+    ],
+    "27. Route files and CSP middleware": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793834503473
       }
     ]
   }

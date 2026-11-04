@@ -241,12 +241,12 @@ Conventions that apply to every task:
     - Implement the streamed pipeline: `SUMMON` → `github.summon` → `DOWNLOAD` → `EXTERNAL` → external race under the sub-budget → skip decision → `READING` → `runReading` → validate → `{ result }`, all under the 40 s `AbortController`; mid-stream failure/budget → final `{ error }` line.
     - _Requirements: R6.4, R6.5, R6.6, R6.7, R6.11, R6.14, R6.16, R6.19, R6.20, R6.22, R12.8, R12.9, R12.10, R12.11, R14.7_
 
-- [ ] 27. Route files and CSP middleware
-  - [~] 27.1 Write route and middleware examples first
+- [x] 27. Route files and CSP middleware
+  - [x] 27.1 Write route and middleware examples first
     - Add route examples: `runtime="nodejs"`, `dynamic="force-dynamic"`, `maxDuration=50` (R6.11); `POST` wired to handlers; `GET`/`PUT`/`PATCH`/`DELETE`/`OPTIONS`/`HEAD` → 405 + `Allow: POST` + `VALIDATION_FAILED` + `no-store` (R12.2).
     - Add middleware examples: per-request base64 nonce from Web Crypto; CSP disallows inline script and lists `'self'` + nonce + `'strict-dynamic'`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'none'`; `x-nonce` forwarded; matcher excludes `/_next/static`, `/_next/image`, `/favicon.ico`, `/api` (R14.9, D10, Q9). Confirm all fail first.
     - _Requirements: R6.11, R12.2, R14.9_
-  - [~] 27.2 Implement `app/api/summon/route.ts`, `app/api/readings/route.ts`, `app/{layout,page}.tsx`, `components/TerminalScreen.tsx`, `terminal/{api-client,browser-ports}.ts`, and `src/middleware.ts`
+  - [x] 27.2 Implement `app/api/summon/route.ts`, `app/api/readings/route.ts`, `app/{layout,page}.tsx`, `components/TerminalScreen.tsx`, `terminal/{api-client,browser-ports}.ts`, and `src/middleware.ts`
     - Implement the routes, the server-rendered shell with `<noscript>` and `await headers()`, the client `TerminalScreen` building browser ports, `createApiPort` (summon outcome table + streaming reader), `createBrowserPorts`, and the CSP middleware.
     - _Requirements: R1.5, R6.11, R11.4, R11.5, R11.6, R11.7, R12.2, R12.8, R14.9, R16.4_
 
