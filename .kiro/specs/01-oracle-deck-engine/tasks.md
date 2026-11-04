@@ -140,44 +140,44 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - Read pre-parsed trees from `opts.trees` (never call `parsePython`); skip `opts.parseErrors`; call `maskSecret` immediately on raw secrets and apply the safety-net re-mask to any `Evidence.detail` matching AWS/private-key patterns.
     - _Requirements: R7.1, R7.2, R7.3, R7.4, R7.5, R7.6, R7.7, R20.2, R20.3_
 
-- [~] 17. Checkpoint — runnable core
+- [x] 17. Checkpoint — runnable core
   - Ensure all tests pass and `pnpm --filter @necro/oracle typecheck` is clean; ask the user if questions arise.
 
-- [ ] 18. Implement `detectDeath` (XIII — Dead Code)
-  - [~] 18.1 Write unit tests (test-first)
+- [x] 18. Implement `detectDeath` (XIII — Dead Code)
+  - [x] 18.1 Write unit tests (test-first)
     - Unreachable modules (excluding entrypoint candidates) → severity 2 upright, up to 20 lexicographic paths; ≥ 5 unused top-level symbols → severity 2, up to 20 ordered items; large commented-out valid-Python blocks (≥ 5 lines) → severity 1 reversed when no unreachable modules, else additional evidence; nothing → null.
     - _Requirements: R8.1, R8.2, R8.3, R8.4, R8.5_
-  - [~] 18.2 Implement `src/detectors/death.ts`
+  - [x] 18.2 Implement `src/detectors/death.ts`
     - Build the intra-repo import graph from `opts.trees` (skip `opts.parseErrors`); never call `parsePython`.
     - _Requirements: R8.1, R8.2, R8.3, R8.4, R8.5_
 
-- [ ] 19. Implement `detectWheel` (X — No Tests)
-  - [~] 19.1 Write unit tests (test-first)
+- [x] 19. Implement `detectWheel` (X — No Tests)
+  - [x] 19.1 Write unit tests (test-first)
     - Zero test files → severity 2 upright; tests present but no runner config → severity 1 reversed; tests + ≥ 1 runner config → null; evidence has exact count, up to 10 lexicographic paths, detected config names; dedup of multi-pattern matches.
     - _Requirements: R9.1, R9.2, R9.3, R9.4, R9.5_
-  - [~] 19.2 Implement `src/detectors/wheel.ts`
+  - [x] 19.2 Implement `src/detectors/wheel.ts`
     - _Requirements: R9.1, R9.2, R9.3, R9.4, R9.5_
 
-- [ ] 20. Implement `detectHermit` (IX — Missing Documentation)
-  - [~] 20.1 Write unit tests (test-first)
+- [x] 20. Implement `detectHermit` (IX — Missing Documentation)
+  - [x] 20.1 Write unit tests (test-first)
     - No root README → severity 2 upright; README < 200 bytes or missing keyword → severity 1 reversed with sub-condition evidence; docstring coverage < 0.25 with ≥ 4 public symbols adds a coverage evidence item; unparseable py file → parse-error evidence and excluded from coverage; clean → null.
     - _Requirements: R10.1, R10.2, R10.3, R10.4, R10.5_
-  - [~] 20.2 Implement `src/detectors/hermit.ts`
+  - [x] 20.2 Implement `src/detectors/hermit.ts`
     - Docstring coverage from `opts.trees` (skip `opts.parseErrors`); never call `parsePython`.
     - _Requirements: R10.1, R10.2, R10.3, R10.4, R10.5_
 
-- [ ] 21. Implement `detectHangedMan` (XII — Stagnation)
-  - [~] 21.1 Write unit tests (test-first)
+- [x] 21. Implement `detectHangedMan` (XII — Stagnation)
+  - [x] 21.1 Write unit tests (test-first)
     - Invalid `meta` → `NecroError(INVALID_REPO_META)`; archived → severity 2 upright; > 730 days + ≥ 3 open issues → severity 2 upright (archived precedence); reversed ranges `(183,730]` or (openPRCount ≥ 3 and oldestOpenPRAgeDays ≥ 180) → severity 1 reversed; active ≤ 183 days + openPRCount < 3 → null; evidence fields present; uses `opts.now` (no `Date.now()`).
     - _Requirements: R11.1, R11.2, R11.3, R11.4, R11.5, R11.6_
-  - [~] 21.2 Implement `src/detectors/hanged-man.ts`
+  - [x] 21.2 Implement `src/detectors/hanged-man.ts`
     - _Requirements: R11.1, R11.2, R11.3, R11.4, R11.5, R11.6_
 
-- [ ] 22. Implement `detectTemperance` (XIV — No CI / Dead CI)
-  - [~] 22.1 Write unit tests (test-first)
+- [x] 22. Implement `detectTemperance` (XIV — No CI / Dead CI)
+  - [x] 22.1 Write unit tests (test-first)
     - No CI → severity 2 upright with `kind:"no-ci-found"`; Travis-only → severity 1 reversed; any non-Travis provider → null; `.github/workflows/` depth exactly one level; evidence lists paths + provider names.
     - _Requirements: R12.1, R12.2, R12.3, R12.4, R12.5_
-  - [~] 22.2 Implement `src/detectors/temperance.ts`
+  - [x] 22.2 Implement `src/detectors/temperance.ts`
     - _Requirements: R12.1, R12.2, R12.3, R12.4, R12.5_
 
 - [ ] 23. Implement `detectJustice` (XI — Missing License)
@@ -203,7 +203,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - _Requirements: R15.1, R15.2, R15.3, R15.4, R15.5_
 
 - [ ] 26. Implement `computeWorldDraw` (XXI — Destiny)
-  - [~] 26.1 Write unit tests (test-first)
+  - [-] 26.1 Write unit tests (test-first)
     - REVIVED → world severity 2 upright; UNDEAD → world severity 1 reversed; STILL_DEAD → null; non-null draws include vitalityDelta + passed/failed gate ids as evidence.
     - _Requirements: R16.1, R16.2, R16.3, R16.4, R16.5_
   - [~] 26.2 Implement `src/detectors/world.ts`

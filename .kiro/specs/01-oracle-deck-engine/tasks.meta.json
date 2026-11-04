@@ -520,6 +520,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022001
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763275198
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763281266
       }
     ],
     "18.1 Write unit tests (test-first)": [
@@ -527,6 +537,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022048
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763300443
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763525852
       }
     ],
     "18.2 Implement `src/detectors/death.ts`": [
@@ -534,6 +554,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022096
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763543642
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763799751
       }
     ],
     "19.1 Write unit tests (test-first)": [
@@ -541,6 +571,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022134
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763301510
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763526840
       }
     ],
     "19.2 Implement `src/detectors/wheel.ts`": [
@@ -548,6 +588,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022177
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763545037
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763797397
       }
     ],
     "20.1 Write unit tests (test-first)": [
@@ -555,6 +605,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022215
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763302765
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763529128
       }
     ],
     "20.2 Implement `src/detectors/hermit.ts`": [
@@ -562,6 +622,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022253
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763545992
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763796160
       }
     ],
     "21.1 Write unit tests (test-first)": [
@@ -569,6 +639,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022297
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763303731
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763529303
       }
     ],
     "21.2 Implement `src/detectors/hanged-man.ts`": [
@@ -576,6 +656,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022349
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763547378
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763800501
       }
     ],
     "22.1 Write unit tests (test-first)": [
@@ -583,6 +673,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022394
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763304664
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763530188
       }
     ],
     "22.2 Implement `src/detectors/temperance.ts`": [
@@ -590,6 +690,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022431
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763548365
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763798351
       }
     ],
     "23.1 Write unit tests (test-first)": [
@@ -639,6 +749,11 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022713
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763275872
       }
     ],
     "26.2 Implement `src/detectors/world.ts`": [
@@ -875,6 +990,41 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793763252531
+      }
+    ],
+    "20. Implement `detectHermit` (IX — Missing Documentation)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763796247
+      }
+    ],
+    "19. Implement `detectWheel` (X — No Tests)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763797437
+      }
+    ],
+    "22. Implement `detectTemperance` (XIV — No CI / Dead CI)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763798414
+      }
+    ],
+    "18. Implement `detectDeath` (XIII — Dead Code)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763799806
+      }
+    ],
+    "21. Implement `detectHangedMan` (XII — Stagnation)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763800601
       }
     ]
   }
