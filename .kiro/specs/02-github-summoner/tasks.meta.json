@@ -1,0 +1,715 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Pin the tar dependencies exactly": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877261
+      },
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771887344
+      },
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771929324
+      }
+    ],
+    "1.2 Write committed characterization tests in `src/tar-extract.spike.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877301
+      }
+    ],
+    "1.3 Run the spike and record the findings": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877338
+      }
+    ],
+    "2.1 Write the scaffolding smoke test": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877370
+      }
+    ],
+    "2.2 Implement the scaffolding": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877396
+      }
+    ],
+    "3.1 Write the failing test in `packages/oracle/src/util/errors.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877429
+      }
+    ],
+    "3.2 Add the codes to `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877483
+      }
+    ],
+    "4.1 Write the failing tests in `packages/config/test`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877510
+      }
+    ],
+    "4.2 Implement `EnvSchema` and `loadEnv` in `packages/config/src/index.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877542
+      }
+    ],
+    "5.1 Write the failing lint-policy test in `packages/github/src/lint-policy.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877574
+      }
+    ],
+    "5.2 Add the restricted block to the root `eslint.config.js`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877612
+      }
+    ],
+    "6. Checkpoint - prerequisites in place": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877646
+      }
+    ],
+    "7.1 Write the helper self-tests": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877677
+      }
+    ],
+    "7.2 Implement the helpers in `src/testing/`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877711
+      }
+    ],
+    "8.1 Write the failing tests": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877742
+      }
+    ],
+    "8.2 Implement `src/constants.ts` and `src/ports.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877807
+      }
+    ],
+    "9.1 Write the failing tests in `src/time.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877835
+      }
+    ],
+    "9.2 Implement `src/time.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877858
+      }
+    ],
+    "10.1 Write the failing schema tests": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877887
+      }
+    ],
+    "10.2 Implement `src/schemas/github.ts`, `pypi.ts`, `npm.ts`, `osv.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877919
+      }
+    ],
+    "10.3 Write the fixture validation test": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877942
+      }
+    ],
+    "10.4 Author the recorded fixtures": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877968
+      }
+    ],
+    "11.1 Write the failing unit tests in `src/errors.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771877993
+      }
+    ],
+    "11.2 Write property test P28 in `src/http-failure.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878046
+      }
+    ],
+    "11.3 Implement `src/errors.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878072
+      }
+    ],
+    "12.1 Write the failing unit tests in `src/entry-path.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878102
+      }
+    ],
+    "12.2 Write property test P22 in `src/entry-path.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878126
+      }
+    ],
+    "12.3 Implement `src/entry-path.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878154
+      }
+    ],
+    "13.1 Write the failing example tests in `src/intake.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878176
+      }
+    ],
+    "13.2 Write property test P1 in `src/intake.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878204
+      }
+    ],
+    "13.3 Write property test P2 in `src/intake.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878230
+      }
+    ],
+    "13.4 Write property test P3 in `src/intake.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878255
+      }
+    ],
+    "13.5 Write property test P4 in `src/intake.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878281
+      }
+    ],
+    "13.6 Implement `parseRepoRef` and `ParsedRepoRefSchema` in `src/intake.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878311
+      }
+    ],
+    "14. Checkpoint - pure foundations": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878359
+      }
+    ],
+    "15.1 Write the failing unit tests in `src/http-failure.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878388
+      }
+    ],
+    "15.2 Write property test P29 in `src/http-failure.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878424
+      }
+    ],
+    "15.3 Write property test P30 in `src/http-failure.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878465
+      }
+    ],
+    "15.4 Implement `src/http-failure.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878495
+      }
+    ],
+    "16.1 Write the failing unit tests in `src/repo-meta.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878525
+      }
+    ],
+    "16.2 Write property test P23 in `src/repo-meta.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878558
+      }
+    ],
+    "16.3 Implement `src/repo-meta.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878592
+      }
+    ],
+    "17.1 Write the failing unit tests in `src/github-client.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878630
+      }
+    ],
+    "17.2 Write property test P27 in `src/github-client.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878663
+      }
+    ],
+    "17.3 Write property test P32 in `src/github-client.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878718
+      }
+    ],
+    "17.4 Write property test P14 in `src/rename-redirect.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878743
+      }
+    ],
+    "17.5 Implement `src/github-client.ts` part A": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878769
+      }
+    ],
+    "18.1 Write the failing unit tests in `src/github-client.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878795
+      }
+    ],
+    "18.2 Write property test P12 in `src/github-client.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878824
+      }
+    ],
+    "18.3 Write property test P15 in `src/github-client.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878853
+      }
+    ],
+    "18.4 Write property test P33 in `src/github-client.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878877
+      }
+    ],
+    "18.5 Implement `src/github-client.ts` part B": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878909
+      }
+    ],
+    "19.1 Write the failing unit tests in `src/intake.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878937
+      }
+    ],
+    "19.2 Write property test P19 in `src/resolve-ref.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771878989
+      }
+    ],
+    "19.3 Write property test P20 in `src/resolve-ref.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879017
+      }
+    ],
+    "19.4 Implement `resolveRef` and `resolveRefDetailed` in `src/intake.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879042
+      }
+    ],
+    "20. Checkpoint - client and resolution": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879070
+      }
+    ],
+    "21.1 Write the failing unit tests in `src/tar-extract.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879101
+      }
+    ],
+    "21.2 Write property test P21 in `src/tar-extract.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879138
+      }
+    ],
+    "21.3 Write property test P6 in `src/tar-extract.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879166
+      }
+    ],
+    "21.4 Write property test P11 in `src/tar-extract.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879191
+      }
+    ],
+    "21.5 Implement `src/tar-extract.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879224
+      }
+    ],
+    "22.1 Write the failing unit tests in `src/snapshot-cache.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879252
+      }
+    ],
+    "22.2 Write property test P8 in `src/snapshot-cache.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879276
+      }
+    ],
+    "22.3 Write property test P31 in `src/snapshot-cache.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879306
+      }
+    ],
+    "22.4 Implement `src/snapshot-cache.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879359
+      }
+    ],
+    "23.1 Write the failing unit tests in `src/registries.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879385
+      }
+    ],
+    "23.2 Implement `src/registries.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879410
+      }
+    ],
+    "24.1 Write the failing unit tests in `src/osv.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879442
+      }
+    ],
+    "24.2 Implement `src/osv.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879475
+      }
+    ],
+    "25.1 Write the failing unit tests in `src/external-data.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879510
+      }
+    ],
+    "25.2 Write property test P24 in `src/external-data.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879548
+      }
+    ],
+    "25.3 Write property test P25 in `src/external-data.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879581
+      }
+    ],
+    "25.4 Write property test P26 in `src/external-data.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879610
+      }
+    ],
+    "25.5 Implement `src/external-data.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879641
+      }
+    ],
+    "26. Checkpoint - extraction, cache, external data": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879669
+      }
+    ],
+    "27.1 Write the failing unit tests in `src/snapshot.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879696
+      }
+    ],
+    "27.2 Write property test P5 in `src/snapshot.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879726
+      }
+    ],
+    "27.3 Write property test P7 in `src/snapshot.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879755
+      }
+    ],
+    "27.4 Write property test P18 in `src/optional-degradation.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879783
+      }
+    ],
+    "27.5 Write the failing degraded-result cache TTL tests in `src/degraded-cache.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879807
+      }
+    ],
+    "27.6 Implement `GitHubSummoner.buildDetailed` and `build` in `src/snapshot.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879835
+      }
+    ],
+    "28.1 Write the failing unit tests in `src/summon.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879860
+      }
+    ],
+    "28.2 Write property test P9 in `src/secrets.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879889
+      }
+    ],
+    "28.3 Write property test P10 in `src/determinism.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879919
+      }
+    ],
+    "28.4 Write property test P13 in `src/call-budget.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879948
+      }
+    ],
+    "28.5 Write property test P16 in `src/error-mapping.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771879973
+      }
+    ],
+    "28.6 Write property test P17 in `src/error-mapping.pbt.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880001
+      }
+    ],
+    "28.7 Implement `summon` and `createSummoner` in `src/snapshot.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880027
+      }
+    ],
+    "29.1 Write the failing tests in `src/adapters/adapters.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880054
+      }
+    ],
+    "29.2 Implement `src/adapters/system-fetch.ts` and `src/adapters/system-clock.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880081
+      }
+    ],
+    "30.1 Write the failing tests": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880115
+      }
+    ],
+    "30.2 Implement `src/index.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880180
+      }
+    ],
+    "31.1 Write the failing golden test in `src/golden.test.ts`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880207
+      }
+    ],
+    "31.2 Author the golden fixtures and make the test pass": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880238
+      }
+    ],
+    "32. Checkpoint - package complete": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880266
+      }
+    ],
+    "33.1 Create `docs/ARCHITECTURE.md`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880292
+      }
+    ],
+    "33.2 Append a dated entry to `docs/KIRO_USAGE.md`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880323
+      }
+    ],
+    "33.3 Add a \"Known risks\" subsection to `docs/ARCHITECTURE.md`": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880353
+      }
+    ],
+    "34. Final checkpoint - full verification": [
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771880385
+      }
+    ]
+  }
+}

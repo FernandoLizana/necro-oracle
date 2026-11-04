@@ -77,6 +77,15 @@ scope here.
   that records each dependency whose registry or OSV query timed out or failed,
   together with a reason, so that isolated per-dependency failures are reported
   without failing the external-data fetch or the reading.
+- **Optional_REST_Call**: A REST_Call whose failure degrades the result instead
+  of failing the summon, specifically the pull-request listing call that feeds
+  `openPRCount` and `oldestOpenPRAgeDays` and the latest-release call that feeds
+  `latestReleaseAt`. The repository metadata call, the commit/ref resolution
+  call, and the tarball download request are not Optional_REST_Calls.
+- **Degraded_Fields**: The list in the GitHub_Summoner public result naming each
+  Optional_REST_Call (`pulls`, `release`) that failed with a 5xx response, a
+  timeout, or a connection-level network error, and therefore supplied neutral
+  RepoMeta defaults. The list is empty when no Optional_REST_Call degraded.
 - **ParsedDependency**: The `@necro/oracle` type `{ name, versionSpec, extras }`
   produced by manifest parsing; the set of packages queried against PyPI/npm/OSV.
 - **Ref_Resolution**: Converting a branch, ref name, or partial SHA into the
@@ -93,8 +102,15 @@ scope here.
   used for every failure in this package.
 - **Snapshot_Cache**: The in-memory cache keyed by `owner/repo@sha`, returning a
   previously built `RepoSnapshot` without re-downloading. Entries are bounded
-  both by a TTL (default 7 days) and by a maximum entry count (default 20) with
-  least-recently-used eviction.
+  both by a per-entry TTL and by a maximum entry count (default 20) with
+  least-recently-used eviction. The TTL of an entry is the configured TTL
+  (default 7 days) when the stored result has an empty Degraded_Fields list, and
+  the Degraded_TTL otherwise (see Requirement 8 criteria 11 to 14).
+- **Degraded_TTL**: The fixed 10-minute (600-second, 600,000 ms) lifetime
+  applied to a Snapshot_Cache entry whose stored result has a non-empty
+  Degraded_Fields list, so that the next summon after expiry retries the
+  Optional_REST_Calls. The effective TTL of such an entry is the lesser of the
+  configured TTL and the Degraded_TTL.
 
 ## Requirements
 
@@ -168,9 +184,10 @@ scope here.
 3. THE GitHub_Summoner SHALL represent RepoMeta `pushedAt` and `latestReleaseAt` as ISO 8601 UTC strings or `null`.
 4. THE GitHub_Summoner SHALL set RepoMeta `openPRCount` to the count of open pull requests and SHALL set RepoMeta `openIssueCount` to GitHub's reported open-issues count minus `openPRCount`, floored at `0`, so that pull requests are not double-counted as issues.
 5. THE GitHub_Summoner SHALL set RepoMeta `oldestOpenPRAgeDays` to the whole number of days (elapsed seconds divided by 86,400, rounded down, minimum `0`) from the oldest open pull request's creation time to the snapshot time, or to `null` when no open pull request exists.
-6. WHERE GitHub repository attributes exist that are not fields of RepoMeta — specifically star count (an integer of at least `0`), the default branch name (a non-empty string), and the presence of a `.github/workflows` directory (a boolean) — THE GitHub_Summoner SHALL expose those attributes through its own public result type separate from RepoMeta, and SHALL derive the presence of a `.github/workflows` directory from the downloaded Tarball_Snapshot entries rather than from a separate GitHub REST API call.
-7. IF a RepoMeta field cannot be derived from validated GitHub data, whether because the data is absent or because it fails zod validation, THEN THE GitHub_Summoner SHALL use the neutral default for that field (counts `0`, booleans `false`, and `pushedAt`, `oldestOpenPRAgeDays`, `latestReleaseAt`, and `licenseKey` set to `null`).
+6. WHERE GitHub repository attributes exist that are not fields of RepoMeta — specifically star count (an integer of at least `0`), the default branch name (a non-empty string), and the presence of a `.github/workflows` directory (a boolean) — THE GitHub_Summoner SHALL expose those attributes, together with the Degraded_Fields list of criterion 9, through its own public result type separate from RepoMeta, and SHALL derive the presence of a `.github/workflows` directory from the downloaded Tarball_Snapshot entries rather than from a separate GitHub REST API call.
+7. IF a RepoMeta field cannot be derived from validated GitHub data, whether because the data is absent, because it fails zod validation, or because the Optional_REST_Call feeding it failed with a 5xx response, a timeout, or a connection-level network error, THEN THE GitHub_Summoner SHALL use the neutral default for that field (counts `0`, booleans `false`, and `pushedAt`, `oldestOpenPRAgeDays`, `latestReleaseAt`, and `licenseKey` set to `null`); in particular a failed pull-request call yields `openPRCount` `0` and `oldestOpenPRAgeDays` `null`, a failed latest-release call yields `latestReleaseAt` `null`, and `openIssueCount` then equals GitHub's raw open-issues count because pull requests cannot be subtracted.
 8. THE GitHub_Summoner SHALL complete a full summon using at most 5 REST_Calls, excluding the tarball download request and including a followed rename redirect (Requirement 2 criterion 10), so that an unauthenticated summon stays within GitHub's 60-requests-per-hour unauthenticated budget; the unauthenticated tarball download makes zero REST_Calls (Requirement 3 criterion 15).
+9. WHEN an Optional_REST_Call fails with a 5xx response, a timeout, or a connection-level network error, THE GitHub_Summoner SHALL NOT raise a NecroError, SHALL apply the neutral defaults of criterion 7, and SHALL include the name of that call (`pulls` or `release`) in the Degraded_Fields list of the public result; a 401, 403, or 429 response on an Optional_REST_Call SHALL keep the behavior of Requirement 7 criteria 4, 5, and 8 and is not degraded.
 
 ### Requirement 5: Provide injectable external data for detectors
 
@@ -213,10 +230,10 @@ scope here.
 3. IF the GitHub REST API confirms, for an authenticated request, that a repository is absent, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REPO_NOT_FOUND` and an Oracle_Voice userMessage; IF a repository exists but is private, or an unauthenticated request reports not-found in a way that cannot be proven to mean absence, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REPO_PRIVATE` and an Oracle_Voice userMessage.
 4. IF the GitHub REST API reports that the request is rate limited, THEN THE GitHub_Summoner SHALL raise a NecroError with code `RATE_LIMITED` and an Oracle_Voice userMessage that states the wait duration, computed as the rate-limit reset instant minus the current ClockPort time, expressed in whole minutes rounded up with a minimum of one minute.
 5. IF the GitHub REST API responds with a secondary rate limit, indicated by a `403` or `429` response carrying a `Retry-After` value, THEN THE GitHub_Summoner SHALL raise a NecroError with code `RATE_LIMITED` whose userMessage states the wait duration taken from the `Retry-After` value when present, otherwise falling back to the reset-instant computation specified in criterion 4.
-6. IF a GitHub REST API or tarball-download request exceeds its timeout or fails with a connection-level network error, THEN THE GitHub_Summoner SHALL raise a NecroError with code `NETWORK_TIMEOUT` and an Oracle_Voice userMessage; a per-dependency registry or OSV timeout or failure is isolated per Requirement 5 criterion 5 and SHALL NOT raise `NETWORK_TIMEOUT`.
+6. IF the repository metadata request, the commit/ref resolution request, or the tarball-download request exceeds its timeout or fails with a connection-level network error, THEN THE GitHub_Summoner SHALL raise a NecroError with code `NETWORK_TIMEOUT` and an Oracle_Voice userMessage; a timeout or connection-level network error on an Optional_REST_Call SHALL NOT raise `NETWORK_TIMEOUT` and degrades per Requirement 4 criteria 7 and 9; a per-dependency registry or OSV timeout or failure is isolated per Requirement 5 criterion 5 and SHALL NOT raise `NETWORK_TIMEOUT`.
 7. IF the requested branch name, ref name, or commit SHA does not exist in an existing repository, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REF_NOT_FOUND` and an Oracle_Voice userMessage that names the missing ref, and SHALL NOT raise `INVALID_REPO_URL` or `REPO_NOT_FOUND`.
 8. IF the GitHub REST API responds with status 401 or the supplied `GITHUB_TOKEN` is rejected as malformed or invalid, THEN THE GitHub_Summoner SHALL raise a NecroError with code `AUTH_INVALID` and an Oracle_Voice userMessage that does not contain any character sequence of the token.
-9. IF a GitHub REST API request or the tarball download request to a GitHub host responds with a 5xx status, THEN THE GitHub_Summoner SHALL raise a NecroError with code `UPSTREAM_UNAVAILABLE` and an Oracle_Voice userMessage; a per-dependency registry or OSV 5xx response is isolated per Requirement 5 criterion 5 and SHALL NOT raise `UPSTREAM_UNAVAILABLE`.
+9. IF the repository metadata request, the commit/ref resolution request, or the tarball download request to a GitHub host responds with a 5xx status, THEN THE GitHub_Summoner SHALL raise a NecroError with code `UPSTREAM_UNAVAILABLE` and an Oracle_Voice userMessage; a 5xx response on an Optional_REST_Call SHALL NOT raise `UPSTREAM_UNAVAILABLE`, degrades per Requirement 4 criterion 7, and is reported per Requirement 4 criterion 9; a per-dependency registry or OSV 5xx response is isolated per Requirement 5 criterion 5 and SHALL NOT raise `UPSTREAM_UNAVAILABLE`.
 10. THE GitHub_Summoner SHALL attach the originating error as the `cause` of each raised NecroError and SHALL NOT suppress, discard, or replace an error without rethrowing it as a NecroError whose `cause` preserves the original.
 11. THE GitHub_Summoner SHALL phrase every NecroError userMessage in the Oracle_Voice as a short mystical line followed by a technical line that states what happened and what to do next.
 
@@ -227,8 +244,8 @@ scope here.
 #### Acceptance Criteria
 
 1. WHEN a snapshot is built for a RepoRef, THE GitHub_Summoner SHALL store it in the in-memory Snapshot_Cache keyed by `owner/repo@sha`, recording the entry's creation time from the injected ClockPort.
-2. WHEN a snapshot is requested for a RepoRef whose cache key is present and whose age (current ClockPort time minus recorded creation time) is strictly less than the configured TTL, THE GitHub_Summoner SHALL return the cached RepoSnapshot without issuing a tarball download.
-3. WHILE a cached entry's age, measured against the injected ClockPort, is greater than or equal to the configured TTL, THE GitHub_Summoner SHALL treat the entry as absent, rebuild the snapshot, and overwrite the expired entry with the rebuilt snapshot and a new creation time.
+2. WHEN a snapshot is requested for a RepoRef whose cache key is present and whose age (current ClockPort time minus recorded creation time) is strictly less than the entry's effective TTL (the configured TTL, or the Degraded_TTL per criteria 11 and 12), THE GitHub_Summoner SHALL return the cached RepoSnapshot without issuing a tarball download.
+3. WHILE a cached entry's age, measured against the injected ClockPort, is greater than or equal to the entry's effective TTL (the configured TTL, or the Degraded_TTL per criteria 11 and 12), THE GitHub_Summoner SHALL treat the entry as absent, rebuild the snapshot, and overwrite the expired entry with the rebuilt snapshot and a new creation time.
 4. THE GitHub_Summoner SHALL derive the identical cache key for the same `owner`, `name`, and `sha` on every invocation.
 5. WHERE no TTL is supplied by the caller, THE GitHub_Summoner SHALL apply a default TTL of 7 days (604800 seconds).
 6. WHEN a snapshot is rebuilt for a RepoRef whose cache key is already present, THE GitHub_Summoner SHALL evict the existing entry and replace it with the rebuilt snapshot so that at most one entry exists per cache key.
@@ -236,6 +253,10 @@ scope here.
 8. WHEN storing a new entry would exceed the maximum entry count, THE GitHub_Summoner SHALL evict the least-recently-used entry before storing the new one.
 9. WHEN a cache hit returns a cached RepoSnapshot, THE GitHub_Summoner SHALL mark that entry as the most-recently-used entry.
 10. WHEN a snapshot is stored in the Snapshot_Cache, THE GitHub_Summoner SHALL store repository file contents byte-for-byte unaltered and SHALL NOT persist the `GITHUB_TOKEN` or any Authorization header value in the cache.
+11. WHEN a snapshot result whose Degraded_Fields list is non-empty is stored, THE GitHub_Summoner SHALL store it with an effective TTL equal to the lesser of the configured TTL (including the default of criterion 5 and any caller-supplied TTL) and the Degraded_TTL of 10 minutes (600 seconds), so that a longer configured TTL does not override the Degraded_TTL.
+12. WHEN a snapshot result whose Degraded_Fields list is empty is stored, THE GitHub_Summoner SHALL store it with an effective TTL equal to the configured TTL (default 7 days per criterion 5).
+13. THE GitHub_Summoner SHALL measure the effective TTL of every entry, including a degraded entry, against the injected ClockPort using the same freshness rule as criteria 2 and 3: an entry whose age is strictly less than its effective TTL is fresh, and an entry whose age is greater than or equal to its effective TTL is expired.
+14. WHEN a summon requests a RepoRef whose cache entry is a degraded entry that has expired, THE GitHub_Summoner SHALL treat the entry as absent, SHALL retry the Optional_REST_Calls as part of the rebuild, and SHALL replace the expired entry with the rebuilt result under the effective TTL that criteria 11 and 12 assign to the rebuilt result.
 
 ### Requirement 9: Injected ports and offline determinism
 
@@ -325,13 +346,35 @@ property id and covered requirements.
   R6.4):** For all generated RepoRefs with no `GITHUB_TOKEN` present, the
   download request targets `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}`,
   carries no Authorization header, and contributes zero REST_Calls.
-- **P16 — Error-code mapping (R2.11, R7.7, R7.8, R7.9):** For all generated
+- **P16 — Error-code mapping (R2.11, R7.6, R7.7, R7.8, R7.9):** For all generated
   responses, a nonexistent ref in an existing repository yields `REF_NOT_FOUND`
-  (never `INVALID_REPO_URL`), a 401 yields `AUTH_INVALID`, and a GitHub 5xx on a
-  REST_Call or tarball download yields `UPSTREAM_UNAVAILABLE`, while a
-  per-dependency registry or OSV 5xx yields none of these and is recorded in
-  Skipped_Dependencies (R5.5).
+  (never `INVALID_REPO_URL`), a 401 on any REST_Call yields `AUTH_INVALID`, a
+  GitHub 5xx on the repository metadata call, the commit/ref resolution call, or
+  the tarball download yields `UPSTREAM_UNAVAILABLE`, and a timeout or
+  connection-level network error on those same three requests yields
+  `NETWORK_TIMEOUT`, while a per-dependency registry or OSV 5xx yields none of
+  these and is recorded in Skipped_Dependencies (R5.5).
 - **P17 — AUTH_INVALID never leaks the token (R7.8, R6.5):** For all generated
   `GITHUB_TOKEN` values and 401 responses, the raised `AUTH_INVALID` NecroError
   userMessage and every other NecroError field contain no substring of the
   token value.
+- **P18 — Optional-call degradation (R4.7, R4.9, R7.6, R7.9):** For all
+  generated 5xx responses, timeouts, and connection-level network errors on the
+  pull-request call, the latest-release call, or both, the summon raises no
+  NecroError, `openPRCount` is `0`, `oldestOpenPRAgeDays` is `null` when the
+  pull-request call failed, `latestReleaseAt` is `null` when the latest-release
+  call failed, `openIssueCount` equals GitHub's raw open-issues count when the
+  pull-request call failed, and Degraded_Fields names exactly the failed calls;
+  for all generated 429 or 401 responses on those calls the summon still raises
+  `RATE_LIMITED` or `AUTH_INVALID` respectively, and for all generated 5xx
+  responses on the repository metadata, commit/ref resolution, or tarball
+  requests the summon still raises `UPSTREAM_UNAVAILABLE`.
+
+- **P19 — Degraded-entry TTL (R8.2, R8.3, R8.11, R8.12, R8.13, R8.14):** For
+  all stored results, all configured TTL values of at least 1 ms, and all
+  ClockPort instants, an entry whose Degraded_Fields list is non-empty is fresh
+  if and only if its age is strictly less than `min(configured TTL, 600,000 ms)`
+  and an entry whose Degraded_Fields list is empty is fresh if and only if its
+  age is strictly less than the configured TTL; for all expired degraded
+  entries, the next summon treats the entry as absent, repeats the
+  Optional_REST_Calls, and replaces the entry.

@@ -15,7 +15,7 @@ Design stance, in priority order:
 - **Every side effect is a port.** HTTP, time, and environment arrive through `FetchPort`, `ClockPort`, and `EnvPort`. No global `fetch`, `Date.now()`, zero-argument `new Date()`, or `process.env` appears in package logic. Every test runs offline against recorded fixtures.
 - **Caps are layered and independent of the tar library.** Compressed bytes (50 MB), decompressed tar-stream bytes (200 MB), and entry count (100,000) are enforced by our own stream guards. The 1 MB per-file and 5000-file caps stay in `buildSnapshotFromFileMap` and are never reimplemented.
 - **Quota-frugal and token-aware.** Without a `GITHUB_TOKEN` the archive comes straight from `codeload.github.com` with no Authorization header and zero REST calls. With a token it comes from the `api.github.com` tarball endpoint plus at most one redirect to codeload. A summon makes at most 5 REST calls (4 in the normal case, the fifth reserved for a rename redirect), and the client enforces that with a hard guard.
-- **Honest degradation.** Optional metadata falls back to the neutral defaults `RepoMeta` already defines. Per-dependency registry/OSV failures land in `skipped`. The reading never fails because a registry was slow. A rate limit, a missing repo or ref, a rejected token, an upstream outage, or a size cap fails loudly with a typed `NecroError`.
+- **Honest degradation.** The two optional REST calls (open pull requests, latest release) degrade to the neutral defaults `RepoMeta` already defines when they fail with a `5xx`, a timeout, or a connection-level network error, and the failed call is named in the public `degradedFields` list (`pulls` | `release`). Per-dependency registry/OSV failures land in `skipped`. The reading never fails because a registry or an optional metadata call was slow. A rate limit or `401` (on any call, optional ones included), a missing repo or ref, a rejected token, an outage or timeout on the repo, commit, or tarball request, or a size cap fails loudly with a typed `NecroError`.
 - **Public repositories only.** A repository the API reports as `private: true` is refused before any content is downloaded.
 
 ### What this spec changes outside `packages/github`
@@ -62,14 +62,15 @@ packages/github/
     ports.ts                       FetchPort, ClockPort, EnvPort, FetchTransportError
     constants.ts                   caps, hosts, timeouts, defaults (SCREAMING_SNAKE)
     errors.ts                      SummonerError, error factory, message catalog, redaction
-    http-failure.ts                pure mapper: (status, headers, body hint, ctx) → SummonerError
+    http-failure.ts                pure classifier: (failure, ctx, nowMs) → SummonerError | DegradedOutcome
+                                   (DegradedOutcome only for optional pulls/release 5xx, timeout, network)
     intake.ts                      parseRepoRef (pure), resolveRef
     github-client.ts               auth + redirect policy, JSON reads, tarball path selection,
                                    REST call counter and hard budget guard (5)
     repo-meta.ts                   mapRepoMeta (pure)
     entry-path.ts                  normalizeEntryPath, isVendoredPath, isBinarySample (pure)
     tar-extract.ts                 capped streaming gunzip + tar-stream decode → ExtractedTree
-    snapshot-cache.ts              SnapshotCache (TTL + LRU, ClockPort-driven)
+    snapshot-cache.ts              SnapshotCache (per-entry TTL + LRU, ClockPort-driven), effectiveTtlMs
     snapshot.ts                    GitHubSummoner (implements GitHubSnapshotBuilder), createSummoner
     registries.ts                  PyPI + npm fetch and map → RegistryData
     osv.ts                         OSV querybatch + vuln detail fetch and map → OsvData
@@ -99,7 +100,7 @@ graph TD
         IDX["index.ts"]
         INT["intake.ts<br/>parseRepoRef, resolveRef"]
         SNP["snapshot.ts<br/>GitHubSummoner"]
-        CACHE["snapshot-cache.ts<br/>TTL + LRU"]
+        CACHE["snapshot-cache.ts<br/>per-entry TTL + LRU"]
         CLI["github-client.ts<br/>auth, redirects, JSON,<br/>tarball path, REST guard"]
         META["repo-meta.ts"]
         TAR["tar-extract.ts<br/>gunzip + tar-stream bridge"]
@@ -157,13 +158,14 @@ sequenceDiagram
     S->>G: 2. GET /repos/{canon}/commits/{ref}
     G-->>S: sha (40 lowercase hex) or 404/422 → REF_NOT_FOUND
     S->>K: get(canonOwner/canonName@sha)
-    alt hit and age < TTL
+    alt hit and age < entry's effective TTL
         K-->>S: cached SummonResult
         S-->>C: result (no further network)
     else miss or expired
         par metadata
-            S->>G: 3. GET /pulls?state=open&sort=created&direction=asc&per_page=1
-            S->>G: 4. GET /releases/latest
+            S->>G: 3. GET /pulls?state=open&sort=created&direction=asc&per_page=1 (optional)
+            S->>G: 4. GET /releases/latest (optional)
+            Note over S,G: 5xx, timeout, or network error on 3 or 4 → neutral RepoMeta<br/>+ degradedFields, summon continues. 401/403/429 on 3 or 4 stay fatal.
         and tarball (variant chosen by token presence)
             alt no GITHUB_TOKEN
                 S->>X: GET /{o}/{r}/tar.gz/{sha} (no Authorization, no REST call)
@@ -177,12 +179,12 @@ sequenceDiagram
         end
         S->>S: capped gunzip + tar-stream decode → text file map
         S->>S: buildSnapshotFromFileMap(ref, files, {meta, createdAt})
-        S->>K: set(key, result)
+        S->>K: set(key, result, { ttlMs: min(configured TTL, 600 000) if degradedFields non-empty, else configured TTL })
         S-->>C: result
     end
 ```
 
-The tarball request is never a REST call on either variant, so it does not count toward the budget of 5 and does not touch `restCallCount`. A summon uses 4 REST calls (repo, commit, pulls, release); the fifth slot is headroom reserved for the rename redirect hop.
+The tarball request is never a REST call on either variant, so it does not count toward the budget of 5 and does not touch `restCallCount`. A summon uses 4 REST calls (repo, commit, pulls, release); the fifth slot is headroom reserved for the rename redirect hop. A degraded pulls or release call was still sent, so it counts as a REST call exactly like a successful one, and it is never retried.
 
 ### Key design decisions
 
@@ -216,6 +218,8 @@ The tarball request has its own, separate redirect rule (token path: one redirec
 
 **D5. Snapshot cache stores `SummonResult`, returns shallow copies.**
 `runReading` assigns `snapshot.manifests = parseAllManifests(snapshot)`. Returning the cached object itself would let one reading mutate another's snapshot. The cache returns `{ ...snapshot }` (a new top-level object sharing the read-only `files`/`contents`), so the assignment is local. In-flight builds for the same key share one promise, so concurrent summons do not download twice. Failures are never cached.
+
+*Degraded results get a short TTL (R8.11 to R8.14).* A result whose `degradedFields` is non-empty carries neutral `RepoMeta` values for the failed optional calls. Caching those for 7 days would freeze the neutral values for a commit long after the outage ended. The summoner therefore chooses the entry's TTL when it stores the result: `effectiveTtlMs = degradedFields.length > 0 ? min(configuredTtlMs, DEGRADED_TTL_MS) : configuredTtlMs`, with `DEGRADED_TTL_MS = 600_000` (10 minutes). Taking the minimum means a longer configured or default TTL never overrides the degraded TTL, while a caller-configured TTL shorter than 10 minutes still wins. The cache stays generic: it stores a per-entry TTL passed to `set` and knows nothing about `degradedFields`. Freshness uses the same strictly-less-than rule against the injected `ClockPort` (R8.13), and an expired degraded entry is simply absent, so the next summon repeats the `pulls` and `release` calls and replaces the entry under the TTL its new result earns (R8.14).
 
 **D6. OSV is queried only for exactly-pinned dependencies.**
 The Devil turns every injected `OsvVulnerability` into evidence. A version-less OSV query returns every advisory ever filed against the package, including ones fixed years before the pinned version. That would put false evidence on a card, which violates "the cards cannot lie". The fetcher therefore queries OSV only when the manifest pins an exact version (`==1.2.3` for PyPI, `1.2.3`/`=1.2.3` for npm). Other dependencies are reported in `skipped` with reason `version-not-pinned`.
@@ -283,6 +287,8 @@ export const TEXT_FILE_CEILING_BYTES = 1_048_576;    // mirrors the oracle cap; 
 export const REST_CALL_BUDGET = 5;                   // R4.8; hard guard in GitHubClient (D2).
                                                      // Excludes the tarball download, includes a followed rename redirect
 export const DEFAULT_TTL_MS = 604_800_000;           // 7 days  (R8.5)
+export const DEGRADED_TTL_MS = 600_000;              // 10 minutes (R8.11); cap on the effective TTL of an
+                                                     // entry whose degradedFields is non-empty
 export const DEFAULT_MAX_CACHE_ENTRIES = 20;         //         (R8.7)
 export const TIMEOUT_REST_MS = 15_000;
 export const TIMEOUT_TARBALL_MS = 40_000;            // keeps a summon under the ~50 s serverless guard
@@ -392,13 +398,28 @@ export class GitHubClient {
   /**
    * GET a REST path, validate against `schema`, map failures via http-failure.ts.
    * Throws VALIDATION_FAILED (reason "rest-budget-exceeded") BEFORE sending a request that
-   * would be the 6th REST_Call.
+   * would be the 6th REST_Call. The request is counted when it is sent, so a call that later
+   * degrades still counts toward the budget.
+   *
+   * Required contexts (`optional: false`): every failure is thrown as a SummonerError.
    */
   getJson<T>(
     path: string,
     schema: z.ZodType<T>,
-    ctx: RequestContext,
+    ctx: RequestContext & { readonly optional: false },
   ): Promise<{ data: T; headers: Readonly<Record<string, string>> }>;
+
+  /**
+   * Optional contexts (`optional: true`, endpoints "pulls" and "release" only). Never throws for
+   * a degradable failure; returns an OptionalJsonResult instead (see "Optional calls" below).
+   * Still throws for 401, 403, 429 (AUTH_INVALID / RATE_LIMITED / REPO_PRIVATE), a refused
+   * redirect, a malformed token, or the budget guard.
+   */
+  getJson<T>(
+    path: string,
+    schema: z.ZodType<T>,
+    ctx: RequestContext & { readonly optional: true },
+  ): Promise<OptionalJsonResult<T>>;
 
   /**
    * Open the tarball. The path depends on token presence (R3.15, R3.16):
@@ -419,7 +440,12 @@ export interface RequestContext {
   readonly repo: { owner: string; name: string };
   /** true once the repo endpoint has returned 200 for this operation (changes 404 meaning). */
   readonly repoProven: boolean;
-  /** true when a fatal failure should be thrown; false when the caller degrades (pulls, release). */
+  /**
+   * false for the repo and commit endpoints: every failure is thrown.
+   * true ONLY for the Optional_REST_Calls (`pulls`, `release`): a 5xx, a timeout, or a
+   * connection-level network error is returned as a degraded outcome instead of thrown (R4.9).
+   * 401, 403, and 429 are fatal in both modes.
+   */
   readonly optional: boolean;
   /**
    * true ONLY for the first GET /repos/{owner}/{repo} of an operation. Permits one
@@ -461,22 +487,75 @@ Rules for the token path: read `Location`, parse with `new URL`, require `https:
 
 **Rename redirect on the first repo call.** Covered by D2: the client follows one `301/307/308` to `https://api.github.com` only on the call flagged `allowRepoRedirect`, increments `restCallCount` for the followed hop, and re-applies `headersFor` to the new URL.
 
+**Optional calls (`optional: true`; R4.7, R4.9, R7.6, R7.9).** The `pulls` and `release` calls are the only Optional_REST_Calls. `http-failure.ts` owns the decision, so the client and the tests share one pure function:
+
+```typescript
+// src/http-failure.ts
+export type DegradedField = "pulls" | "release";            // the Degraded_Fields vocabulary
+export type DegradedCause = "http-5xx" | "timeout" | "network";
+
+export interface DegradedOutcome {
+  readonly status: "degraded";
+  readonly field: DegradedField;                            // from ctx.endpoint
+  readonly cause: DegradedCause;
+  readonly httpStatus?: number;                             // 5xx only
+  readonly sanitizedCause: Error;                           // redacted clone, kept for diagnostics, never thrown
+}
+
+/** Pure. Returns a SummonerError for fatal situations, a DegradedOutcome for degradable ones. */
+export function classifyFailure(
+  failure: { kind: "http"; status: number; headers: Readonly<Record<string, string>>; bodyHint?: string }
+         | { kind: "transport"; error: FetchTransportError },
+  ctx: RequestContext,
+  nowMs: number,
+): SummonerError | DegradedOutcome;
+```
+
+`classifyFailure` applies the error-mapping table in "Error Handling". Rate-limit detection and `401` run first and are identical for every endpoint. Only then, when `ctx.optional` is true and the failure is a `5xx` or a `FetchTransportError` (`timeout` or `network`), does it return a `DegradedOutcome`; with `ctx.optional` false the same inputs yield `UPSTREAM_UNAVAILABLE` or `NETWORK_TIMEOUT`. `ctx.optional` is never true for `repo` or `commit`, which the client asserts when it builds the context.
+
+What `getJson` returns for an `optional: true` context:
+
+```typescript
+export type OptionalJsonResult<T> =
+  | { readonly status: "ok"; readonly data: T; readonly headers: Readonly<Record<string, string>> }
+  | { readonly status: "absent" }        // 404, or a 2xx that fails zod or the body cap: neutral value, NOT a Degraded_Field
+  | DegradedOutcome;                     // 5xx, timeout, connection-level network error: neutral value AND a Degraded_Field
+```
+
+- `ok`: validated payload, as for required calls.
+- `absent`: the existing quiet-neutral path (for example `404` on `releases/latest` meaning no releases, or a payload that fails zod, R4.7). It maps to the neutral value but does not appear in `degradedFields`, because Degraded_Fields lists only calls that failed with a `5xx`, a timeout, or a network error (R4.9).
+- `degraded`: no `NecroError` is created or thrown. The response body, if any, is cancelled. There is no retry, so the budget is not spent twice.
+- Anything else (`401`, `403`, `429`, a refused redirect, a malformed token, the budget guard) is thrown exactly as for a required call. A degraded outcome never masks these: if pulls degrades but release returns `429`, the summon raises `RATE_LIMITED`.
+
+Budget: `restCallCount` is incremented when the request is sent, before the outcome is known, so a degraded call counts toward the budget of 5 like any other REST_Call (R4.8). A failure that happens before the request is sent (budget guard, malformed token) is not degradable and is thrown.
+
+The summoner consumes the two outcomes in `buildDetailed` step 5. A `degraded` outcome is not a fatal failure, so it does not fire the shared `AbortController`; the sibling optional call and the tarball continue.
+
 ### Repo metadata mapper (`repo-meta.ts`)
 
 ```typescript
+import type { DegradedField, DegradedCause } from "./http-failure.js";
+
+/** What an optional call produced, as seen by the pure mapper. */
+export type OptionalOutcome<T> =
+  | { readonly status: "ok"; readonly value: T }
+  | { readonly status: "absent" }                          // 404 / failed zod: neutral, not a Degraded_Field
+  | { readonly status: "degraded"; readonly cause: DegradedCause };  // 5xx / timeout / network: neutral + Degraded_Field
+
 export interface MetaInputs {
   readonly repo: GhRepo | null;               // null → neutral defaults for repo-derived fields
-  readonly pulls: { count: number; oldestCreatedAt: string | null } | null;  // null → neutral
-  readonly release: { publishedAt: string | null } | null;                   // null → neutral
+  readonly pulls: OptionalOutcome<{ count: number; oldestCreatedAt: string | null }>;
+  readonly release: OptionalOutcome<{ publishedAt: string | null }>;
   readonly nowMs: number;
 }
 
 export interface MappedMeta {
   readonly meta: RepoMeta;                    // @necro/oracle shape, validated with RepoMetaSchema
-  readonly degraded: readonly DegradedField[];
+  /** Failed optional calls in fixed order (pulls before release), no duplicates; [] when none. */
+  readonly degradedFields: readonly DegradedField[];
 }
 
-/** Pure (R4.1–R4.5, R4.7). */
+/** Pure (R4.1–R4.5, R4.7, R4.9). */
 export function mapRepoMeta(inputs: MetaInputs): MappedMeta;
 ```
 
@@ -487,10 +566,10 @@ Field rules:
 | `isArchived` | `repo.archived` | else `false` |
 | `pushedAt` | `repo.pushed_at` | normalized ISO 8601 UTC via `isoFromMs(parseIsoMs(x))`, else `null` |
 | `licenseKey` | `repo.license` | `null` license → `null`; `spdx_id` null or `"NOASSERTION"` → `"NOASSERTION"`; else `spdx_id` (R4.2) |
-| `openPRCount` | pulls call | open PR count, else `0` |
-| `openIssueCount` | `repo.open_issues_count` | `max(0, open_issues_count − openPRCount)` (R4.4) |
-| `oldestOpenPRAgeDays` | pulls call | `max(0, floor((nowMs − parseIsoMs(createdAt)) / 86_400_000))` for the oldest open PR, `null` when none (R4.5) |
-| `latestReleaseAt` | release call | `published_at` normalized to ISO UTC, else `null` |
+| `openPRCount` | pulls call | `pulls.status = "ok"`: open PR count; `absent` or `degraded`: `0` |
+| `openIssueCount` | `repo.open_issues_count` | `max(0, open_issues_count − openPRCount)` (R4.4). With `openPRCount` `0` (pulls absent or degraded) this equals the raw `open_issues_count`, because pull requests cannot be subtracted (R4.7) |
+| `oldestOpenPRAgeDays` | pulls call | `ok`: `max(0, floor((nowMs − parseIsoMs(createdAt)) / 86_400_000))` for the oldest open PR, `null` when none (R4.5); `absent` or `degraded`: `null` |
+| `latestReleaseAt` | release call | `ok`: `published_at` normalized to ISO UTC; `absent` (no releases) or `degraded`: `null` |
 
 `SummonExtras` (R4.6) carries what `RepoMeta` cannot:
 
@@ -499,12 +578,13 @@ export interface SummonExtras {
   readonly stars: number;                     // integer ≥ 0
   readonly defaultBranch: string;             // non-empty
   readonly hasWorkflowsDir: boolean;          // derived from tarball entries, no extra API call
-  readonly degraded: readonly DegradedField[];
+  /** Degraded_Fields (R4.6, R4.9): [] when no Optional_REST_Call degraded. */
+  readonly degradedFields: readonly DegradedField[];
 }
-export type DegradedField = "pulls" | "release" | "repo-meta" | "pr-count-unknown";
+// DegradedField = "pulls" | "release" (defined in http-failure.ts, re-exported from index.ts)
 ```
 
-When the `pulls` call degrades, `openPRCount` is `0` and `openIssueCount` is GitHub's raw count (pull requests included); `"pulls"` appears in `degraded` so the Scribe can say so rather than present the number as exact.
+When the `pulls` call degrades, `openPRCount` is `0`, `oldestOpenPRAgeDays` is `null`, and `openIssueCount` is GitHub's raw count (pull requests included); `"pulls"` appears in `degradedFields` so the Scribe can say so rather than present the number as exact. When the `release` call degrades, `latestReleaseAt` is `null` and `"release"` appears. A `404` on releases (no releases) or a payload that fails zod gives the same neutral values but is not listed, because it is not a degradation (R4.9). `degradedFields` is part of the public `SummonResult.extras`, next to `stars`, `defaultBranch`, and `hasWorkflowsDir`, and `mapRepoMeta` fills it (the summoner copies `MappedMeta.degradedFields` into `extras`).
 
 ### Tarball extraction (`tar-extract.ts`, `entry-path.ts`)
 
@@ -581,9 +661,22 @@ Nothing here touches the filesystem. Extracted bytes become strings and are neve
 
 ```typescript
 export interface SnapshotCacheOptions {
-  readonly ttlMs?: number;                    // default DEFAULT_TTL_MS
+  readonly ttlMs?: number;                    // configured TTL; default DEFAULT_TTL_MS
   readonly maxEntries?: number;               // default DEFAULT_MAX_CACHE_ENTRIES
 }
+
+export interface SnapshotCacheSetOptions {
+  /**
+   * Effective TTL of this entry in ms (integer >= 1). Omitted: the configured `ttlMs`.
+   * A supplied value is clamped to the configured `ttlMs`, so a per-entry TTL can only
+   * shorten the lifetime, never extend it past the configured TTL (R8.11).
+   */
+  readonly ttlMs?: number;
+}
+
+/** Pure: effective TTL for a stored result (R8.11, R8.12). */
+export function effectiveTtlMs(configuredTtlMs: number, degradedFields: readonly DegradedField[]): number;
+//   → degradedFields.length > 0 ? Math.min(configuredTtlMs, DEGRADED_TTL_MS) : configuredTtlMs
 
 /** Pure: identical key for identical (owner, name, sha) (R8.4). */
 export function cacheKey(ref: Pick<RepoRef, "owner" | "name" | "sha">): string;
@@ -592,16 +685,22 @@ export function cacheKey(ref: Pick<RepoRef, "owner" | "name" | "sha">): string;
 export class SnapshotCache<V> {
   constructor(clock: ClockPort, opts?: SnapshotCacheOptions);
   get(key: string): V | undefined;            // fresh hit → marks most-recently-used (R8.9)
-  set(key: string, value: V): void;           // replaces existing key; evicts LRU at capacity (R8.6, R8.8)
+  set(key: string, value: V, opts?: SnapshotCacheSetOptions): void;
+                                              // replaces existing key; evicts LRU at capacity (R8.6, R8.8);
+                                              // records the per-entry effective TTL (R8.11, R8.12)
   readonly size: number;
+  readonly configuredTtlMs: number;           // opts.ttlMs ?? DEFAULT_TTL_MS; input to effectiveTtlMs
 }
 ```
 
+`effectiveTtlMs` lives in `snapshot-cache.ts` next to `cacheKey` (both pure) and is re-exported from `index.ts` with them.
+
 Implementation notes:
 
-- Backing store is a `Map<string, { value: V; createdAtMs: number }>`. JavaScript `Map` iterates in insertion order, so re-inserting on hit (`delete` then `set`) keeps the first key the least-recently-used.
-- `get`: entry present and `nowMs − createdAtMs < ttlMs` → hit. Age `≥ ttlMs` → delete and return `undefined` (R8.2, R8.3: the boundary instant is expired).
-- `set`: delete any existing entry for the key (at most one entry per key), purge expired entries, then while `size ≥ maxEntries` delete the first (LRU) key, then insert with `createdAtMs = clock.nowMs()`.
+- Backing store is a `Map<string, { value: V; createdAtMs: number; ttlMs: number }>`. JavaScript `Map` iterates in insertion order, so re-inserting on hit (`delete` then `set`) keeps the first key the least-recently-used. `ttlMs` is the entry's own effective TTL.
+- `get`: entry present and `nowMs − createdAtMs < entry.ttlMs` → hit. Age `≥ entry.ttlMs` → delete and return `undefined` (R8.2, R8.3, R8.13: the boundary instant is expired, for degraded and normal entries alike).
+- `set`: delete any existing entry for the key (at most one entry per key), purge expired entries (each against its own `ttlMs`), then while `size ≥ maxEntries` delete the first (LRU) key, then insert with `createdAtMs = clock.nowMs()` and `ttlMs = min(opts.ttlMs ?? configured ttlMs, configured ttlMs)`.
+- The summoner, not the cache, decides which TTL a result earns by calling `effectiveTtlMs(configuredTtlMs, extras.degradedFields)`. A degraded entry that has expired is deleted by `get` or by the purge in `set`, so the next summon rebuilds and repeats the optional calls (R8.14).
 - The key is exact-case. `Foo/bar@sha` and `foo/bar@sha` are distinct keys. Both resolve to the same repo, so the cost is one extra download, and equality of keys stays equivalent to equality of the three components (P8). Owner and name charsets exclude `/` and `@`, so the key is injective.
 - The cache holds `SummonResult` values only. Tokens and headers are never in scope of the builder's result, so none can be stored (R8.10).
 
@@ -626,7 +725,7 @@ export class GitHubSummoner implements GitHubSnapshotBuilder {
   /** @necro/oracle contract (R10.4). */
   build(ref: RepoRef): Promise<RepoSnapshot>;
 
-  /** build() plus extras (stars, defaultBranch, hasWorkflowsDir, degraded). */
+  /** build() plus extras (stars, defaultBranch, hasWorkflowsDir, degradedFields). */
   buildDetailed(ref: RepoRef): Promise<SummonResult>;
 
   /** parse → resolve → build; the whole pipeline from a user string. */
@@ -642,9 +741,9 @@ export function createSummoner(deps: SummonerDeps, opts?: SummonerOptions): GitH
 2. `cacheKey(ref)`; fresh hit → return the cached result with zero network access (R8.2).
 3. If a build for the key is already in flight, await it.
 4. Otherwise: read the clock once (`startMs`). Fetch the repo payload (or reuse the one `summon` passes in; a standalone `build(ref)` issues call 1 with `allowRepoRedirect: true`). If `private: true`, raise `REPO_PRIVATE` before anything is downloaded. If the payload's canonical owner/name differ from `ref` (a hand-built ref), the canonical pair is used for every later URL and for the cache key.
-5. Run in parallel under one `AbortController`: `pulls` (optional), `release` (optional), and the tarball (`openTarball`, path chosen by token presence) + extraction. A fatal failure in any branch aborts the others.
-6. `mapRepoMeta(...)` with the single `startMs`; `buildSnapshotFromFileMap(ref, tree.files, { meta, createdAt: isoFromMs(startMs) })`.
-7. Store in the cache (the entry's creation time is `clock.nowMs()` at insertion) and return a shallow copy.
+5. Run in parallel under one `AbortController`: `pulls` and `release` (both `getJson` with `optional: true`, each yielding an `OptionalJsonResult`), and the tarball (`openTarball`, path chosen by token presence) + extraction. A thrown failure in any branch (including `RATE_LIMITED` or `AUTH_INVALID` from pulls or release) aborts the others. A `degraded` or `absent` optional result is not a failure and aborts nothing.
+6. `mapRepoMeta(...)` with the single `startMs` (the two `OptionalJsonResult`s are translated to `OptionalOutcome`s; `MappedMeta.degradedFields` becomes `extras.degradedFields`); `buildSnapshotFromFileMap(ref, tree.files, { meta, createdAt: isoFromMs(startMs) })`.
+7. Store in the cache with `cache.set(key, result, { ttlMs: effectiveTtlMs(configuredTtlMs, extras.degradedFields) })` (the entry's creation time is `clock.nowMs()` at insertion): a non-empty `degradedFields` stores the entry for `min(configured TTL, 10 minutes)`, an empty one for the configured TTL (R8.11, R8.12). Return a shallow copy. Step 2's freshness check then applies each entry's own TTL, so an expired degraded entry falls through to a full rebuild that repeats `pulls` and `release` (R8.14).
 
 `build(ref)` returns `(await buildDetailed(ref)).snapshot`.
 
@@ -729,8 +828,9 @@ export { GitHubSummoner, createSummoner,
          type SummonerOptions, type SummonResult, type SummonExtras } from "./snapshot.js";
 export { fetchExternalData,
          type ExternalDataResult, type SkippedDependency, type SkipReason } from "./external-data.js";
-export { mapRepoMeta } from "./repo-meta.js";
-export { cacheKey, SnapshotCache } from "./snapshot-cache.js";
+export { mapRepoMeta, type MetaInputs, type MappedMeta, type OptionalOutcome } from "./repo-meta.js";
+export type { DegradedField, DegradedCause } from "./http-failure.js";
+export { cacheKey, effectiveTtlMs, SnapshotCache } from "./snapshot-cache.js";
 export { GitHubClient } from "./github-client.js";
 export { SummonerError, type SummonerErrorCode } from "./errors.js";
 export { DEFAULT_LIMITS, type ExtractionLimits } from "./tar-extract.js";
@@ -748,8 +848,8 @@ Consumers never import a path other than the package entry (R10.1). `testing/` h
 |---|---|---|---|
 | 1 | `GET /repos/{o}/{r}` (may follow one rename redirect, D2) | canonical owner/name, default branch, `private`, archived, `pushed_at`, stars, open-issues count, license | fatal |
 | 2 | `GET /repos/{canon}/commits/{ref}` | exact 40-char SHA | fatal (`REF_NOT_FOUND` for a missing ref) |
-| 3 | `GET /repos/{canon}/pulls?state=open&sort=created&direction=asc&per_page=1` | oldest open PR (first item) and, from the `Link: rel="last"` page number, the open PR count | rate limit, `401`, `5xx`, and transport errors are fatal; other failures degrade to neutral |
-| 4 | `GET /repos/{canon}/releases/latest` | `published_at` | same as call 3; `404` means no releases (`null`) |
+| 3 | `GET /repos/{canon}/pulls?state=open&sort=created&direction=asc&per_page=1` | oldest open PR (first item) and, from the `Link: rel="last"` page number, the open PR count | optional: `5xx`, timeout, and connection-level network error degrade to neutral and are listed in `degradedFields` (`pulls`); `401`, `403`, `429` stay fatal; other failures (`404`, bad payload) are quietly neutral and not listed |
+| 4 | `GET /repos/{canon}/releases/latest` | `published_at` | same as call 3 (optional; degraded field `release`); `404` means no releases (`null`, not listed) |
 | – | tarball: no token → `GET codeload.github.com/{o}/{r}/tar.gz/{sha}`; token → `GET api.github.com/repos/{o}/{r}/tarball/{sha}` then one redirect to codeload | the archive | fatal |
 
 The tarball row is **not** a REST_Call on either path (REST_Call glossary term), so it never touches `restCallCount`.
@@ -943,7 +1043,7 @@ RepoSnapshot + {registryData, osvData, now} ──▶ runReading (oracle)
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-P1–P17 are the properties named in the requirements document and keep their numbers and meaning. P18–P32 are added by this design from the prework analysis and were renumbered after P17 (the former design P13–P26 are now P18–P30, minus the former REST-budget property, which is subsumed by requirements P13; P31 and P32 are new). Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P22, R8.1–R8.3 and R8.6–R8.9 into the single model-based P30, and R5.2/R5.4/R5.9 into P23. P12 and P26 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P26 is the pure host-policy function. P13 (budget as observed over whole scenarios) and P31 (the client's hard guard in isolation) both bound REST calls but fail for different reasons. P16 owns the ref, `401`, and `5xx` error mapping; P28 owns the remaining classification rows.
+P1–P18 are the properties named in the requirements document and keep their numbers and meaning (P16 now also covers R7.6, and P18 is the optional-call degradation property added by the Q16 carve-out). The requirements document also lists a P19 (degraded-entry TTL, R8.2, R8.3, R8.11 to R8.14); that numbering is local to the requirements document and is realized here by the extended design P31, not by design P19, which is the unrelated ref-resolution property below. P19–P33 are added by this design from the prework analysis and were renumbered after P18 (they were P18–P32 before the requirements gained P18; the former REST-budget property is subsumed by requirements P13; P32 and P33 are design-only). Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P23, R8.1–R8.3 and R8.6–R8.9 into the single model-based P31, and R5.2/R5.4/R5.9 into P24. P12 and P27 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P27 is the pure host-policy function. P13 (budget as observed over whole scenarios) and P32 (the client's hard guard in isolation) both bound REST calls but fail for different reasons. P16 owns the ref, `401`, and repo/commit/tarball `5xx` and timeout mapping; P18 owns the optional pulls/release degradation (and the rate-limit and `401` rows on those calls); P29 owns the remaining classification rows.
 
 PBT applies to this package because the interesting logic is pure (parser, path normalizer, metadata mapper, failure mapper, cache, dependency collection) or sits behind ports that fakes can drive deterministically. Criteria that are structural (no globals in package logic) are verified by lint and smoke tests, not properties.
 
@@ -1021,7 +1121,7 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 ### Property 13: REST call budget, including the rename redirect
 
-*For any* scripted scenario (success, `404` on releases, failing pulls call, cache hit, cache miss, explicit or default ref, token or no token, and a first repository call that returns a followed rename redirect), the number of REST_Calls (requests to `api.github.com` other than the tarball download) during one `summon` is at most 5 and during one `build` at most 4, the tarball download request never contributes to the count on either path, `hasWorkflowsDir` is derived with no additional request, and the `RepoRef` `owner` and `name` equal the canonical values from the validated repo response (not the requested spelling).
+*For any* scripted scenario (success, `404` on releases, pulls and/or release call degraded by a `5xx`, timeout, or network error (the degraded request still counts as a REST_Call), cache hit, cache miss, explicit or default ref, token or no token, and a first repository call that returns a followed rename redirect), the number of REST_Calls (requests to `api.github.com` other than the tarball download) during one `summon` is at most 5 and during one `build` at most 4, the tarball download request never contributes to the count on either path, `hasWorkflowsDir` is derived with no additional request, and the `RepoRef` `owner` and `name` equal the canonical values from the validated repo response (not the requested spelling).
 
 **Validates: Requirements 2.4, 2.7, 2.8, 2.10, 4.6, 4.8**
 
@@ -1039,9 +1139,9 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 ### Property 16: Error-code mapping for ref, auth, and upstream failures
 
-*For any* generated response: a nonexistent ref (`404`/`422`, or `409` empty repository) in an existing, proven repository yields `REF_NOT_FOUND` naming the ref and never `INVALID_REPO_URL` or `REPO_NOT_FOUND`; a `401` yields `AUTH_INVALID`; a GitHub `5xx` on a REST_Call or on the tarball download yields `UPSTREAM_UNAVAILABLE` and never `NETWORK_TIMEOUT`; while a per-dependency registry or OSV `5xx` yields none of these and is recorded in Skipped_Dependencies.
+*For any* generated response: a nonexistent ref (`404`/`422`, or `409` empty repository) in an existing, proven repository yields `REF_NOT_FOUND` naming the ref and never `INVALID_REPO_URL` or `REPO_NOT_FOUND`; a `401` on any REST_Call yields `AUTH_INVALID`; a GitHub `5xx` on the repository metadata call, the commit/ref resolution call, or the tarball download yields `UPSTREAM_UNAVAILABLE` and never `NETWORK_TIMEOUT`; a timeout or connection-level network error on those same three requests yields `NETWORK_TIMEOUT`; while a per-dependency registry or OSV `5xx` yields none of these and is recorded in Skipped_Dependencies. (The pulls and release calls are covered by P18.)
 
-**Validates: Requirements 2.11, 5.5, 7.7, 7.8, 7.9**
+**Validates: Requirements 2.11, 5.5, 7.6, 7.7, 7.8, 7.9**
 
 ### Property 17: AUTH_INVALID never leaks the token
 
@@ -1049,91 +1149,97 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 **Validates: Requirements 6.5, 7.8**
 
-### Property 18: Resolved references are fully populated and immutable
+### Property 18: Optional-call degradation
+
+*For any* `5xx` response, timeout, or connection-level network error on the pull-request call, the latest-release call, or both: the summon raises no `NecroError`; `openPRCount` is `0` and `oldestOpenPRAgeDays` is `null` when the pull-request call failed; `latestReleaseAt` is `null` when the latest-release call failed; `openIssueCount` equals GitHub's raw `open_issues_count` when the pull-request call failed; `degradedFields` names exactly the failed calls (`pulls`, `release`) and is empty when neither failed; the failed calls still count toward the REST budget, which stays at most 5. *For any* `429`, rate-limited `403`, or `401` on those calls the summon still raises `RATE_LIMITED` or `AUTH_INVALID` respectively and reports no degradation; *for any* `5xx` on the repository metadata, commit/ref resolution, or tarball requests the summon still raises `UPSTREAM_UNAVAILABLE`, and a timeout or network error on them still raises `NETWORK_TIMEOUT`.
+
+**Validates: Requirements 4.7, 4.8, 4.9, 7.6, 7.9**
+
+### Property 19: Resolved references are fully populated and immutable
 
 *For any* valid repo payload and commit payload (any default branch name, any requested ref form: none, branch, tag, full SHA, partial SHA), `resolveRef` returns a `RepoRef` whose `owner`, `name`, and `defaultBranch` are non-empty, whose `sha` matches `^[0-9a-f]{40}$`, and whose `defaultBranch` equals the repo payload's `default_branch` regardless of the ref requested; *for any* full 40-hex ref, resolution succeeds only if the commit payload's `sha` equals it.
 
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 10.3**
 
-### Property 19: Invalid payloads are rejected without partial results
+### Property 20: Invalid payloads are rejected without partial results
 
 *For any* repo or commit payload that violates its zod schema (missing field, wrong type, `sha` not 40 lowercase hex, empty `default_branch`, `full_name` that disagrees with `owner.login/name`), `resolveRef` throws `VALIDATION_FAILED`, returns no `RepoRef`, and issues no further request that depends on the invalid field.
 
 **Validates: Requirements 2.5, 2.6**
 
-### Property 20: Archive entry paths are safe and repository-relative
+### Property 21: Archive entry paths are safe and repository-relative
 
 *For any* generated sequence of tar entries (clean files, `..` traversal, absolute paths, backslash traversal, symlinks, hard links, devices, vendored segments at any depth, random top-level prefixes, duplicate paths), every key of the extracted file map: has the top-level `<owner>-<repo>-<sha>/` prefix removed, contains no `..` or empty segment, is not absolute, contains no segment in `VENDORED_SEGMENTS`, and originates from a regular-file entry. Every clean regular file is present with its content. `hasWorkflowsDir` is true if and only if some non-traversal, non-vendored entry lies under `.github/workflows/`. A file named `__proto__` is an ordinary key and does not change any prototype.
 
 **Validates: Requirements 3.3, 3.4, 3.5, 3.13, 4.6**
 
-### Property 21: Binary classification
+### Property 22: Binary classification
 
 *For any* entry content and any NUL position `p`, the entry is excluded as binary if and only if a NUL byte occurs within the first 8000 bytes; content with a NUL only at an offset of 8000 or later is treated as text.
 
 **Validates: Requirements 3.6**
 
-### Property 22: Metadata mapping
+### Property 23: Metadata mapping
 
 *For any* repo payload, pull-request result, release result (each possibly absent), and `nowMs`: the output passes `RepoMetaSchema`; `licenseKey` is `null` for no license, `"NOASSERTION"` for a null or `NOASSERTION` SPDX id, and the SPDX id otherwise; `pushedAt` and `latestReleaseAt` are ISO 8601 UTC strings ending in `Z` or `null`; `openPRCount` equals the supplied count and `openIssueCount = max(0, open_issues_count − openPRCount)`; `oldestOpenPRAgeDays` is `null` when there is no open PR and otherwise `max(0, floor((nowMs − createdAtMs) / 86,400,000))`; every field whose source is absent equals its neutral default.
 
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 4.7**
 
-### Property 23: Registry data is keyed, deduplicated, and well-formed
+### Property 24: Registry data is keyed, deduplicated, and well-formed
 
 *For any* dependency list (mixed ecosystems, mixed name case, duplicates) and any successful fixture responses: each distinct lowercased name is requested at most once per ecosystem; every key of `registryData` equals `dep.name.toLowerCase()` for some input dependency, with no ecosystem prefix; every entry passes the `RegistryEntry` shape check; every recorded registry/OSV request has `timeoutMs ≤ 10,000`, whatever timeout option is supplied; no request carries an `Authorization` header; and a lowercased name present in both ecosystems yields exactly one entry (npm after PyPI).
 
 **Validates: Requirements 5.1, 5.2, 5.4, 5.9, 5.11, 6.3**
 
-### Property 24: OSV data is honest and well-formed
+### Property 25: OSV data is honest and well-formed
 
 *For any* dependency list and fixture OSV responses: only exactly-pinned dependencies are queried; every `OsvVulnerability` passes the oracle shape check, has `affectedPackage` equal to a queried dependency name, and `severity` in the allowed set (`UNKNOWN` when the source gives none); aliases of the same flaw for the same package collapse to one record; unpinned dependencies appear in `skipped` with reason `version-not-pinned` and nowhere in `osvData`.
 
 **Validates: Requirements 5.3, 5.9**
 
-### Property 25: Per-dependency failures are isolated
+### Property 26: Per-dependency failures are isolated
 
 *For any* dependency list and any assignment of outcomes per dependency (success, `404`, timeout, network error, HTTP 5xx, malformed JSON, oversize body), `fetchExternalData` resolves without throwing; `registryData` contains exactly the dependencies whose outcome was success; `404` dependencies are absent from both `registryData` and `skipped`; every timeout, network, HTTP-error, or invalid-response dependency appears in `skipped` exactly once with the matching reason; and a failure of one endpoint never removes data gathered from another.
 
 **Validates: Requirements 5.5, 5.6, 5.7, 5.8, 7.6, 7.9**
 
-### Property 26: Authorization header policy
+### Property 27: Authorization header policy
 
 *For any* URL and any token (or none): `headersFor` includes `Authorization` if and only if a token exists, the scheme is `https`, the port is the default, and the host is exactly `github.com` or `api.github.com`; hosts such as `codeload.github.com`, `pypi.org`, `registry.npmjs.org`, `api.osv.dev`, and look-alikes (`api.github.com.evil.test`, `evilgithub.com`, `api.github.com:444`) never receive it; with no token no request sent through the client carries `Authorization`.
 
 **Validates: Requirements 6.2, 6.3, 6.4**
 
-### Property 27: Every error is a typed, in-voice NecroError
+### Property 28: Every error is a typed, in-voice NecroError
 
 *For any* error code in the ten introduced codes and any generated context, the factory produces an instance of `NecroError` (and `SummonerError`) with the requested `code`; `userMessage` is non-empty, ASCII, contains exactly one line break separating a mystical line of at most 16 words from a non-empty technical line; the message contains no input echo beyond declared fields (for `REF_NOT_FOUND`, the grammar-validated, redacted ref); and when an originating error is supplied, `error.cause` is present, retains its name, and carries its message with secrets redacted.
 
 **Validates: Requirements 7.1, 7.7, 7.8, 7.10, 7.11**
 
-### Property 28: HTTP and transport failure classification
+### Property 29: HTTP and transport failure classification
 
-*For any* `(status, headers, authenticated, repoProven, endpoint)`: `404` on the repo endpoint maps to `REPO_NOT_FOUND` when authenticated and `REPO_PRIVATE` when not; a repo payload with `private: true` maps to `REPO_PRIVATE`; `FetchTransportError` of either kind maps to `NETWORK_TIMEOUT`; `403` without rate-limit signals maps to `REPO_PRIVATE`; a `3xx` on any REST endpoint outside the permitted rename redirect maps to `VALIDATION_FAILED`; any other unexpected status maps to `VALIDATION_FAILED`; the mapping never throws a non-`NecroError`. (The ref, `401`, and `5xx` rows are P16.)
+*For any* `(status, headers, authenticated, repoProven, endpoint)`: `404` on the repo endpoint maps to `REPO_NOT_FOUND` when authenticated and `REPO_PRIVATE` when not; a repo payload with `private: true` maps to `REPO_PRIVATE`; `FetchTransportError` of either kind on the repo, commit, or tarball request maps to `NETWORK_TIMEOUT`, while on an optional pulls/release request it produces a degraded outcome and no error; `403` without rate-limit signals maps to `REPO_PRIVATE`; a `3xx` on any REST endpoint outside the permitted rename redirect maps to `VALIDATION_FAILED`; any other unexpected status maps to `VALIDATION_FAILED`; the mapping never throws a non-`NecroError`. (The ref, `401`, and `5xx` rows are P16; the optional-call degradation rows are P18.)
 
 **Validates: Requirements 2.9, 7.3, 7.6, 9.6**
 
-### Property 29: Rate-limit wait is computed from the clock
+### Property 30: Rate-limit wait is computed from the clock
 
 *For any* `x-ratelimit-reset` epoch second, `ClockPort` instant, and optional `Retry-After` (integer seconds, HTTP-date, absent, or malformed): a `403`/`429` response with `Retry-After` yields `RATE_LIMITED` whose `retryAfterMinutes = max(1, ceil(retryAfterSeconds / 60))`; without a usable `Retry-After`, a response with `x-ratelimit-remaining: 0` yields `max(1, ceil((resetMs − nowMs) / 60,000))`; with neither, the wait is 1 minute; the `userMessage` states the same number.
 
 **Validates: Requirements 7.4, 7.5**
 
-### Property 30: Snapshot cache behaves like a TTL + LRU model
+### Property 31: Snapshot cache behaves like a TTL + LRU model
 
-*For any* sequence of `get` and `set` operations on arbitrary keys with a monotonic fixed clock, any `ttlMs ≥ 1` and any `maxEntries ≥ 1`, `SnapshotCache` agrees with a reference model at every step: a `get` hits if and only if the key was set and `now − setTime < ttlMs` (an age equal to the TTL is a miss); a hit makes the key most-recently-used; `set` on an existing key replaces it (at most one entry per key); inserting beyond capacity evicts the least-recently-used key; `size ≤ maxEntries` always. *For any* build request whose key is fresh in the cache, the `FetchPort` call count is unchanged.
+*For any* sequence of `get` and `set` operations on arbitrary keys with a monotonic fixed clock, any configured `ttlMs ≥ 1`, any `maxEntries ≥ 1`, and any per-entry `set` option (absent, or a `ttlMs ≥ 1` that may exceed the configured TTL), `SnapshotCache` agrees with a reference model at every step. The model stores `(key, setTime, entryTtl)` with `entryTtl = min(configured ttlMs, option ?? configured ttlMs)`: a `get` hits if and only if the key was set and `now − setTime < entryTtl` of the latest `set` for that key (an age equal to the entry's TTL is a miss); a hit makes the key most-recently-used; `set` on an existing key replaces it, including its TTL (at most one entry per key); inserting beyond capacity evicts the least-recently-used key; `size ≤ maxEntries` always. *For any* `degradedFields` list and configured TTL, `effectiveTtlMs` returns `min(configured, 600_000)` when the list is non-empty and the configured TTL when it is empty, so a degraded entry is a hit at age `effective − 1` and a miss at age `effective`. *For any* build request whose key is fresh in the cache, the `FetchPort` call count is unchanged; *for any* build whose cached entry is an expired degraded entry, the rebuild repeats the `pulls` and `release` calls and replaces the entry.
 
-**Validates: Requirements 8.1, 8.2, 8.3, 8.6, 8.8, 8.9**
+**Validates: Requirements 8.1, 8.2, 8.3, 8.6, 8.8, 8.9, 8.11, 8.12, 8.13, 8.14**
 
-### Property 31: Hard REST budget guard
+### Property 32: Hard REST budget guard
 
 *For any* sequence of REST requests issued through one `GitHubClient` (any mix of endpoints, any number of attempts, with or without a followed rename redirect), `restCallCount` never exceeds 5, the `FetchPort` never receives a 6th request to `api.github.com` that is not the tarball download, and the attempt that would be the 6th throws `VALIDATION_FAILED` (reason `rest-budget-exceeded`) before any request is sent.
 
 **Validates: Requirements 2.7, 2.10, 4.8**
 
-### Property 32: Tarball path is selected by token presence
+### Property 33: Tarball path is selected by token presence
 
 *For any* `RepoRef` and any `GITHUB_TOKEN` (present or absent): with a token, the first request targets `https://api.github.com/repos/{owner}/{repo}/tarball/{sha}` with `Authorization: Bearer <token>`, exactly one redirect to `https://codeload.github.com` is followed without `Authorization`, and a second redirect is refused; with no token, the first and only request targets `codeload.github.com` directly. In both cases the extracted archive and the resulting snapshot are identical for identical archive bytes.
 
@@ -1168,7 +1274,7 @@ The factory is the only place a `SummonerError` is constructed. It builds the `u
 | `AUTH_INVALID` | `The key is refused. The gate stays shut.` | `GitHub rejected the credentials in GITHUB_TOKEN. Replace the token or unset it to read public repositories without one.` |
 | `UPSTREAM_UNAVAILABLE` | `The halls of GitHub are dark tonight.` | `<service> answered with a server error (HTTP <status>). This is not your repository; retry in a few minutes.` |
 
-Notes on the three new entries (oracle-voice rules 1, 2, 7, 8): each is a mystical line of at most 16 words, a line break, then a technical line saying what happened and what to do next; ASCII only, no emoji, no tarot-card names used as decoration. `REF_NOT_FOUND` echoes the ref because R7.7 requires naming it; the ref has already passed the `parseRepoRef` grammar (length, character set) and goes through `redactSecrets`, so a pasted token-shaped string is masked. `AUTH_INVALID` never interpolates the token or any part of it; it names only the variable `GITHUB_TOKEN`. `UPSTREAM_UNAVAILABLE` carries `<service>` (`GitHub API` or `GitHub archive`) and the numeric status as declared fields.
+Notes on the three new entries (oracle-voice rules 1, 2, 7, 8): each is a mystical line of at most 16 words, a line break, then a technical line saying what happened and what to do next; ASCII only, no emoji, no tarot-card names used as decoration. `REF_NOT_FOUND` echoes the ref because R7.7 requires naming it; the ref has already passed the `parseRepoRef` grammar (length, character set) and goes through `redactSecrets`, so a pasted token-shaped string is masked. `AUTH_INVALID` never interpolates the token or any part of it; it names only the variable `GITHUB_TOKEN`. `UPSTREAM_UNAVAILABLE` carries `<service>` (`GitHub API` or `GitHub archive`) and the numeric status as declared fields. The catalog wording is unchanged by the Q16 carve-out. The `UPSTREAM_UNAVAILABLE` and `NETWORK_TIMEOUT` messages apply only to the repository metadata, commit/ref resolution, and tarball requests; they are never produced for the optional pulls and release calls, which degrade silently (the Scribe, not an error message, tells the user about `degradedFields`).
 
 ### Redaction (`redactSecrets`)
 
@@ -1178,7 +1284,7 @@ The token is not logged anywhere. The package has no logger of its own: it retur
 
 ### HTTP and transport failure mapping (`http-failure.ts`)
 
-The mapper is pure: `(status, headers, bodyHint, ctx, nowMs) → SummonerError`. `bodyHint` is the optional `message` string that survives `GhErrorBodySchema.safeParse`; a body that does not parse is ignored, never an error.
+The classifier is pure: `classifyFailure(failure, ctx, nowMs) → SummonerError | DegradedOutcome`, where `failure` is an HTTP status with headers and body hint, or a `FetchTransportError`. It returns a `DegradedOutcome` only for a `5xx` or transport failure when `ctx.optional` is true (the `pulls` and `release` endpoints); every other row yields a `SummonerError`. `bodyHint` is the optional `message` string that survives `GhErrorBodySchema.safeParse`; a body that does not parse is ignored, never an error.
 
 Rate-limit detection comes first. A response is rate limited when the status is `403` or `429` and (`retry-after` is present, or `x-ratelimit-remaining` is `0`, or the hint mentions a rate limit). `429` is always rate limited.
 
@@ -1196,13 +1302,16 @@ Rate-limit detection comes first. A response is rate limited when the status is 
 | full 40-hex ref whose response `sha` differs | `VALIDATION_FAILED` | reason `sha-mismatch` |
 | `404` on **tarball**, repo already proven | `REPO_NOT_FOUND` | archive vanished mid-summon (either download path) |
 | `404` on **release** | not an error | no releases: `latestReleaseAt = null` |
-| `404` or other non-listed failure on **pulls**/**release** | degrade | neutral defaults, recorded in `degraded` |
+| `404`, or a `2xx` that fails zod, on **pulls**/**release** | absent | neutral defaults; not listed in `degradedFields` (not a degradation, R4.7) |
+| `401` or `429` / rate-limited `403` on **pulls**/**release** | `AUTH_INVALID` / `RATE_LIMITED` | still fatal; never degraded (R4.9, R7.4, R7.5, R7.8) |
 | `301`/`307`/`308` on the **first repo call**, `Location` on `https://api.github.com`, first redirect | followed | counts as a REST_Call (R2.10); canonical identity from the final body (D2) |
 | any other 3xx on a REST endpoint, redirect on a non-first call, other host/scheme, or a second redirect | `VALIDATION_FAILED` | reason `redirect-refused`; request not sent (R2.9) |
 | any 3xx from the direct codeload request (no-token path), or a second redirect on the token path | `VALIDATION_FAILED` | reason `redirect-refused` |
 | `401` on any GitHub request, or a malformed token (`GithubTokenSchema` fails) | `AUTH_INVALID` | message names `GITHUB_TOKEN`, never its value (R7.8, P17) |
-| any `5xx` on a GitHub REST request or on the tarball download (either path) | `UPSTREAM_UNAVAILABLE` | `details.httpStatus` set; no retry, to protect the call budget (R7.9) |
-| `FetchTransportError` (`timeout` or `network`) | `NETWORK_TIMEOUT` | registry/OSV transport errors become `skipped`, never this code |
+| `5xx` on the **repo** call, the **commit** call, or the **tarball** download (either path) | `UPSTREAM_UNAVAILABLE` | `details.httpStatus` set; no retry, to protect the call budget (R7.9) |
+| `5xx` on the optional **pulls** or **release** call | degrade (`DegradedOutcome`, cause `http-5xx`) | no `NecroError`; neutral `RepoMeta` values; field named in `degradedFields` (R4.7, R4.9, R7.9) |
+| `FetchTransportError` (`timeout` or `network`) on the **repo** call, the **commit** call, or the **tarball** download | `NETWORK_TIMEOUT` | registry/OSV transport errors become `skipped`, never this code (R7.6) |
+| `FetchTransportError` (`timeout` or `network`) on the optional **pulls** or **release** call | degrade (`DegradedOutcome`, cause `timeout` or `network`) | no `NecroError`; neutral values; field named in `degradedFields` (R4.9, R7.6) |
 | `2xx` whose body fails its zod schema, or body larger than its cap | `VALIDATION_FAILED` | no field read from the unvalidated value |
 | non-allow-listed host, `http:` URL, or non-default port | `VALIDATION_FAILED` | request not sent |
 | REST budget guard trips (6th request) | `VALIDATION_FAILED` | reason `rest-budget-exceeded`; request not sent (D2) |
@@ -1211,7 +1320,15 @@ Rate-limit detection comes first. A response is rate limited when the status is 
 
 Registry and OSV `5xx` responses are not in this table: they are per-dependency failures and become `skipped` entries with reason `http-error` (see below). No situation above maps to `INVALID_REPO_URL` except a malformed reference string rejected by `parseRepoRef`.
 
-For *optional* endpoints (`pulls`, `release`), the fatal conditions are a rate limit, `401`, a `5xx`, and a transport error (R7.6, R7.8, R7.9 apply to every GitHub REST request). A rate limit on call 3 means call 4 and the tarball will fail too, so failing fast is the honest result. Every other failure (for example `404` on pulls, or a payload that fails zod) degrades quietly to the neutral defaults.
+**Endpoint split (Q16 carve-out).** `UPSTREAM_UNAVAILABLE` and `NETWORK_TIMEOUT` are fatal only for the repository metadata, commit/ref resolution, and tarball requests (R7.6, R7.9). For the *optional* endpoints (`pulls`, `release`) a `5xx`, a timeout, or a connection-level network error degrades instead (R4.7, R4.9). The fatal conditions on optional endpoints are a rate limit (`429`, or `403` with rate-limit signals), `401`, a refused redirect, and a malformed token: a rate limit on call 3 means call 4 and the tarball will fail too, and a rejected credential will fail every later call, so failing fast is the honest result. A `404` or a payload that fails zod is quietly neutral. A degraded call is not retried and still counts as a REST_Call.
+
+| Failure | repo, commit, tarball | optional pulls, release |
+|---|---|---|
+| `5xx` | `UPSTREAM_UNAVAILABLE` | degrade, listed in `degradedFields` |
+| timeout | `NETWORK_TIMEOUT` | degrade, listed in `degradedFields` |
+| connection-level network error | `NETWORK_TIMEOUT` | degrade, listed in `degradedFields` |
+| `401` | `AUTH_INVALID` | `AUTH_INVALID` |
+| `403` rate-limited, `429` | `RATE_LIMITED` | `RATE_LIMITED` |
 
 ### Registry and OSV failures
 
@@ -1229,7 +1346,7 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 
 - **No network, LLM, or sandbox calls in any test.** Every test uses `testing/fixture-fetch.ts`, a `FetchPort` that answers from recorded JSON under `fixtures/` and records every request (URL, method, headers, `timeoutMs`). `vitest.setup.ts` replaces `globalThis.fetch` with a function that throws, so a stray real call fails loudly. The fixed clock and a fixture `EnvPort` complete the three ports.
 - **Archives are built in memory.** `testing/make-tar-gz.ts` produces gzip tarballs from entry lists without committing binaries. Hostile entries (`..`, absolute, symlink, hard link, device, backslash) are written by a small hand-rolled ustar header writer in `testing/raw-tar.ts`, independent of `tar-stream`'s own `pack()` (which may refuse to produce them), because the extractor must be tested against what an attacker can produce. `make-tar-gz.ts` may use `tar-stream` `pack()` for well-formed archives; `tar-stream` is a runtime dependency, so no extra test dependency is needed.
-- **Limits are parametric.** Cap properties (P6, P11) inject small limits (for example 1–64 KB, 3–50 entries) so 100 runs finish in milliseconds. One smoke test pins the default literals (`52_428_800`, `209_715_200`, `100_000`, `604_800_000`, `20`). One slow example test (tagged and skipped from the default run) streams a lazily generated 200 MB zero-filled archive at the real default to confirm the guard fires at that scale.
+- **Limits are parametric.** Cap properties (P6, P11) inject small limits (for example 1–64 KB, 3–50 entries) so 100 runs finish in milliseconds. One smoke test pins the default literals (`52_428_800`, `209_715_200`, `100_000`, `604_800_000`, `600_000`, `20`). One slow example test (tagged and skipped from the default run) streams a lazily generated 200 MB zero-filled archive at the real default to confirm the guard fires at that scale.
 - **Pure first.** Parser, path normalizer, binary sniff, metadata mapper, failure mapper, header policy, cache, and dependency collection are plain functions and are tested directly.
 
 ### Property-based tests (fast-check)
@@ -1244,33 +1361,35 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 | P1, P2, P3, P4 | `intake.ts` (`parseRepoRef`) | `intake.pbt.test.ts` |
 | P5, P7 | `snapshot.ts` + `tar-extract.ts` + oracle builder | `snapshot.pbt.test.ts` |
 | P6, P11 | `tar-extract.ts` | `tar-extract.pbt.test.ts` |
-| P8, P26 | `snapshot-cache.ts` | `snapshot-cache.pbt.test.ts` |
+| P8, P31 (also the requirements-document P19, degraded-entry TTL) | `snapshot-cache.ts` (`SnapshotCache` with per-entry TTL, `effectiveTtlMs`) | `snapshot-cache.pbt.test.ts` |
 | P9 | `errors.ts`, `github-client.ts`, `snapshot.ts` | `secrets.pbt.test.ts` |
 | P10 | `snapshot.ts` + `external-data.ts` | `determinism.pbt.test.ts` |
-| P12, P15, P26, P31, P32 | `github-client.ts` (`headersFor`, tarball path selection, redirect policy, budget guard) | `github-client.pbt.test.ts` |
+| P12, P15, P27, P32, P33 | `github-client.ts` (`headersFor`, tarball path selection, redirect policy, budget guard) | `github-client.pbt.test.ts` |
 | P13 | `snapshot.ts` + `github-client.ts` (whole-scenario REST count, canonical identity) | `call-budget.pbt.test.ts` |
 | P14 | `github-client.ts` (rename redirect policy) | `rename-redirect.pbt.test.ts` |
 | P16, P17 | `http-failure.ts`, `errors.ts`, `github-client.ts` | `error-mapping.pbt.test.ts` |
-| P18, P19 | `intake.ts` (`resolveRef`) | `resolve-ref.pbt.test.ts` |
-| P20, P21 | `entry-path.ts`, `tar-extract.ts` | `entry-path.pbt.test.ts`, `tar-extract.pbt.test.ts` |
-| P22 | `repo-meta.ts` | `repo-meta.pbt.test.ts` |
-| P23, P24, P25 | `external-data.ts`, `registries.ts`, `osv.ts` | `external-data.pbt.test.ts` |
-| P27, P28, P29 | `errors.ts`, `http-failure.ts` | `http-failure.pbt.test.ts` |
+| P18 | `http-failure.ts` + `github-client.ts` (`optional: true` outcome) + `repo-meta.ts` + `snapshot.ts` (whole summon with scripted pulls/release failures) | `optional-degradation.pbt.test.ts` |
+| P19, P20 | `intake.ts` (`resolveRef`) | `resolve-ref.pbt.test.ts` |
+| P21, P22 | `entry-path.ts`, `tar-extract.ts` | `entry-path.pbt.test.ts`, `tar-extract.pbt.test.ts` |
+| P23 | `repo-meta.ts` | `repo-meta.pbt.test.ts` |
+| P24, P25, P26 | `external-data.ts`, `registries.ts`, `osv.ts` | `external-data.pbt.test.ts` |
+| P28, P29, P30 | `errors.ts`, `http-failure.ts` | `http-failure.pbt.test.ts` |
 
-P8 and P30 are both in `snapshot-cache.pbt.test.ts`. The tests for P6 and P11 exercise `extractTarball` through the real `Readable.fromWeb` + `tar-stream` bridge, not a stub, so backpressure and cancellation behaviour is what ships.
+P8 and P31 are both in `snapshot-cache.pbt.test.ts`. The tests for P6 and P11 exercise `extractTarball` through the real `Readable.fromWeb` + `tar-stream` bridge, not a stub, so backpressure and cancellation behaviour is what ships.
 
-Generators worth naming: valid owner/name/ref strings (with noise decorators), hostile tar entry sequences, repo/commit/pulls/release payload builders with schema-violating mutators and rename-redirect responses (status, `Location` host/scheme/port, first or later call, one or two hops), token strings (valid and malformed, to check `AUTH_INVALID` non-leak), dependency lists with case and duplicate variants, per-dependency outcome assignments, and `(reset, now, retry-after)` triples. For P30 the model is a ten-line list-based LRU with timestamps. For P13, P15, P31, and P32 the fixture `FetchPort` records every request (URL, headers) and the test asserts over the recording.
+Generators worth naming: valid owner/name/ref strings (with noise decorators), hostile tar entry sequences, repo/commit/pulls/release payload builders with schema-violating mutators and rename-redirect responses (status, `Location` host/scheme/port, first or later call, one or two hops), token strings (valid and malformed, to check `AUTH_INVALID` non-leak), dependency lists with case and duplicate variants, per-dependency outcome assignments, and `(reset, now, retry-after)` triples. For P31 the model is a ten-line list-based LRU with timestamps and a per-entry TTL (`min(configured, option)`), with an arbitrary `degradedFields` list driving `effectiveTtlMs`. For P13, P15, P32, and P33 the fixture `FetchPort` records every request (URL, headers) and the test asserts over the recording.
 
 ### Unit and example tests
 
 - **Parser examples:** `octocat/Hello-World`, `https://github.com/octocat/Hello-World/tree/feature/x`, `https://www.github.com/o/r.git/`, `o/r@<40 hex>`, rejected `git@github.com:o/r.git`, `https://user:pw@github.com/o/r`, `https://gitlab.com/o/r`, `https://github.com/o/r/issues`.
 - **Resolution:** default branch path, explicit branch, full SHA verified, partial SHA expanded, SHA mismatch, missing ref in an existing repo (`REF_NOT_FOUND`), rename redirect on call 1 (canonical owner/name from the body, 5 REST calls total), case-variant spelling normalized to canonical.
 - **Download path:** no token → one request to `codeload.github.com/{o}/{r}/tar.gz/{sha}`, no Authorization header, zero REST calls; token → `api.github.com` tarball endpoint with Bearer, one redirect to codeload without Authorization; 3xx from the direct path refused.
-- **Errors:** `401` → `AUTH_INVALID` with the token absent from every field; GitHub `5xx` on REST and on the tarball → `UPSTREAM_UNAVAILABLE`; registry `5xx` → `skipped`, no throw.
-- **Metadata:** archived repo, no license, `NOASSERTION`, no releases (`404`), zero open PRs, `Link: rel="last"` count parsing, a single PR without a `Link` header.
+- **Errors:** `401` → `AUTH_INVALID` with the token absent from every field; GitHub `5xx` on the repo call, the commit call, and the tarball → `UPSTREAM_UNAVAILABLE`; timeout on those three → `NETWORK_TIMEOUT`; `5xx`, timeout, or network error on pulls or release → no throw, neutral `RepoMeta`, `degradedFields` set; `429`/`401` on pulls or release → `RATE_LIMITED`/`AUTH_INVALID`; registry `5xx` → `skipped`, no throw.
+- **Metadata:** archived repo, no license, `NOASSERTION`, no releases (`404`), zero open PRs, `Link: rel="last"` count parsing, a single PR without a `Link` header, pulls degraded (`openIssueCount` equals the raw count), release degraded, both degraded (`degradedFields` is `["pulls", "release"]`).
 - **Tarball:** realistic GitHub archive layout (pax global header handled internally by `tar-stream`, root directory entry, nested paths), an entry that is skipped must still be drained so the next entry is reached, `.github/workflows/ci.yml` detection, binary and vendored exclusions, a 1 MiB file kept and a 1 MiB + 1 file recorded in `oversizeFiles`.
 - **External data:** PyPI normalized-name URL for `Flask_Cors`, scoped npm name encoding, Python 2-only classifier mapping, deprecated npm version, OSV batch + detail round trip, cross-ecosystem collision (R5.11), result shape (R5.10).
-- **Cache:** default TTL and capacity constants, in-flight deduplication, failure not cached, shallow-copy return (mutating `manifests` on a returned snapshot does not change the next hit).
+- **Degraded cache TTL (`degraded-cache.test.ts`):** a build with `pulls` degraded is a hit at 9 min 59.999 s and a miss at exactly 10 min, and the next summon repeats the `pulls` and `release` calls and replaces the entry; a build with empty `degradedFields` stays cached for 7 days; a configured TTL shorter than 10 minutes wins; a longer configured TTL does not override the 10-minute degraded TTL.
+- **Cache:** default TTL, degraded TTL (`600_000`) and capacity constants, in-flight deduplication, failure not cached, shallow-copy return (mutating `manifests` on a returned snapshot does not change the next hit).
 - **Interface conformance:** `const _: GitHubSnapshotBuilder = new GitHubSummoner(...)` compile-time check; import-surface test that every name in R10 is reachable from `src/index.ts` only.
 
 ### Integration test (offline)
@@ -1342,7 +1461,7 @@ Task 1 should confirm two facts about `tar-stream@3.2.2` against the real packag
 
 - `eslint.config.js`: add the restricted-syntax block described under Static checks.
 - `docs/ARCHITECTURE.md`: this file does not exist yet. Create it with a section for the GitHub adapter: dependency direction, the three ports, the call plan, the cap layers, and the host/auth policy table. It should be organized so later specs (sandbox, llm, ledger) append their own sections.
-- `docs/KIRO_USAGE.md`: append a dated entry under the daily log and the Specs heading: the requirements-first workflow produced this spec; the prework step turned the acceptance criteria into 15 new properties (P18-P32) beside the 17 named in the requirements; npm registry queries (`pnpm view tar-stream versions --json`) and the `tar-stream` README were used to choose and verify the tar library. Also record the requirements revision that added rename redirects, the token-aware tarball path, and three more error codes. Per the docs discipline, this lands in the same change as the implementation.
+- `docs/KIRO_USAGE.md`: append a dated entry under the daily log and the Specs heading: the requirements-first workflow produced this spec; the prework step turned the acceptance criteria into 15 new properties (P19-P33) beside the 18 named in the requirements (including P18, the optional-call degradation property from the Q16 carve-out); npm registry queries (`pnpm view tar-stream versions --json`) and the `tar-stream` README were used to choose and verify the tar library. Also record the requirements revision that added rename redirects, the token-aware tarball path, and three more error codes. Per the docs discipline, this lands in the same change as the implementation.
 - `docs/DECK.md` is unaffected: no card, grimoire, agent, or gate changes.
 - `pnpm-lock.yaml` updates with the dependency additions.
 
@@ -1370,7 +1489,7 @@ Task 1 should confirm two facts about `tar-stream@3.2.2` against the real packag
 
 **Q10. Memory on serverless. RESOLVED (accepted as a deployment decision).** Retained text can approach the 200 MB uncompressed cap, and JavaScript strings holding non-Latin-1 text use two bytes per character. `ExtractionLimits` is injectable so the web app can set tighter limits (for example 64 MB) without a code change.
 
-**Q11. The cache is per process.** On Vercel most invocations meet a cold instance, so the 7-day in-memory cache helps mainly the CLI, the MCP server, and warm instances. A shared cache (Upstash Redis, 7-day TTL per the tech steering) is the obvious next step. `SnapshotCache` is a small class so a Redis-backed variant can implement the same `get`/`set` shape in a later spec.
+**Q11. The cache is per process.** On Vercel most invocations meet a cold instance, so the 7-day in-memory cache (10 minutes for degraded results) helps mainly the CLI, the MCP server, and warm instances. A shared cache (Upstash Redis, 7-day TTL per the tech steering) is the obvious next step. `SnapshotCache` is a small class so a Redis-backed variant can implement the same `get`/`set(key, value, { ttlMs })` shape, including the per-entry TTL, in a later spec.
 
 **Q12. Exact-pin-only OSV queries reduce coverage.** Many real `requirements.txt` files use ranges, and those dependencies get no OSV check (D6), reported as `version-not-pinned`. This is the price of never putting a vulnerability on a card that does not apply to the pinned version. Resolving a range to a concrete version would need a lockfile parser or a registry lookup, and belongs in a later spec.
 
@@ -1379,5 +1498,7 @@ Task 1 should confirm two facts about `tar-stream@3.2.2` against the real packag
 **Q14. Shared ports.** `ClockPort` and `FetchPort` will be wanted by the sandbox and ledger adapters. They are defined here for now. If a second adapter needs them, promote them to a small shared package rather than importing across adapters.
 
 **Q15. Type globals.** `DecompressionStream`, `ReadableStream`, `TransformStream`, `TextDecoder`, and `URL` come from `@types/node` under the base `lib: ["ES2022"]`. If any is missing in the installed `@types/node`, import the types from `node:stream/web` as `import type` (no runtime `node:` import).
+
+**Q16. Should an outage of the optional pulls and release calls fail the whole summon? RESOLVED: carve-out added (R4.7, R4.9, R7.6, R7.9), with a 10-minute cache TTL for degraded results (R8.11 to R8.14).** The pull-request and latest-release calls only feed `openPRCount`, `oldestOpenPRAgeDays`, `openIssueCount` precision, and `latestReleaseAt`, so a `5xx`, a timeout, or a connection-level network error on them degrades to neutral `RepoMeta` values and is reported in `degradedFields` (`pulls` | `release`) instead of raising `UPSTREAM_UNAVAILABLE` or `NETWORK_TIMEOUT`. `401`, `403`, and `429` on those calls stay fatal (`AUTH_INVALID`, `RATE_LIMITED`). `UPSTREAM_UNAVAILABLE` and `NETWORK_TIMEOUT` remain fatal for the repository, commit, and tarball requests. Consequences: P16 now covers R7.6 and P18 covers degradation; a degraded call still counts toward the REST budget and is never retried; a summon result with a non-empty `degradedFields` is cached with a short TTL of `min(configured TTL, DEGRADED_TTL_MS)` (10 minutes by default, R8.11), while results with an empty list keep the configured TTL (default 7 days, R8.12). The next summon after the degraded entry expires repeats the optional `pulls` and `release` calls and replaces the entry (R8.14), so neutral metadata cannot persist for the full TTL. The degraded call is still never retried within one summon.
 
 **Risk summary.** The two risks that could change user-visible behavior are Q2 (a misleading `REPO_NOT_FOUND` for inaccessible private repos) and Q6 (quota exhaustion without a token). The two that could change the implementation are Q9 and Q10. The rest are documented limitations.
