@@ -313,6 +313,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988912
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817870521
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793818036927
       }
     ],
     "11.2 Implement `motion/{reveal,motion-mode}.ts` and `prefs/prefs.ts`": [
@@ -320,6 +330,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988975
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793818042526
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793818175125
       }
     ],
     "12.1 Write `P15`, `P20` and examples first": [
@@ -697,6 +717,13 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793817799241
+      }
+    ],
+    "11. Motion mode, reveal schedule, and preference loaders": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793818175178
       }
     ]
   }

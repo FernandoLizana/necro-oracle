@@ -51,6 +51,29 @@ export type {
   SoundState,
 } from "./sound/sound-reducer.js";
 
+// Motion — effective mode resolution and the reveal schedule (pure, no clock).
+// `MotionMode` and `MotionPreference` are canonically owned by motion-mode.ts;
+// `SoundPreference` stays canonically re-exported from sound-reducer.ts above.
+export { resolveMotionMode } from "./motion/motion-mode.js";
+export type { MotionMode, MotionPreference } from "./motion/motion-mode.js";
+export {
+  REVEAL_BASE_CPS,
+  REVEAL_MAX_MS,
+  revealDurationMs,
+  revealRate,
+  revealedChars,
+} from "./motion/reveal.js";
+
+// Preferences — validate raw persisted strings into safe preference values.
+// Types (MotionPreference, SoundPreference) are re-exported from their
+// canonical modules above, so only the values are surfaced from here.
+export {
+  MOTION_STORAGE_KEY,
+  SOUND_STORAGE_KEY,
+  parseMotionPreference,
+  parseSoundPreference,
+} from "./prefs/prefs.js";
+
 // Commands — parse a terminal entry and render it back to canonical text.
 export type {
   Command,

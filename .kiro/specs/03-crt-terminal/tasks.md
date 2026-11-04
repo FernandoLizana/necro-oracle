@@ -111,11 +111,11 @@ Conventions that apply to every task:
   - [~] 10.2 Implement the four builders in `render/errors.ts`
     - _Requirements: R11.4, R11.5, R11.6, R18.9, R18.10_
 
-- [ ] 11. Motion mode, reveal schedule, and preference loaders
-  - [~] 11.1 Write `P9`, `P10`, `P11` first
+- [x] 11. Motion mode, reveal schedule, and preference loaders
+  - [x] 11.1 Write `P9`, `P10`, `P11` first
     - Add `motion/reveal.pbt.test.ts` for **Property 9 (R10.1, R10.2, R10.3, R10.12)**, `motion/motion-mode.pbt.test.ts` for **Property 10 (R10.6, R10.7)**, and `prefs/prefs.pbt.test.ts` for **Property 11 (R10.10, R19.1, R19.12)**. Confirm they fail first.
     - _Requirements: R10.1, R10.2, R10.3, R10.6, R10.7, R10.10, R10.12, R19.1, R19.12_
-  - [~] 11.2 Implement `motion/{reveal,motion-mode}.ts` and `prefs/prefs.ts`
+  - [x] 11.2 Implement `motion/{reveal,motion-mode}.ts` and `prefs/prefs.ts`
     - Implement `resolveMotionMode`, `parseMotionPreference`, `parseSoundPreference`, `revealRate`, `revealedChars`, `revealDurationMs`, and the storage-key constants.
     - _Requirements: R10.1, R10.2, R10.3, R10.6, R10.7, R10.10, R10.12, R19.1, R19.12_
 
