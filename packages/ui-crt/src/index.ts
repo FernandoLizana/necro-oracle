@@ -146,3 +146,53 @@ export { step } from "./session/reducer.js";
 // Sound loader — the production SoundLoaderPort. The engine itself stays a
 // separate lazy chunk behind `loadEngine`; engine.ts is never barrelled.
 export { loadEngine } from "./sound/load-engine.js";
+
+// CRT design tokens — the single source of truth the stylesheet mirrors.
+export {
+  CRT_AFTERGLOW_MS,
+  CRT_BG,
+  CRT_ERROR,
+  CRT_FG,
+  CRT_FG_DIM,
+  CRT_FLICKER_CYCLES_PER_S,
+  CRT_FLICKER_DEPTH,
+  CRT_FOCUS,
+  CRT_GLOW_ALPHA,
+  CRT_GLOW_RADIUS_PX,
+  CRT_SCANLINE_ALPHA,
+  CRT_SCANLINE_PERIOD_PX,
+} from "./tokens.js";
+
+// React components — the CRT design system. `Terminal` is the live terminal;
+// the rest are the screen chrome and the block/spread/evidence renderers.
+export { Terminal, type TerminalProps } from "./components/Terminal.js";
+export { Screen, type ScreenProps } from "./components/Screen.js";
+export {
+  OutputLog,
+  type OutputLogProps,
+} from "./components/OutputLog.js";
+export {
+  OutputBlockView,
+  type OutputBlockViewProps,
+} from "./components/OutputBlockView.js";
+export { Card, type CardProps } from "./components/Card.js";
+export { Spread, type SpreadProps } from "./components/Spread.js";
+export {
+  EvidenceScroll,
+  type EvidenceScrollProps,
+} from "./components/EvidenceScroll.js";
+export {
+  CommandLine,
+  type CommandLineProps,
+} from "./components/CommandLine.js";
+export { ButtonRow, type ButtonRowProps } from "./components/ButtonRow.js";
+
+// Hooks — the browser-facing adapters that drive the pure reducer and motion.
+export {
+  useTerminal,
+  SOUND_UNAVAILABLE_MESSAGE,
+  type TerminalController,
+} from "./hooks/use-terminal.js";
+export { useMotion, type MotionSignal } from "./hooks/use-motion.js";
+export { useReveal, type UseRevealOptions } from "./hooks/use-reveal.js";
+export { useSound, type UseSoundOptions } from "./hooks/use-sound.js";

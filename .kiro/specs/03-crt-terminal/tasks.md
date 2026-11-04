@@ -159,16 +159,16 @@ Conventions that apply to every task:
     - Implement `createEngine(ctor?)`, the `loadEngine` literal-path dynamic import (separate chunk), and the hum/click Web Audio graph capped at `MASTER_GAIN`.
     - _Requirements: R19.3, R19.4, R19.9, R19.10, R19.17_
 
-- [ ] 17. React components, hooks, CRT tokens and CSS
-  - [~] 17.1 Write the tokens/CSS test and component/hook examples first
+- [x] 17. React components, hooks, CRT tokens and CSS
+  - [x] 17.1 Write the tokens/CSS test and component/hook examples first
     - Add the tokens/CSS test: parse `src/crt.css`, assert values equal `src/tokens.ts`; compute WCAG contrast for fg/dim/error/focus over bg with the scanline composite (≥ 4.5:1 text, ≥ 3:1 focus, R15.6, R15.7); assert flicker ≤ 3 changes/s and ≤ 5 % (R9.4), scanline/glow CSS-only with no `url(` (R9.8).
     - Add component/hook examples (jsdom): boot renders `BOOT_PHRASE` first and focuses input (R1.1, R1.2); DOM text is selectable, no canvas (R1.3, R1.4); `<noscript>` statement present (R1.5); `role="log"` live region with `aria-live="polite"`/`aria-relevant="additions"` and announce-once (full text added at append, reveal copy `aria-hidden`) (R10.4, R15.1); `aria-busy` set one tick after in-progress block and kept through the final block (R15.3, Q12); Command_Line label and `main` landmark name (R15.2); `lang="en"` and title (R12/R15.12); keys Enter/ArrowUp/ArrowDown/Ctrl+L/Escape/Ctrl+C and Tab not trapped (R3.1-R3.7); button row and equivalents (R3.8-R3.12); scroll container behaviour (R17.4, R17.5); reduced mode no reveal and no rAF loop when idle (R10.3, R10.11, R16.9); evidence link `rel`/`target` and only link is the evidence link (R14.1, R14.5); `use-reveal`/`use-motion`/`use-sound` wiring (gesture, visibility, gain apply, failure fallback). Confirm all fail first.
     - _Requirements: R1.1, R1.2, R1.3, R1.4, R1.5, R3.1, R3.2, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8, R3.9, R3.10, R3.11, R3.12, R9.1, R9.2, R9.3, R9.4, R9.5, R9.6, R9.7, R9.8, R10.3, R10.4, R10.8, R10.9, R10.11, R14.1, R14.5, R14.8, R15.1, R15.2, R15.3, R15.4, R15.5, R15.6, R15.7, R15.11, R15.12, R15.13, R16.9, R17.4, R17.5, R19.5, R19.6, R19.8, R19.14_
-  - [~] 17.2 Implement `tokens.ts`, `crt.css`, components and hooks
+  - [x] 17.2 Implement `tokens.ts`, `crt.css`, components and hooks
     - Implement `src/tokens.ts`, `src/crt.css` (layers, data-motion rules), `components/{Screen,Terminal,OutputLog,OutputBlockView,Card,Spread,EvidenceScroll,CommandLine,ButtonRow}.tsx`, and `hooks/{use-terminal,use-reveal,use-motion,use-sound}.ts`; all hook/handler files start with `"use client"`.
     - _Requirements: R1.1, R1.2, R1.3, R1.4, R1.5, R3.1, R3.2, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8, R3.9, R3.10, R3.11, R3.12, R9.1, R9.2, R9.3, R9.4, R9.5, R9.6, R9.7, R9.8, R10.1, R10.2, R10.3, R10.4, R10.8, R10.9, R10.11, R14.1, R14.5, R14.8, R15.1, R15.2, R15.3, R15.4, R15.5, R15.6, R15.7, R15.11, R15.12, R15.13, R16.9, R17.2, R17.4, R17.5, R19.5, R19.6, R19.8, R19.14_
 
-- [~] 18. Checkpoint - `@necro/ui-crt` is complete
+- [x] 18. Checkpoint - `@necro/ui-crt` is complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 19. `apps/web` protocol schemas, NDJSON stream schemas and incremental parser

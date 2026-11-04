@@ -1,0 +1,243 @@
+/*
+ * src/crt.css
+ *
+ * Feature: 03-crt-terminal, task 17.2.
+ *
+ * The CRT design system stylesheet. Every custom property declared on `.crt`
+ * mirrors a constant exported from `src/tokens.ts`; `crt-tokens.test.ts` parses
+ * this file and asserts the two agree. The scanline is a repeating gradient and
+ * the glow is a text-shadow, so no image is ever loaded (R9.8). All animation
+ * is gated under `.crt[data-motion="full"]`; `.crt[data-motion="reduced"] *`
+ * removes every animation and transition (R10.3, R10.11).
+ *
+ * Requirements: R9.1-R9.8, R10.3, R10.9, R10.11, R15.6, R15.7, R15.8, R17.4, R17.5
+ */
+
+.crt {
+  /* Phosphor palette (R9.1) — mirrors tokens.ts exactly. */
+  --crt-fg: #33ff66;
+  --crt-bg: #001a00;
+  --crt-fg-dim: #29cc52;
+  --crt-error: #ff7a7a;
+  --crt-focus: #a85c30;
+
+  /* Effect tokens (R9.2-R9.5) — mirror tokens.ts exactly. */
+  --crt-glow-radius: 4px;
+  --crt-glow-alpha: 0.55;
+  --crt-scanline-period: 3px;
+  --crt-scanline-alpha: 0.18;
+  --crt-flicker-cycles-per-s: 1;
+  --crt-flicker-depth: 0.04;
+  --crt-afterglow-ms: 600ms;
+
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--crt-bg);
+  color: var(--crt-fg);
+  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-size: 18px;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+/* The phosphor glow is a text-shadow only — no filter image (R9.3, R9.8). */
+.crt .crt-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
+  text-shadow:
+    0 0 var(--crt-glow-radius) rgba(51, 255, 102, var(--crt-glow-alpha));
+}
+
+/* Screen-reader-only text: kept in the a11y tree, clipped visually (R10.4, R15.1). */
+.crt-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The output log is the ONE scroll container (R17.4, R17.5). */
+.crt-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  outline: none;
+}
+
+.crt-block {
+  margin: 0 0 0.5rem 0;
+}
+
+/* Lines wrap on narrow screens; no fixed widths (R15.8). */
+.crt-line,
+.crt-reveal pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+}
+
+.crt-block[data-kind="error"] {
+  color: var(--crt-error);
+}
+
+.crt-block[data-kind="status"],
+.crt-block[data-kind="echo"] {
+  color: var(--crt-fg-dim);
+}
+
+/* Input row and button row wrap on narrow screens (R15.8). */
+.crt-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
+.crt-prompt {
+  color: var(--crt-fg);
+}
+
+.crt-input input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--crt-fg);
+  font-family: inherit;
+  font-size: inherit;
+  caret-color: var(--crt-fg);
+  outline: none;
+}
+
+.crt-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  margin-top: 0.5rem;
+}
+
+.crt-buttons button {
+  background: transparent;
+  border: 1px solid var(--crt-fg-dim);
+  color: var(--crt-fg);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0.1rem 0.6rem;
+  cursor: pointer;
+}
+
+.crt-buttons button[aria-pressed="true"] {
+  background: var(--crt-fg-dim);
+  color: var(--crt-bg);
+}
+
+.crt a {
+  color: var(--crt-fg);
+  text-decoration: underline;
+}
+
+/* A visible 2px focus ring that reaches >= 3:1 on bg and fg (R15.7). */
+.crt :focus-visible {
+  outline: 2px solid var(--crt-focus);
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Effect layers: absolutely positioned, non-interactive, hidden from a11y. */
+/* ------------------------------------------------------------------------ */
+
+.crt-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Scanlines are a repeating-linear-gradient — no image file (R9.2, R9.8). */
+.crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, var(--crt-scanline-alpha)) 0,
+    rgba(0, 0, 0, var(--crt-scanline-alpha)) 1px,
+    rgba(0, 0, 0, 0) 1px,
+    rgba(0, 0, 0, 0) var(--crt-scanline-period)
+  );
+}
+
+/* The flicker layer is a black overlay whose opacity animates 0..depth. */
+.crt-flicker {
+  background-color: #000;
+  opacity: 0;
+}
+
+/* The soft-blink cursor for the Command_Line prompt. */
+.crt-cursor {
+  display: inline-block;
+}
+
+@keyframes crt-flicker-kf {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: var(--crt-flicker-depth);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes crt-cursor-kf {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Motion gating (R9.6, R9.7, R10.3, R10.11).                               */
+/* ------------------------------------------------------------------------ */
+
+/* Animations run ONLY in full motion. 1 cycle/s => 2 luminance changes/s. */
+.crt[data-motion="full"] .crt-flicker {
+  animation: crt-flicker-kf 1s steps(2, jump-none) infinite;
+}
+
+.crt[data-motion="full"] .crt-cursor {
+  animation: crt-cursor-kf 1s steps(1, jump-none) infinite;
+}
+
+/* The afterglow fade on freshly revealed blocks, full motion only (R9.5). */
+.crt[data-motion="full"] .crt-reveal pre {
+  transition: opacity var(--crt-afterglow-ms) ease-out;
+}
+
+/* Reduced motion disables every animation and transition (R10.3, R10.11). */
+.crt[data-motion="reduced"] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.crt[data-motion="reduced"] .crt-flicker {
+  opacity: 0;
+}

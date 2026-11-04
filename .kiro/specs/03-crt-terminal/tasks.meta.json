@@ -597,6 +597,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989560
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793821868537
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793822652551
       }
     ],
     "17.2 Implement `tokens.ts`, `crt.css`, components and hooks": [
@@ -604,6 +614,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989651
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793822677558
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793824892788
       }
     ],
     "18. Checkpoint - `@necro/ui-crt` is complete": [
@@ -611,6 +631,11 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989698
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825014236
       }
     ],
     "19.1 Write protocol/stream schema conformance and NDJSON parser examples first": [
@@ -933,6 +958,13 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793821136269
+      }
+    ],
+    "17. React components, hooks, CRT tokens and CSS": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793824892846
       }
     ]
   }
