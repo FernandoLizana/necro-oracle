@@ -225,11 +225,11 @@ Conventions that apply to every task:
   - [x] 24.2 Implement `server/deps.ts` and `server/composition.ts`
     - _Requirements: R12.12, R16.4, R16.6_
 
-- [ ] 25. Summon handler
-  - [~] 25.1 Write summon-handler examples first
+- [x] 25. Summon handler
+  - [x] 25.1 Write summon-handler examples first
     - Add examples (fake `RouteDeps`): method 405 + `Allow: POST` (R12.2); non-`application/json` → 400, body > 2 KB → 413, invalid JSON/zod → 400 (R12.1, R12.3); limiter-before-GitHub via gateway spy (R13.1); `no-store` + `nosniff` headers (R12.8); `toSummonSummary` field-by-field build with no snapshot contents, no token/Authorization in any body/header (R5.9, R12.6, R14.7); NecroError → mapped Error_Envelope (R5.10); outgoing body validated by `SummonSummarySchema` (R6.7-analog); never loads/executes repo content (R12.11). Confirm they fail first.
     - _Requirements: R5.2, R5.3, R5.9, R5.10, R12.1, R12.2, R12.3, R12.6, R12.8, R12.11, R13.1, R14.7_
-  - [~] 25.2 Implement `server/handlers/guard.ts` and `server/handlers/summon.ts`
+  - [x] 25.2 Implement `server/handlers/guard.ts` and `server/handlers/summon.ts`
     - Implement the shared guard pipeline (client-ip, limiter, body read/size, zod) and `handleSummon` (parse, summon, `toSummonSummary`, redact, validate, JSON response).
     - _Requirements: R5.2, R5.3, R5.9, R5.10, R12.1, R12.2, R12.3, R12.6, R12.8, R12.11, R13.1, R14.7_
 
