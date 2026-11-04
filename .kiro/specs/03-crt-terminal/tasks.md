@@ -250,21 +250,21 @@ Conventions that apply to every task:
     - Implement the routes, the server-rendered shell with `<noscript>` and `await headers()`, the client `TerminalScreen` building browser ports, `createApiPort` (summon outcome table + streaming reader), `createBrowserPorts`, and the CSP middleware.
     - _Requirements: R1.5, R6.11, R11.4, R11.5, R11.6, R11.7, R12.2, R12.8, R14.9, R16.4_
 
-- [ ] 28. API client streaming-reader and summon outcome tests
-  - [~] 28.1 Write API-client examples first
+- [x] 28. API client streaming-reader and summon outcome tests
+  - [x] 28.1 Write API-client examples first
     - Add Summon_Route outcome-table examples (fake `fetch`): `TypeError`/timeout → `NETWORK_TIMEOUT`; user abort → `AbortError` rethrown; ok + valid schema → value; ok + bad schema/not JSON → `VALIDATION_FAILED`; `!ok` + valid envelope → mapped `NecroError`; ≥ 500 no envelope → `UPSTREAM_UNAVAILABLE`; < 500 no envelope → `VALIDATION_FAILED` (R5.4, R5.10, R11.4, R11.5, R11.6, R11.7).
     - Add streaming-reader examples (scripted `ReadableStream`): each Progress_Event dispatched to `onProgress` incrementally as its line arrives; final `result` line validated by `ReadingResponseSchema` and resolves (R6.18); `error` line → mapped `NecroError`; stream ends with no `result`/`error` → `networkError()` → `NETWORK_TIMEOUT` (R6.17, R11.6); 55 s client timeout → `NETWORK_TIMEOUT` (R11.6); malformed line → `invalidResponseError()` → `VALIDATION_FAILED` (R6.9); user abort → `AbortError`. Confirm all fail first.
     - _Requirements: R5.4, R5.10, R6.8, R6.9, R6.17, R6.18, R11.4, R11.5, R11.6, R11.7_
-  - [~] 28.2 Implement the streaming-reader and summon paths in `terminal/api-client.ts`
+  - [x] 28.2 Implement the streaming-reader and summon paths in `terminal/api-client.ts`
     - _Requirements: R5.4, R5.10, R6.8, R6.9, R6.17, R6.18, R11.4, R11.5, R11.6, R11.7_
 
-- [ ] 29. Demo fixtures, bundle generator and loader
-  - [~] 29.1 Write `P23` and demo examples first
+- [x] 29. Demo fixtures, bundle generator and loader
+  - [x] 29.1 Write `P23` and demo examples first
     - Author `fixtures/graveyard/{lich-py2,mixed-ruins,green-garden}/` (`repo/`, `demo.json`, `registry.json`, `osv.json`), with `green-garden` strictly highest vitality and only obviously fake token-shaped strings.
     - Add `apps/web/src/demo/demo-bundle.pbt.test.ts` for **Property 23 (R18.9, R18.12, R18.13)** — every bundled Reading_Response is valid against `ReadingResponseSchema` and equals a fresh `runReading` on the fixture with the fixed `DEMO_NOW` clock and fixture registry/OSV data, comparing every field except the minted `id` (checked for UUID shape and deterministic derivation).
     - Add examples: catalog shape and `green-garden` strictly highest vitality (R18.1); loader failure → `demoUnavailableError` (R18.10); schema failure → `invalidResponseError` (R18.9); idle prefetch best-effort (R18.8); demo paths rendered as `fixture:` with no link (R18.11). Confirm all fail first.
     - _Requirements: R18.1, R18.8, R18.9, R18.10, R18.11, R18.12, R18.13_
-  - [~] 29.2 Implement `demo/build-demo.ts`, `scripts/demo-bundle/generate.ts`, `bundle.generated.json`, and `demo/load-bundle.ts`
+  - [x] 29.2 Implement `demo/build-demo.ts`, `scripts/demo-bundle/generate.ts`, `bundle.generated.json`, and `demo/load-bundle.ts`
     - Implement `buildDemoBundle`, `demoId`, `DEMO_NOW`, the root `demo:bundle` script (regenerates the JSON via `@necro/oracle/node`), and the memoised validating `loadDemoBundle` with a literal-path dynamic import (separate chunk).
     - _Requirements: R18.3, R18.8, R18.9, R18.10, R18.12, R18.13, R16.12_
 

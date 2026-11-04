@@ -1,0 +1,3 @@
+# Runtime dependencies for green-garden (pinned, current majors).
+click==8.1.7
+rich==13.7.1

@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-fake-lich-0001",
+    "severity": "HIGH",
+    "affectedPackage": "mysql-python",
+    "affectedVersionRange": ">=0,<1.2.5"
+  }
+]

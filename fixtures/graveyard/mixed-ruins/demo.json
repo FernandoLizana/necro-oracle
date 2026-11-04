@@ -1,0 +1,15 @@
+{
+  "sha": "4b1f7c2a9d0e3b5a6c8d1e2f3a4b5c6d7e8f9012",
+  "defaultBranch": "main",
+  "stars": 73,
+  "hasWorkflowsDir": false,
+  "meta": {
+    "pushedAt": "2025-11-10T14:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 2,
+    "openPRCount": 1,
+    "oldestOpenPRAgeDays": 40,
+    "latestReleaseAt": "2025-06-01T00:00:00.000Z",
+    "licenseKey": "Apache-2.0"
+  }
+}

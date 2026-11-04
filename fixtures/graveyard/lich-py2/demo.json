@@ -1,0 +1,15 @@
+{
+  "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c",
+  "defaultBranch": "master",
+  "stars": 5,
+  "hasWorkflowsDir": false,
+  "meta": {
+    "pushedAt": "2015-08-01T00:00:00.000Z",
+    "isArchived": true,
+    "openIssueCount": 17,
+    "openPRCount": 4,
+    "oldestOpenPRAgeDays": 2200,
+    "latestReleaseAt": null,
+    "licenseKey": null
+  }
+}

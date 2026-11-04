@@ -1,0 +1,1287 @@
+{
+  "green-garden": {
+    "fates": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "star",
+            "evidence": [
+              {
+                "detail": "license: contributed=true; observed licenseKey=MIT",
+                "kind": "strength:license",
+                "source": "static"
+              },
+              {
+                "detail": "tests: contributed=true; observed test file count=1",
+                "kind": "strength:tests",
+                "source": "static"
+              },
+              {
+                "detail": "ci: contributed=true; observed CI config count=1",
+                "kind": "strength:ci",
+                "source": "static"
+              },
+              {
+                "detail": "readme: contributed=true; observed README byte length=534",
+                "kind": "strength:readme",
+                "source": "static"
+              },
+              {
+                "detail": "recent push: contributed=true; observed pushedAt=2026-01-02T09:30:00.000Z",
+                "kind": "strength:push",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Star rises: 5 of five strengths endure in this repository."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "b801d96f-73de-4515-8a57-645803fa5ba9",
+        "repo": {
+          "defaultBranch": "main",
+          "name": "green-garden",
+          "owner": "graveyard",
+          "sha": "9e5c0a1b2d3f4a5b6c7d8e9f0a1b2c3d4e5f6071"
+        },
+        "spread": [
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "Past",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "star",
+              "evidence": [
+                {
+                  "detail": "license: contributed=true; observed licenseKey=MIT",
+                  "kind": "strength:license",
+                  "source": "static"
+                },
+                {
+                  "detail": "tests: contributed=true; observed test file count=1",
+                  "kind": "strength:tests",
+                  "source": "static"
+                },
+                {
+                  "detail": "ci: contributed=true; observed CI config count=1",
+                  "kind": "strength:ci",
+                  "source": "static"
+                },
+                {
+                  "detail": "readme: contributed=true; observed README byte length=534",
+                  "kind": "strength:readme",
+                  "source": "static"
+                },
+                {
+                  "detail": "recent push: contributed=true; observed pushedAt=2026-01-02T09:30:00.000Z",
+                  "kind": "strength:push",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The Star rises: 5 of five strengths endure in this repository."
+            },
+            "label": "Present",
+            "position": 2
+          },
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "Future",
+            "position": 3
+          }
+        ],
+        "vitality": 100
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 10,
+        "hasWorkflowsDir": true,
+        "ref": {
+          "defaultBranch": "main",
+          "name": "green-garden",
+          "owner": "graveyard",
+          "sha": "9e5c0a1b2d3f4a5b6c7d8e9f0a1b2c3d4e5f6071"
+        },
+        "stars": 412,
+        "truncated": false
+      }
+    },
+    "necropsy": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "star",
+            "evidence": [
+              {
+                "detail": "license: contributed=true; observed licenseKey=MIT",
+                "kind": "strength:license",
+                "source": "static"
+              },
+              {
+                "detail": "tests: contributed=true; observed test file count=1",
+                "kind": "strength:tests",
+                "source": "static"
+              },
+              {
+                "detail": "ci: contributed=true; observed CI config count=1",
+                "kind": "strength:ci",
+                "source": "static"
+              },
+              {
+                "detail": "readme: contributed=true; observed README byte length=534",
+                "kind": "strength:readme",
+                "source": "static"
+              },
+              {
+                "detail": "recent push: contributed=true; observed pushedAt=2026-01-02T09:30:00.000Z",
+                "kind": "strength:push",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Star rises: 5 of five strengths endure in this repository."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "232e7f15-d4de-424b-a7c1-2cc041df3654",
+        "repo": {
+          "defaultBranch": "main",
+          "name": "green-garden",
+          "owner": "graveyard",
+          "sha": "9e5c0a1b2d3f4a5b6c7d8e9f0a1b2c3d4e5f6071"
+        },
+        "spread": [
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "The Corpse",
+            "position": 1
+          },
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "The Wound",
+            "position": 2
+          },
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "The Shadow",
+            "position": 3
+          },
+          {
+            "draw": {
+              "card": "star",
+              "evidence": [
+                {
+                  "detail": "license: contributed=true; observed licenseKey=MIT",
+                  "kind": "strength:license",
+                  "source": "static"
+                },
+                {
+                  "detail": "tests: contributed=true; observed test file count=1",
+                  "kind": "strength:tests",
+                  "source": "static"
+                },
+                {
+                  "detail": "ci: contributed=true; observed CI config count=1",
+                  "kind": "strength:ci",
+                  "source": "static"
+                },
+                {
+                  "detail": "readme: contributed=true; observed README byte length=534",
+                  "kind": "strength:readme",
+                  "source": "static"
+                },
+                {
+                  "detail": "recent push: contributed=true; observed pushedAt=2026-01-02T09:30:00.000Z",
+                  "kind": "strength:push",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The Star rises: 5 of five strengths endure in this repository."
+            },
+            "label": "The Hope",
+            "position": 4
+          },
+          {
+            "description": "no ritual can be performed — here is why",
+            "draw": null,
+            "label": "The Call",
+            "position": 5
+          }
+        ],
+        "vitality": 100
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 10,
+        "hasWorkflowsDir": true,
+        "ref": {
+          "defaultBranch": "main",
+          "name": "green-garden",
+          "owner": "graveyard",
+          "sha": "9e5c0a1b2d3f4a5b6c7d8e9f0a1b2c3d4e5f6071"
+        },
+        "stars": 412,
+        "truncated": false
+      }
+    }
+  },
+  "lich-py2": {
+    "fates": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "judgement",
+            "evidence": [
+              {
+                "detail": "Python 2 print statement in crypt.py",
+                "kind": "print_statement",
+                "line": 4,
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
+                "kind": "legacy_octal",
+                "line": 5,
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 print statement in lich.py",
+                "kind": "print_statement",
+                "line": 8,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
+                "kind": "except_comma",
+                "line": 7,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 `<>` inequality operator in lich.py",
+                "kind": "ne_operator",
+                "line": 16,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
+                "kind": "long_integer",
+                "line": 15,
+                "path": "lich.py",
+                "source": "static"
+              }
+            ],
+            "grimoires": [
+              "py2to3",
+              "pyproject"
+            ],
+            "orientation": "upright",
+            "severity": 3,
+            "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
+          },
+          {
+            "card": "tower",
+            "evidence": [
+              {
+                "detail": "mysql-python >=1.2 is deprecated",
+                "kind": "stale-dependency",
+                "source": "registry"
+              }
+            ],
+            "grimoires": [
+              "pyproject"
+            ],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "1 broken or abandoned dependency"
+          },
+          {
+            "card": "devil",
+            "evidence": [
+              {
+                "detail": "GHSA-fake-lich-0001 (HIGH) affects mysql-python >=0,<1.2.5",
+                "kind": "osv",
+                "source": "osv"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "Security sins found in 1 place(s); The Devil binds this code."
+          },
+          {
+            "card": "death",
+            "evidence": [
+              {
+                "detail": "Module crypt.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module lich.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module setup.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "setup.py",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+          },
+          {
+            "card": "wheel",
+            "evidence": [
+              {
+                "detail": "0 test files found; the deck shows no tests at all.",
+                "kind": "test-coverage",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No test files found."
+          },
+          {
+            "card": "hermit",
+            "evidence": [
+              {
+                "detail": "No README lives at the repository root; the project keeps its silence.",
+                "kind": "no-readme",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Hermit walks alone: this repository has no README at its root, leaving every traveller to guess at its purpose."
+          },
+          {
+            "card": "hanged_man",
+            "evidence": [
+              {
+                "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
+                "kind": "last-push",
+                "source": "github"
+              },
+              {
+                "detail": "repository archived: archived (true)",
+                "kind": "archived-flag",
+                "source": "github"
+              },
+              {
+                "detail": "openIssueCount: 17",
+                "kind": "open-issues",
+                "source": "github"
+              },
+              {
+                "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
+                "kind": "open-prs",
+                "source": "github"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
+          },
+          {
+            "card": "temperance",
+            "evidence": [
+              {
+                "detail": "no CI configuration detected",
+                "kind": "no-ci-found",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+          },
+          {
+            "card": "justice",
+            "evidence": [
+              {
+                "detail": "observed SPDX key: null",
+                "kind": "spdx-key",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No law governs this code. The observed license key is absent (null), so the repository has no clear, usable license."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "91253466-f711-4b19-b2be-44fdeff34d6e",
+        "repo": {
+          "defaultBranch": "master",
+          "name": "lich-py2",
+          "owner": "graveyard",
+          "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c"
+        },
+        "spread": [
+          {
+            "draw": {
+              "card": "hanged_man",
+              "evidence": [
+                {
+                  "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
+                  "kind": "last-push",
+                  "source": "github"
+                },
+                {
+                  "detail": "repository archived: archived (true)",
+                  "kind": "archived-flag",
+                  "source": "github"
+                },
+                {
+                  "detail": "openIssueCount: 17",
+                  "kind": "open-issues",
+                  "source": "github"
+                },
+                {
+                  "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
+                  "kind": "open-prs",
+                  "source": "github"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
+            },
+            "label": "Past",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "judgement",
+              "evidence": [
+                {
+                  "detail": "Python 2 print statement in crypt.py",
+                  "kind": "print_statement",
+                  "line": 4,
+                  "path": "crypt.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
+                  "kind": "legacy_octal",
+                  "line": 5,
+                  "path": "crypt.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 print statement in lich.py",
+                  "kind": "print_statement",
+                  "line": 8,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
+                  "kind": "except_comma",
+                  "line": 7,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 `<>` inequality operator in lich.py",
+                  "kind": "ne_operator",
+                  "line": 16,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
+                  "kind": "long_integer",
+                  "line": 15,
+                  "path": "lich.py",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [
+                "py2to3",
+                "pyproject"
+              ],
+              "orientation": "upright",
+              "severity": 3,
+              "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
+            },
+            "label": "Present",
+            "position": 2
+          },
+          {
+            "draw": {
+              "card": "tower",
+              "evidence": [
+                {
+                  "detail": "mysql-python >=1.2 is deprecated",
+                  "kind": "stale-dependency",
+                  "source": "registry"
+                }
+              ],
+              "grimoires": [
+                "pyproject"
+              ],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "1 broken or abandoned dependency"
+            },
+            "label": "Future",
+            "position": 3
+          }
+        ],
+        "vitality": 0
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 3,
+        "hasWorkflowsDir": false,
+        "ref": {
+          "defaultBranch": "master",
+          "name": "lich-py2",
+          "owner": "graveyard",
+          "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c"
+        },
+        "stars": 5,
+        "truncated": false
+      }
+    },
+    "necropsy": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "judgement",
+            "evidence": [
+              {
+                "detail": "Python 2 print statement in crypt.py",
+                "kind": "print_statement",
+                "line": 4,
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
+                "kind": "legacy_octal",
+                "line": 5,
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 print statement in lich.py",
+                "kind": "print_statement",
+                "line": 8,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
+                "kind": "except_comma",
+                "line": 7,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 `<>` inequality operator in lich.py",
+                "kind": "ne_operator",
+                "line": 16,
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
+                "kind": "long_integer",
+                "line": 15,
+                "path": "lich.py",
+                "source": "static"
+              }
+            ],
+            "grimoires": [
+              "py2to3",
+              "pyproject"
+            ],
+            "orientation": "upright",
+            "severity": 3,
+            "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
+          },
+          {
+            "card": "tower",
+            "evidence": [
+              {
+                "detail": "mysql-python >=1.2 is deprecated",
+                "kind": "stale-dependency",
+                "source": "registry"
+              }
+            ],
+            "grimoires": [
+              "pyproject"
+            ],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "1 broken or abandoned dependency"
+          },
+          {
+            "card": "devil",
+            "evidence": [
+              {
+                "detail": "GHSA-fake-lich-0001 (HIGH) affects mysql-python >=0,<1.2.5",
+                "kind": "osv",
+                "source": "osv"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "Security sins found in 1 place(s); The Devil binds this code."
+          },
+          {
+            "card": "death",
+            "evidence": [
+              {
+                "detail": "Module crypt.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "crypt.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module lich.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "lich.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module setup.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "setup.py",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+          },
+          {
+            "card": "wheel",
+            "evidence": [
+              {
+                "detail": "0 test files found; the deck shows no tests at all.",
+                "kind": "test-coverage",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No test files found."
+          },
+          {
+            "card": "hermit",
+            "evidence": [
+              {
+                "detail": "No README lives at the repository root; the project keeps its silence.",
+                "kind": "no-readme",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Hermit walks alone: this repository has no README at its root, leaving every traveller to guess at its purpose."
+          },
+          {
+            "card": "hanged_man",
+            "evidence": [
+              {
+                "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
+                "kind": "last-push",
+                "source": "github"
+              },
+              {
+                "detail": "repository archived: archived (true)",
+                "kind": "archived-flag",
+                "source": "github"
+              },
+              {
+                "detail": "openIssueCount: 17",
+                "kind": "open-issues",
+                "source": "github"
+              },
+              {
+                "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
+                "kind": "open-prs",
+                "source": "github"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
+          },
+          {
+            "card": "temperance",
+            "evidence": [
+              {
+                "detail": "no CI configuration detected",
+                "kind": "no-ci-found",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+          },
+          {
+            "card": "justice",
+            "evidence": [
+              {
+                "detail": "observed SPDX key: null",
+                "kind": "spdx-key",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No law governs this code. The observed license key is absent (null), so the repository has no clear, usable license."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "3afc9b18-844e-4adf-8e51-490b355aa42c",
+        "repo": {
+          "defaultBranch": "master",
+          "name": "lich-py2",
+          "owner": "graveyard",
+          "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c"
+        },
+        "spread": [
+          {
+            "draw": {
+              "card": "judgement",
+              "evidence": [
+                {
+                  "detail": "Python 2 print statement in crypt.py",
+                  "kind": "print_statement",
+                  "line": 4,
+                  "path": "crypt.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
+                  "kind": "legacy_octal",
+                  "line": 5,
+                  "path": "crypt.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 print statement in lich.py",
+                  "kind": "print_statement",
+                  "line": 8,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
+                  "kind": "except_comma",
+                  "line": 7,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 `<>` inequality operator in lich.py",
+                  "kind": "ne_operator",
+                  "line": 16,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
+                  "kind": "long_integer",
+                  "line": 15,
+                  "path": "lich.py",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [
+                "py2to3",
+                "pyproject"
+              ],
+              "orientation": "upright",
+              "severity": 3,
+              "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
+            },
+            "label": "The Corpse",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "devil",
+              "evidence": [
+                {
+                  "detail": "GHSA-fake-lich-0001 (HIGH) affects mysql-python >=0,<1.2.5",
+                  "kind": "osv",
+                  "source": "osv"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "Security sins found in 1 place(s); The Devil binds this code."
+            },
+            "label": "The Wound",
+            "position": 2
+          },
+          {
+            "draw": {
+              "card": "tower",
+              "evidence": [
+                {
+                  "detail": "mysql-python >=1.2 is deprecated",
+                  "kind": "stale-dependency",
+                  "source": "registry"
+                }
+              ],
+              "grimoires": [
+                "pyproject"
+              ],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "1 broken or abandoned dependency"
+            },
+            "label": "The Shadow",
+            "position": 3
+          },
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "The Hope",
+            "position": 4
+          },
+          {
+            "description": "no ritual can be performed — here is why",
+            "draw": null,
+            "label": "The Call",
+            "position": 5
+          }
+        ],
+        "vitality": 0
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 3,
+        "hasWorkflowsDir": false,
+        "ref": {
+          "defaultBranch": "master",
+          "name": "lich-py2",
+          "owner": "graveyard",
+          "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c"
+        },
+        "stars": 5,
+        "truncated": false
+      }
+    }
+  },
+  "mixed-ruins": {
+    "fates": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "wheel",
+            "evidence": [
+              {
+                "detail": "0 test files found; the deck shows no tests at all.",
+                "kind": "test-coverage",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No test files found."
+          },
+          {
+            "card": "temperance",
+            "evidence": [
+              {
+                "detail": "no CI configuration detected",
+                "kind": "no-ci-found",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+          },
+          {
+            "card": "star",
+            "evidence": [
+              {
+                "detail": "license: contributed=true; observed licenseKey=Apache-2.0",
+                "kind": "strength:license",
+                "source": "static"
+              },
+              {
+                "detail": "tests: contributed=false; observed test file count=0",
+                "kind": "strength:tests",
+                "source": "static"
+              },
+              {
+                "detail": "ci: contributed=false; observed CI config count=0",
+                "kind": "strength:ci",
+                "source": "static"
+              },
+              {
+                "detail": "readme: contributed=true; observed README byte length=413",
+                "kind": "strength:readme",
+                "source": "static"
+              },
+              {
+                "detail": "recent push: contributed=true; observed pushedAt=2025-11-10T14:00:00.000Z",
+                "kind": "strength:push",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Star rises: 3 of five strengths endure in this repository."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "e81dc1fe-d917-4037-b40d-cc79b26bfa3d",
+        "repo": {
+          "defaultBranch": "main",
+          "name": "mixed-ruins",
+          "owner": "graveyard",
+          "sha": "4b1f7c2a9d0e3b5a6c8d1e2f3a4b5c6d7e8f9012"
+        },
+        "spread": [
+          {
+            "draw": {
+              "card": "temperance",
+              "evidence": [
+                {
+                  "detail": "no CI configuration detected",
+                  "kind": "no-ci-found",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+            },
+            "label": "Past",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "wheel",
+              "evidence": [
+                {
+                  "detail": "0 test files found; the deck shows no tests at all.",
+                  "kind": "test-coverage",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "No test files found."
+            },
+            "label": "Present",
+            "position": 2
+          },
+          {
+            "draw": {
+              "card": "star",
+              "evidence": [
+                {
+                  "detail": "license: contributed=true; observed licenseKey=Apache-2.0",
+                  "kind": "strength:license",
+                  "source": "static"
+                },
+                {
+                  "detail": "tests: contributed=false; observed test file count=0",
+                  "kind": "strength:tests",
+                  "source": "static"
+                },
+                {
+                  "detail": "ci: contributed=false; observed CI config count=0",
+                  "kind": "strength:ci",
+                  "source": "static"
+                },
+                {
+                  "detail": "readme: contributed=true; observed README byte length=413",
+                  "kind": "strength:readme",
+                  "source": "static"
+                },
+                {
+                  "detail": "recent push: contributed=true; observed pushedAt=2025-11-10T14:00:00.000Z",
+                  "kind": "strength:push",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The Star rises: 3 of five strengths endure in this repository."
+            },
+            "label": "Future",
+            "position": 3
+          }
+        ],
+        "vitality": 62
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 5,
+        "hasWorkflowsDir": false,
+        "ref": {
+          "defaultBranch": "main",
+          "name": "mixed-ruins",
+          "owner": "graveyard",
+          "sha": "4b1f7c2a9d0e3b5a6c8d1e2f3a4b5c6d7e8f9012"
+        },
+        "stars": 73,
+        "truncated": false
+      }
+    },
+    "necropsy": {
+      "reading": {
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "draws": [
+          {
+            "card": "wheel",
+            "evidence": [
+              {
+                "detail": "0 test files found; the deck shows no tests at all.",
+                "kind": "test-coverage",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No test files found."
+          },
+          {
+            "card": "temperance",
+            "evidence": [
+              {
+                "detail": "no CI configuration detected",
+                "kind": "no-ci-found",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+          },
+          {
+            "card": "star",
+            "evidence": [
+              {
+                "detail": "license: contributed=true; observed licenseKey=Apache-2.0",
+                "kind": "strength:license",
+                "source": "static"
+              },
+              {
+                "detail": "tests: contributed=false; observed test file count=0",
+                "kind": "strength:tests",
+                "source": "static"
+              },
+              {
+                "detail": "ci: contributed=false; observed CI config count=0",
+                "kind": "strength:ci",
+                "source": "static"
+              },
+              {
+                "detail": "readme: contributed=true; observed README byte length=413",
+                "kind": "strength:readme",
+                "source": "static"
+              },
+              {
+                "detail": "recent push: contributed=true; observed pushedAt=2025-11-10T14:00:00.000Z",
+                "kind": "strength:push",
+                "source": "static"
+              }
+            ],
+            "grimoires": [],
+            "orientation": "upright",
+            "severity": 2,
+            "summary": "The Star rises: 3 of five strengths endure in this repository."
+          }
+        ],
+        "engineVersion": "0.0.0",
+        "errors": [],
+        "id": "cbbbbe21-0ebb-4097-82da-49783b5f3666",
+        "repo": {
+          "defaultBranch": "main",
+          "name": "mixed-ruins",
+          "owner": "graveyard",
+          "sha": "4b1f7c2a9d0e3b5a6c8d1e2f3a4b5c6d7e8f9012"
+        },
+        "spread": [
+          {
+            "draw": {
+              "card": "wheel",
+              "evidence": [
+                {
+                  "detail": "0 test files found; the deck shows no tests at all.",
+                  "kind": "test-coverage",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "No test files found."
+            },
+            "label": "The Corpse",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "temperance",
+              "evidence": [
+                {
+                  "detail": "no CI configuration detected",
+                  "kind": "no-ci-found",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+            },
+            "label": "The Wound",
+            "position": 2
+          },
+          {
+            "description": "This position holds no card — the void is a sign.",
+            "draw": null,
+            "label": "The Shadow",
+            "position": 3
+          },
+          {
+            "draw": {
+              "card": "star",
+              "evidence": [
+                {
+                  "detail": "license: contributed=true; observed licenseKey=Apache-2.0",
+                  "kind": "strength:license",
+                  "source": "static"
+                },
+                {
+                  "detail": "tests: contributed=false; observed test file count=0",
+                  "kind": "strength:tests",
+                  "source": "static"
+                },
+                {
+                  "detail": "ci: contributed=false; observed CI config count=0",
+                  "kind": "strength:ci",
+                  "source": "static"
+                },
+                {
+                  "detail": "readme: contributed=true; observed README byte length=413",
+                  "kind": "strength:readme",
+                  "source": "static"
+                },
+                {
+                  "detail": "recent push: contributed=true; observed pushedAt=2025-11-10T14:00:00.000Z",
+                  "kind": "strength:push",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The Star rises: 3 of five strengths endure in this repository."
+            },
+            "label": "The Hope",
+            "position": 4
+          },
+          {
+            "description": "no ritual can be performed — here is why",
+            "draw": null,
+            "label": "The Call",
+            "position": 5
+          }
+        ],
+        "vitality": 62
+      },
+      "summary": {
+        "cache": "miss",
+        "degradedFields": [],
+        "demo": true,
+        "fileCount": 5,
+        "hasWorkflowsDir": false,
+        "ref": {
+          "defaultBranch": "main",
+          "name": "mixed-ruins",
+          "owner": "graveyard",
+          "sha": "4b1f7c2a9d0e3b5a6c8d1e2f3a4b5c6d7e8f9012"
+        },
+        "stars": 73,
+        "truncated": false
+      }
+    }
+  }
+}

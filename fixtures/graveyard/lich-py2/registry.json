@@ -1,0 +1,10 @@
+[
+  {
+    "name": "mysql-python",
+    "latestVersion": "1.2.5",
+    "yanked": false,
+    "isDeprecated": true,
+    "py2Only": true,
+    "publishedAt": "2014-01-01T00:00:00.000Z"
+  }
+]

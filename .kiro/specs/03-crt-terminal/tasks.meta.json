@@ -959,6 +959,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990610
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793829516283
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793830746136
       }
     ],
     "28.2 Implement the streaming-reader and summon paths in `terminal/api-client.ts`": [
@@ -966,6 +976,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990662
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793830752566
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833060860
       }
     ],
     "29.1 Write `P23` and demo examples first": [
@@ -973,6 +993,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990717
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793829517137
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793830747188
       }
     ],
     "29.2 Implement `demo/build-demo.ts`, `scripts/demo-bundle/generate.ts`, `bundle.generated.json`, and `demo/load-bundle.ts`": [
@@ -980,6 +1010,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990765
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793830753921
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833062117
       }
     ],
     "30. Checkpoint - server, routes and demo are complete": [
@@ -1211,6 +1251,20 @@
         "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793828895056
+      }
+    ],
+    "28. API client streaming-reader and summon outcome tests": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833060947
+      }
+    ],
+    "29. Demo fixtures, bundle generator and loader": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793833062190
       }
     ]
   }

@@ -1,0 +1,12 @@
+[project]
+name = "green-garden"
+version = "1.2.0"
+requires-python = ">=3.9"
+dependencies = [
+  "click>=8.1",
+  "rich>=13.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
