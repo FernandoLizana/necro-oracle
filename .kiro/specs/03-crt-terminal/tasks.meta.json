@@ -519,6 +519,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989343
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793819953204
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793820369664
       }
     ],
     "15.2 Implement `session/state.ts` and `session/reducer.ts`": [
@@ -526,6 +536,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989412
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793820416003
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793821136233
       }
     ],
     "16.1 Write sound-engine examples first": [
@@ -906,6 +926,13 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793819916867
+      }
+    ],
+    "15. Session reducer and effects": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793821136269
       }
     ]
   }

@@ -142,12 +142,12 @@ Conventions that apply to every task:
   - [x] 14.2 Implement `session/pinned-ref` helper and `demo/catalog.ts`
     - _Requirements: R5.3, R6.1, R18.1_
 
-- [ ] 15. Session reducer and effects
-  - [~] 15.1 Write `P19`, `P24`, `P25`, `P27` and reducer examples first
+- [x] 15. Session reducer and effects
+  - [x] 15.1 Write `P19`, `P24`, `P25`, `P27` and reducer examples first
     - Add `session/inflight.pbt.test.ts` for **Property 19 (R3.11)**, `session/demo-isolation.pbt.test.ts` for **Property 24 (R18.5, R18.6, R18.7, R18.11)**, `session/demo-resolution.pbt.test.ts` for **Property 25 (R18.2, R18.3, R18.4)**, and `session/independence.pbt.test.ts` for **Property 27 (R19.11, R19.15)**.
     - Add example tests: boot; submit/echo/history-push (R3.1); over-length rejection (R2.13); `null` → fresh prompt (R2.10); `clear` keeps summary/readings/lastSpread (R15.10); `read` with no summary / `celtic` / held spread (R6.2, R6.3, R6.12); summon replaces demo (R18.14); abort (R3.6); skip-reveal (R3.5); completes running reveal before submit (R10.5); local-command latency (R16.8); button equivalents incl. SUMMON fills `summon ` and focuses, SOUND toggles and counts as gesture (R3.8-R3.12); `api.progress` appends exactly one status block per phase and keeps `aria-busy`/`inflight` until final `api.read` (R6.15, R15.13); stale `api.progress`/`api.*` ignored by `requestId`; `api.summoned` clears readings (R5.4); `focus` effect emitted only for typed/SUMMON commands (R15.4, R15.5); `prefs.save` only for the two allowed keys (R1.6). Add reducer action-sequence arbitraries. Confirm all fail first.
     - _Requirements: R1.6, R2.10, R2.13, R3.1, R3.5, R3.6, R3.8, R3.9, R3.10, R3.11, R3.12, R5.4, R6.2, R6.3, R6.12, R6.13, R6.15, R10.5, R15.4, R15.5, R15.10, R15.13, R16.8, R18.2, R18.3, R18.4, R18.5, R18.6, R18.7, R18.11, R18.14, R18.15, R19.11, R19.15_
-  - [~] 15.2 Implement `session/state.ts` and `session/reducer.ts`
+  - [x] 15.2 Implement `session/state.ts` and `session/reducer.ts`
     - Implement `initialState`, `step(state, action)` producing `{ state, effects }` with all the branch rules in the design's "Session reducer and effects", `withDemoLabel` applied to non-echo demo blocks, `appendBlocks` on every new block, reveal-queue only in `full` motion.
     - _Requirements: R1.6, R2.10, R2.13, R3.1, R3.4, R3.5, R3.6, R3.11, R5.4, R6.1, R6.2, R6.3, R6.12, R6.13, R6.15, R10.5, R15.4, R15.5, R15.10, R15.13, R16.8, R18.3, R18.4, R18.5, R18.6, R18.7, R18.14, R18.15, R19.11_
 

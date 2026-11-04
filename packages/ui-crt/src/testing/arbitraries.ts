@@ -243,7 +243,7 @@ const COMMAND_SOUND_ARGS: readonly CommandSoundArg[] = ["on", "off"];
  * `#ref` or `@sha`. Kept valid and stable so the round-trip holds: `summon`
  * carries the raw second token unchanged, and `printCommand` re-emits it as-is.
  */
-const arbCommandRepoToken: fc.Arbitrary<string> = fc
+export const arbCommandRepoToken: fc.Arbitrary<string> = fc
   .tuple(
     fc.stringMatching(/^[A-Za-z0-9_.-]{1,20}$/),
     fc.stringMatching(/^[A-Za-z0-9_.-]{1,20}$/),
@@ -580,3 +580,112 @@ export function arbReadingResponse(
     })),
   );
 }
+
+// ============================================================================
+// Session reducer action-sequence arbitraries (task 15.1 — P19, P24, P25, P27)
+// ============================================================================
+//
+// These arbitraries drive the pure session reducer (`session/state.ts` +
+// `session/reducer.ts`, task 15.2). They build raw command strings and reducer
+// `Action` values so the four properties can replay realistic interleavings:
+//
+//   - P19 (single in-flight request): summon / read / demo-with-name submits
+//     attempted while a request is already in flight.
+//   - P24 (demo isolation): sequences of `demo`, `read` and `explain` on a demo
+//     session.
+//   - P25 (demo resolution): `demo`, `demo <known>`, `demo <unknown>`.
+//   - P27 (region independence): interleavings of `motion` and `sound`
+//     commands plus the sound sub-events.
+//
+// They import ONLY the demo catalog (for the real catalog names), the command
+// constants and the already-present reading/summary builders above — no reducer
+// module, keeping the arbitraries free of the system under test (which does not
+// exist yet in the red phase).
+
+import { DEMO_CATALOG } from "../demo/catalog.js";
+import { MAX_ENTRY_LENGTH } from "../command/types.js";
+
+/** The real catalog Demo_Names, drawn from `DEMO_CATALOG` so a drift is caught. */
+export const CATALOG_DEMO_NAMES: readonly string[] = DEMO_CATALOG.map(
+  (entry) => entry.name,
+);
+
+/** A Demo_Name that is well-formed (`^[a-z0-9-]{1,32}$`) but NOT in the catalog. */
+export const arbUnknownDemoName: fc.Arbitrary<string> = fc
+  .stringMatching(/^[a-z0-9-]{1,32}$/)
+  .filter((name) => !CATALOG_DEMO_NAMES.includes(name));
+
+/** A catalog Demo_Name (`lich-py2`, `mixed-ruins`, `green-garden`). */
+export const arbCatalogDemoName: fc.Arbitrary<string> = fc.constantFrom(
+  ...CATALOG_DEMO_NAMES,
+);
+
+/**
+ * A raw command line that, while a request is in flight, must be rejected with
+ * the "ritual underway" block and emit no effect (R3.11): a `summon`, a `read`,
+ * or a `demo <name>` carrying a name. The repo token and spread stay valid so
+ * the reducer reaches the in-flight guard rather than an earlier parse branch.
+ */
+export const arbInflightBlockingRaw: fc.Arbitrary<string> = fc.oneof(
+  arbCommandRepoToken.map((repo) => `summon ${repo}`),
+  fc.constantFrom("read", "read fates", "read necropsy"),
+  fc
+    .constantFrom(...CATALOG_DEMO_NAMES)
+    .map((name) => `demo ${name}`),
+);
+
+/**
+ * A raw command line for a demo session isolation sequence (P24): `demo`,
+ * `demo <name>`, `read`, `read fates`, `read necropsy`, `read celtic`,
+ * `explain <position>` and `explain <card>`. None of these may touch the
+ * network once a demo summary is installed.
+ */
+export const arbDemoSessionRaw: fc.Arbitrary<string> = fc.oneof(
+  fc.constant("demo"),
+  arbCatalogDemoName.map((name) => `demo ${name}`),
+  fc.constantFrom(
+    "read",
+    "read fates",
+    "read necropsy",
+    "read celtic",
+  ),
+  fc.integer({ min: 1, max: 10 }).map((n) => `explain ${n}`),
+);
+
+/** A raw `motion` command line, with and without an argument. */
+export const arbMotionRaw: fc.Arbitrary<string> = fc.constantFrom(
+  "motion",
+  "motion on",
+  "motion off",
+  "motion auto",
+);
+
+/** A raw `sound` command line, with and without an argument. */
+export const arbSoundRaw: fc.Arbitrary<string> = fc.constantFrom(
+  "sound",
+  "sound on",
+  "sound off",
+);
+
+/**
+ * An interleaving of `motion` and `sound` command lines (P27). Each element is
+ * tagged with the region it belongs to so a test can assert that a motion
+ * command never perturbs the sound region and vice versa.
+ */
+export const arbMotionSoundStep: fc.Arbitrary<{
+  readonly region: "motion" | "sound";
+  readonly raw: string;
+}> = fc.oneof(
+  arbMotionRaw.map((raw) => ({ region: "motion" as const, raw })),
+  arbSoundRaw.map((raw) => ({ region: "sound" as const, raw })),
+);
+
+/** A short sequence of interleaved motion/sound command steps. */
+export const arbMotionSoundSequence = fc.array(arbMotionSoundStep, {
+  maxLength: 12,
+});
+
+/** A raw entry guaranteed to exceed the 200-character limit (R2.13). */
+export const arbOverLengthRaw: fc.Arbitrary<string> = fc
+  .integer({ min: MAX_ENTRY_LENGTH + 1, max: MAX_ENTRY_LENGTH + 200 })
+  .chain((len) => fc.string({ minLength: len, maxLength: len }));

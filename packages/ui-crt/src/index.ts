@@ -130,6 +130,19 @@ export { formatPinnedRef } from "./session/pinned-ref.js";
 export { DEMO_CATALOG, DEMO_NAME_PATTERN } from "./demo/catalog.js";
 export type { DemoCatalogEntry } from "./demo/catalog.js";
 
+// Session reducer — the pure state machine driving the Terminal. `step` and
+// `initialState` are the only runtime exports; the SessionState / Action /
+// Effect / InflightRequest shapes are types the UI layer and tests consume.
+export { initialState } from "./session/state.js";
+export type {
+  Action,
+  Effect,
+  InflightRequest,
+  RevealState,
+  SessionState,
+} from "./session/state.js";
+export { step } from "./session/reducer.js";
+
 // Sound loader — the production SoundLoaderPort. The engine itself stays a
 // separate lazy chunk behind `loadEngine`; engine.ts is never barrelled.
 export { loadEngine } from "./sound/load-engine.js";
