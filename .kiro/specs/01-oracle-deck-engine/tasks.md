@@ -41,7 +41,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - [x] 5.1 Write unit tests for `maskSecret` (test-first)
     - Length ≥ 4 → first 4 chars + `"****"`; length < 4 → `"****"`; verify AWS/private-key inputs are reduced.
     - _Requirements: R20.1, R20.4_
-  - [~] 5.2 Implement `src/util/mask.ts` `maskSecret(value: string): string`
+  - [x] 5.2 Implement `src/util/mask.ts` `maskSecret(value: string): string`
     - _Requirements: R20.1, R20.4_
   - [~] 5.3 [PBT] Write property tests for masking — P8, P9
     - **Property 9: Secret masking length invariant** — len ≥ 4 ⇒ exactly 8 chars; len < 4 ⇒ `"****"`.
@@ -49,7 +49,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Validates: Requirements R20.1, R20.2, R20.3, R20.4** / **Properties: P8, P9**
 
 - [ ] 6. Implement the card registry
-  - [~] 6.1 Write unit tests for the registry (test-first)
+  - [x] 6.1 Write unit tests for the registry (test-first)
     - Assert exactly 12 cards with correct ids/numerals; `getCard` happy path and `CARD_NOT_FOUND` sad path; weights match R18.3 (`star`/`world` = 0); duplicate `id` or `numeral` throws `REGISTRY_INVALID` at load.
     - _Requirements: R1.1, R1.2, R1.4, R1.5, R1.6, R18.3_
   - [~] 6.2 Implement `src/registry/cards.ts`
@@ -67,7 +67,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - _Requirements: R2.1, R2.2, R2.8, R11.1_
 
 - [ ] 8. Implement `buildSnapshotFromFileMap` (browser-safe)
-  - [~] 8.1 Write unit tests for the file-map builder (test-first)
+  - [x] 8.1 Write unit tests for the file-map builder (test-first)
     - Lang assigned by extension (`.py`/`.js`/`.ts`/`.html`/other); 1 MB oversize files land in `oversizeFiles` and are absent from `contents`; > 5000 files → first 5000 lexicographic, `truncated: true`; ≤ 5000 → `truncated: false`; `createdAt` equals the supplied `opts.createdAt` (builder never calls `Date.now()`); default neutral `meta` applied when omitted.
     - _Requirements: R2.1, R2.2, R2.5, R2.6, R2.7_
   - [~] 8.2 Implement `src/snapshot/builder-file-map.ts`
@@ -92,7 +92,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - The setup file imports `initParser` from the parser module; it is sequenced immediately before the parser task (task 11) so that import resolves once the parser skeleton exists, and the parser implementation (task 11.2) satisfies the import. The parser test sub-task (11.1) depends on this setup file being in place.
   - _Requirements: R3.1, R21.5, R21.6_
 
-- [ ] 11. Implement the tree-sitter parser
+- [x] 11. Implement the tree-sitter parser
   - [x] 11.1 Write unit tests for the parser (test-first)
     - Depends on the Vitest WASM setup file (task 10) so the on-disk grammar is initialised in `beforeAll`.
     - `parsePython` returns a `module`-root `Tree` for valid py2/py3; invalid UTF-8 → best-effort non-null tree (no throw); byte length > 1 MB → `FILE_TOO_LARGE`; `queryPython` invalid S-expr → `INVALID_QUERY_PATTERN`; `hasLegacyPythonNodes` true for `print_statement`, `exec_statement`, `except E, e`, `<>`, `10L` (`/[Ll]$/`), `0777` (`/^0[0-7]+$/`), and backtick repr (including the `ERROR`-node fallback); false for clean py3.
@@ -100,7 +100,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - [x] 11.2 Implement `src/parser/tree-sitter.ts`
     - `initParser()` lazy singleton (idempotent; resets `initPromise` on failure → `PARSER_INIT_FAILED`); synchronous `parsePython` (throws `PARSER_INIT_FAILED` if called before init, `FILE_TOO_LARGE` over 1 MB); `queryPython` (`INVALID_QUERY_PATTERN`); `hasLegacyPythonNodes` with the 7 legacy indicators and the `ERROR`-node backtick fallback. No side effects at import time.
     - _Requirements: R3.1, R3.2, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8, R21.6_
-  - [~] 11.3 [PBT] Write property tests for the parser — P15
+  - [x] 11.3 [PBT] Write property tests for the parser — P15
     - **Property 15: `hasLegacyPythonNodes` is false for clean Python 3** using `arbPythonSource`.
     - **Validates: Requirements R3.7** / **Properties: P15**
 
@@ -112,7 +112,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - `ParsedDependencySchema`, `ManifestSchema`, `PythonVersionSignalSchema`; `parseAllManifests(snapshot)` (uses `opts.trees`-style pre-parse via `parsePython` internally for setup.py AST, TOML via `smol-toml`, JSON for package.json); `detectPythonVersion(manifests)`.
     - _Requirements: R4.1, R4.2, R4.3, R4.4, R4.5, R4.6, R4.7, R4.8_
 
-- [~] 13. Define the shared `DetectorOpts` and `Detector` types
+- [x] 13. Define the shared `DetectorOpts` and `Detector` types
   - Add `DetectorOpts` (`registryData?`, `osvData?`, `now`, `trees`, `parseErrors`) and the `Detector` function type to the detectors barrel; add `RegistryEntry`/`RegistryData` and `OsvVulnerability`/`OsvData` shapes used by Tower/Devil.
   - _Requirements: R6.6, R7.6, R19.2, R21.2_
 
