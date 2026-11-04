@@ -126,10 +126,33 @@ importers:
       size-limit:
         specifier: ^14.3.0
         version: 14.3.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/sandbox: {}
 
-  packages/ui-crt: {}
+  packages/ui-crt:
+    dependencies:
+      '@necro/oracle':
+        specifier: workspace:*
+        version: link:../oracle
+      react:
+        specifier: ^19
+        version: 19.3.1
+      react-dom:
+        specifier: ^19
+        version: 19.3.1(react@19.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.3.0(@types/react@19.3.0)
+      fast-check:
+        specifier: ^3.23.1
+        version: 3.23.2
 
   packages/voice: {}
 

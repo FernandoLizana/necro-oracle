@@ -40,6 +40,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814987860
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816611157
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816771333
       }
     ],
     "2.2 Implement `src/client.ts` and the `./client` export": [
@@ -47,6 +57,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814987908
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816785941
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816888887
       }
     ],
     "2.3 Write the dist-level guard test first, then wire the size-limit entry": [
@@ -61,6 +81,26 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988000
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816612566
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816775950
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817113122
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817215609
       }
     ],
     "3.2 Implement the schema keys and `EnvValidationError`": [
@@ -68,6 +108,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988061
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816787718
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816892970
       }
     ],
     "4.1 Write the barrel and conformance smoke test first": [
@@ -75,6 +125,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988128
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816613474
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816779682
       }
     ],
     "4.2 Implement package deps, `protocol.ts`, `ports.ts`, and the barrel": [
@@ -82,6 +142,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814988172
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816788776
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817044925
       }
     ],
     "5.1 Write `P1`, `P2`, `P3` and parser examples first": [
@@ -488,6 +558,20 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793816568846
+      }
+    ],
+    "3. `@necro/config` env keys and `EnvValidationError`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793816893046
+      }
+    ],
+    "4. `@necro/ui-crt` package setup and protocol types": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793817044974
       }
     ]
   }

@@ -30,10 +30,10 @@ Conventions that apply to every task:
     - _Requirements: R16.2, R16.6_
 
 - [ ] 2. `@necro/oracle/client` Client_Safe_Entry and import-closure guards
-  - [~] 2.1 Write the source-level import-closure guard test first
+  - [x] 2.1 Write the source-level import-closure guard test first
     - Add `packages/oracle/src/client.guard.test.ts`: walk the static import graph from `src/client.ts` with `ts.preProcessFile`, resolving `.js` to `.ts`. Fail if any reachable file is outside `{ registry/schema, registry/cards, snapshot/types, reading/schema, util/errors }`, has a bare import other than `zod`, imports `node:*`/`web-tree-sitter`/`tree-sitter-python`/`smol-toml`, or contains a dynamic `import(`. Confirm it fails before `client.ts` exists.
     - _Requirements: R16.3, R16.5_
-  - [~] 2.2 Implement `src/client.ts` and the `./client` export
+  - [x] 2.2 Implement `src/client.ts` and the `./client` export
     - Create `packages/oracle/src/client.ts` exporting only schemas, inferred types, `CARD_REGISTRY`, `getCard`, `RepoRefSchema`/`RepoRef`, `SpreadKindSchema`/`ReadingSchema`/`SpreadKind`/`Reading`, and `NecroError`/`NecroErrorCodeSchema`/`NecroErrorCode`.
     - Add the `./client` entry to `packages/oracle/package.json` exports (same shape as `./node`: `types`, `development`, `import`, `default`).
     - _Requirements: R16.3, R16.5_
@@ -42,20 +42,20 @@ Conventions that apply to every task:
     - Add a second `.size-limit.cjs` entry for `dist/client.js` with zod included, limit `25 KB` gzipped.
     - _Requirements: R16.1, R16.5_
 
-- [ ] 3. `@necro/config` env keys and `EnvValidationError`
-  - [~] 3.1 Write `P22` and the config examples first
+- [x] 3. `@necro/config` env keys and `EnvValidationError`
+  - [x] 3.1 Write `P22` and the config examples first
     - Add `packages/config/test/env.pbt.test.ts` for **Property 22 (R13.4): daily ceiling config** — for all candidate `NECRO_DAILY_REQUEST_CEILING` values the schema accepts exactly the positive integers, defaults to 1000 when absent or blank, and rejects `0`, `-3`, `1.5`, `1e3`, `" 7"`, `abc` with a typed error naming the key but not the value.
     - Add examples: existing `env.test.ts` still green; `NECRO_CLIENT_IP_HEADER` default `x-real-ip`; `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` optional presence. Confirm they fail before implementation.
     - _Requirements: R13.4_
-  - [~] 3.2 Implement the schema keys and `EnvValidationError`
+  - [x] 3.2 Implement the schema keys and `EnvValidationError`
     - In `packages/config/src/index.ts` add `NECRO_DAILY_REQUEST_CEILING` (positive safe integer, default 1000), `NECRO_CLIENT_IP_HEADER` (default `x-real-ip`), optional `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, and `EnvValidationError extends Error` with `readonly keys: readonly string[]`, keeping the existing message format so `env.test.ts` still passes.
     - _Requirements: R13.3, R13.4, R13.9_
 
-- [ ] 4. `@necro/ui-crt` package setup and protocol types
-  - [~] 4.1 Write the barrel and conformance smoke test first
+- [x] 4. `@necro/ui-crt` package setup and protocol types
+  - [x] 4.1 Write the barrel and conformance smoke test first
     - Add a smoke test asserting `@necro/oracle/client` resolves under Vitest and that `src/protocol.ts` types (`SummonSummary`, `ReadingResponse`, `ReadingPhase`, `ProgressEvent`, `ApiPort`, `DemoPort`, `DemoBundle`, `PlayableSpread`) are importable from the barrel. Confirm it fails first.
     - _Requirements: R16.3, R16.7_
-  - [~] 4.2 Implement package deps, `protocol.ts`, `ports.ts`, and the barrel
+  - [x] 4.2 Implement package deps, `protocol.ts`, `ports.ts`, and the barrel
     - Update `packages/ui-crt/package.json`: `react`/`react-dom` peer deps, `@necro/oracle` (`workspace:*`), dev `fast-check`; keep `jsx: react-jsx`.
     - Add `src/protocol.ts` (types only, `exactOptionalPropertyTypes`-safe), `src/ports.ts` (`StoragePort`, `MediaPort`, `VisibilityPort`, `FramePort`, `DemoPort`, `SoundLoaderPort`, `SoundEngine`, `TerminalPorts`), and wire `src/index.ts`.
     - _Requirements: R16.3, R16.7_
