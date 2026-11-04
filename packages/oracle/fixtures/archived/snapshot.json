@@ -1,0 +1,26 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "archived",
+    "sha": "e5f60718293a4b5c6d7e8f900112233445566778",
+    "defaultBranch": "master"
+  },
+  "files": {
+    "service.py": "def handle(request):\n    return {\"status\": \"ok\"}\n\n\ndef health():\n    return True\n",
+    "tests/test_service.py": "from service import handle, health\n\n\ndef test_handle():\n    assert handle({}) == {\"status\": \"ok\"}\n\n\ndef test_health():\n    assert health() is True\n",
+    "pytest.ini": "[pytest]\n",
+    "LICENSE": "MIT License\n\nCopyright (c) 2015\n\nPermission is hereby granted, free of charge, to any person obtaining a copy.\n",
+    ".github/workflows/ci.yml": "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pytest\n",
+    "README.md": "# archived\n\nAn archived Python 3 service, frozen in time.\n\n## Usage\n\nThis project is archived and no longer maintained. The README is kept long enough to exceed two hundred bytes so documentation is not the distinguishing signal; the point of this fixture is the archived repository flag and the ancient last push.\n"
+  },
+  "meta": {
+    "pushedAt": "2015-01-01T00:00:00.000Z",
+    "isArchived": true,
+    "openIssueCount": 7,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": null,
+    "licenseKey": "MIT"
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

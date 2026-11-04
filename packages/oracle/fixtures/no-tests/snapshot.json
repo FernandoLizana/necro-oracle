@@ -1,0 +1,24 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "no-tests",
+    "sha": "c3d4e5f60718293a4b5c6d7e8f90011223344556",
+    "defaultBranch": "main"
+  },
+  "files": {
+    "calc.py": "def add(a, b):\n    return a + b\n\n\ndef subtract(a, b):\n    return a - b\n\n\ndef multiply(a, b):\n    return a * b\n",
+    "requirements.txt": "requests>=2.31\n",
+    "LICENSE": "MIT License\n\nCopyright (c) 2024\n\nPermission is hereby granted, free of charge, to any person obtaining a copy.\n",
+    "README.md": "# no-tests\n\nA small Python 3 library for arithmetic.\n\n## Installation\n\npip install no-tests\n\n## Usage\n\nImport the functions and call them. This README is intentionally long enough to comfortably exceed two hundred bytes so the Star does not reward documentation here beyond what we intend for this fixture scenario.\n"
+  },
+  "meta": {
+    "pushedAt": "2026-10-01T00:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 0,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": null,
+    "licenseKey": "MIT"
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

@@ -1,0 +1,26 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "no-license",
+    "sha": "d4e5f60718293a4b5c6d7e8f9001122334455667",
+    "defaultBranch": "main"
+  },
+  "files": {
+    "lib.py": "def greet(name):\n    return \"hello, \" + name\n\n\ndef farewell(name):\n    return \"goodbye, \" + name\n",
+    "tests/test_lib.py": "from lib import greet, farewell\n\n\ndef test_greet():\n    assert greet(\"world\") == \"hello, world\"\n\n\ndef test_farewell():\n    assert farewell(\"world\") == \"goodbye, world\"\n",
+    "pytest.ini": "[pytest]\n",
+    "requirements.txt": "pytest>=7.0\n",
+    ".github/workflows/ci.yml": "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pytest\n",
+    "README.md": "# no-license\n\nA Python 3 library with tests and CI but no license.\n\n## Usage\n\nImport and call the functions. This README is deliberately written to be longer than two hundred bytes so the documentation strength factor is satisfied for this fixture, isolating the missing-license signal as the point of interest.\n"
+  },
+  "meta": {
+    "pushedAt": "2026-10-15T00:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 0,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": null,
+    "licenseKey": "NOASSERTION"
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

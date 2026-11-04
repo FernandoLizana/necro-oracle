@@ -1,0 +1,169 @@
+{
+  "createdAt": "2026-11-03T12:00:00.000Z",
+  "draws": [
+    {
+      "card": "judgement",
+      "evidence": [
+        {
+          "detail": "Python 2 print statement in app.py",
+          "kind": "print_statement",
+          "line": 5,
+          "path": "app.py",
+          "source": "static"
+        }
+      ],
+      "grimoires": [
+        "py2to3",
+        "pyproject"
+      ],
+      "orientation": "reversed",
+      "severity": 1,
+      "summary": "The runtime straddles two worlds: Python 2 syntax lingers beside six / __future__ shims. A migration has begun but is not yet complete."
+    },
+    {
+      "card": "wheel",
+      "evidence": [
+        {
+          "detail": "0 test files found; the deck shows no tests at all.",
+          "kind": "test-coverage",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No test files found."
+    },
+    {
+      "card": "hermit",
+      "evidence": [
+        {
+          "detail": "The README is only 66 bytes; a short, small scroll under 200 bytes cannot guide the living.",
+          "kind": "readme-too-short",
+          "path": "README.md",
+          "source": "static"
+        },
+        {
+          "detail": "The README names no keyword among install / usage / getting started / quickstart; the reader is left without a path.",
+          "kind": "readme-missing-keyword",
+          "path": "README.md",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "reversed",
+      "severity": 1,
+      "summary": "The Hermit's lantern burns low: the README is present but thin, offering too little light for a newcomer to find their way."
+    },
+    {
+      "card": "temperance",
+      "evidence": [
+        {
+          "detail": "no CI configuration detected",
+          "kind": "no-ci-found",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+    },
+    {
+      "card": "justice",
+      "evidence": [
+        {
+          "detail": "observed SPDX key: null",
+          "kind": "spdx-key",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No law governs this code. The observed license key is absent (null), so the repository has no clear, usable license."
+    }
+  ],
+  "engineVersion": "0.0.0",
+  "errors": [],
+  "repo": {
+    "defaultBranch": "main",
+    "name": "straddling",
+    "owner": "graveyard",
+    "sha": "b2c3d4e5f60718293a4b5c6d7e8f900112233445"
+  },
+  "spread": [
+    {
+      "draw": {
+        "card": "wheel",
+        "evidence": [
+          {
+            "detail": "0 test files found; the deck shows no tests at all.",
+            "kind": "test-coverage",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "No test files found."
+      },
+      "label": "The Corpse",
+      "position": 1
+    },
+    {
+      "draw": {
+        "card": "judgement",
+        "evidence": [
+          {
+            "detail": "Python 2 print statement in app.py",
+            "kind": "print_statement",
+            "line": 5,
+            "path": "app.py",
+            "source": "static"
+          }
+        ],
+        "grimoires": [
+          "py2to3",
+          "pyproject"
+        ],
+        "orientation": "reversed",
+        "severity": 1,
+        "summary": "The runtime straddles two worlds: Python 2 syntax lingers beside six / __future__ shims. A migration has begun but is not yet complete."
+      },
+      "label": "The Wound",
+      "position": 2
+    },
+    {
+      "draw": {
+        "card": "temperance",
+        "evidence": [
+          {
+            "detail": "no CI configuration detected",
+            "kind": "no-ci-found",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+      },
+      "label": "The Shadow",
+      "position": 3
+    },
+    {
+      "description": "This position holds no card — the void is a sign.",
+      "draw": null,
+      "label": "The Hope",
+      "position": 4
+    },
+    {
+      "description": "no ritual can be performed — here is why",
+      "draw": null,
+      "label": "The Call",
+      "position": 5
+    }
+  ],
+  "vitality": 25
+}

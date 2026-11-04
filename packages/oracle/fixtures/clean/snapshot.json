@@ -1,0 +1,27 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "clean",
+    "sha": "f60718293a4b5c6d7e8f90011223344556677889",
+    "defaultBranch": "main"
+  },
+  "files": {
+    "app.py": "\"\"\"Application entrypoint.\"\"\"\n\nimport widget\nimport tests.test_widget\n\n\ndef main():\n    \"\"\"Run the application.\"\"\"\n    return widget.describe(widget.build(\"demo\"))\n",
+    "widget.py": "\"\"\"A small, healthy module.\"\"\"\n\n\ndef build(name):\n    \"\"\"Build a widget with the given name.\"\"\"\n    return {\"name\": name}\n\n\ndef describe(widget):\n    \"\"\"Return a human-readable description of a widget.\"\"\"\n    return \"widget: \" + widget[\"name\"]\n",
+    "tests/test_widget.py": "\"\"\"Tests for the widget module.\"\"\"\n\nimport widget\n\n\ndef test_build():\n    \"\"\"build returns a dict with the name.\"\"\"\n    assert widget.build(\"a\") == {\"name\": \"a\"}\n\n\ndef test_describe():\n    \"\"\"describe renders a widget.\"\"\"\n    assert widget.describe({\"name\": \"a\"}) == \"widget: a\"\n",
+    "pyproject.toml": "[project]\nname = \"clean\"\nversion = \"1.0.0\"\nrequires-python = \">=3.10\"\ndependencies = [\"requests>=2.31\"]\n\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+    "LICENSE": "MIT License\n\nCopyright (c) 2026\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.\n",
+    ".github/workflows/ci.yml": "name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pytest\n",
+    "README.md": "# clean\n\nA healthy, modern Python 3 project.\n\n## Installation\n\npip install clean\n\n## Usage\n\nImport the functions from widget and call them. This README deliberately exceeds two hundred bytes, documents installation and usage, and sits beside tests, CI, a license and a recent push so that the Star rises upright while every diagnostic card stays silent.\n"
+  },
+  "meta": {
+    "pushedAt": "2026-10-20T00:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 0,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": "2026-10-01T00:00:00.000Z",
+    "licenseKey": "MIT"
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

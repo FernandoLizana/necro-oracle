@@ -1,0 +1,23 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "straddling",
+    "sha": "b2c3d4e5f60718293a4b5c6d7e8f900112233445",
+    "defaultBranch": "main"
+  },
+  "files": {
+    "app.py": "from __future__ import print_function\nimport six\n\ndef main():\n    print 'still has a py2 print statement'\n    if six.PY2:\n        pass\n\nmain()\n",
+    "requirements.txt": "six>=1.11\nrequests>=2.20\n",
+    "README.md": "# straddling\n\nA project midway through a Python 2 to 3 migration.\n"
+  },
+  "meta": {
+    "pushedAt": "2021-03-01T00:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 0,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": null,
+    "licenseKey": null
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

@@ -1,0 +1,23 @@
+{
+  "ref": {
+    "owner": "graveyard",
+    "name": "py2-only",
+    "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9001122334",
+    "defaultBranch": "master"
+  },
+  "files": {
+    "app.py": "import os\n\ndef main():\n    print 'hello from python 2'\n    exec 'x = 1'\n    try:\n        run()\n    except Exception, e:\n        print e\n\nmain()\n",
+    "setup.py": "from setuptools import setup\n\nsetup(\n    name='py2only',\n    version='0.1.0',\n    install_requires=['requests'],\n    classifiers=[\n        'Programming Language :: Python :: 2',\n        'Programming Language :: Python :: 2.7',\n    ],\n)\n",
+    "README.md": "# py2only\n\nAn abandoned Python 2 package.\n"
+  },
+  "meta": {
+    "pushedAt": "2016-05-01T00:00:00.000Z",
+    "isArchived": false,
+    "openIssueCount": 0,
+    "openPRCount": 0,
+    "oldestOpenPRAgeDays": null,
+    "latestReleaseAt": null,
+    "licenseKey": null
+  },
+  "createdAt": "2026-11-03T12:00:00.000Z"
+}

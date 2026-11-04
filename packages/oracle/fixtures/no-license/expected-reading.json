@@ -1,0 +1,166 @@
+{
+  "createdAt": "2026-11-03T12:00:00.000Z",
+  "draws": [
+    {
+      "card": "death",
+      "evidence": [
+        {
+          "detail": "Module tests/test_lib.py is never imported by any other file and is not an entrypoint.",
+          "kind": "unreachable_module",
+          "path": "tests/test_lib.py",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+    },
+    {
+      "card": "justice",
+      "evidence": [
+        {
+          "detail": "observed SPDX key: NOASSERTION",
+          "kind": "spdx-key",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No law governs this code. The observed license key is 'NOASSERTION', so the repository has no clear, usable license."
+    },
+    {
+      "card": "star",
+      "evidence": [
+        {
+          "detail": "license: contributed=false; observed licenseKey=NOASSERTION",
+          "kind": "strength:license",
+          "source": "static"
+        },
+        {
+          "detail": "tests: contributed=true; observed test file count=1",
+          "kind": "strength:tests",
+          "source": "static"
+        },
+        {
+          "detail": "ci: contributed=true; observed CI config count=1",
+          "kind": "strength:ci",
+          "source": "static"
+        },
+        {
+          "detail": "readme: contributed=true; observed README byte length=312",
+          "kind": "strength:readme",
+          "source": "static"
+        },
+        {
+          "detail": "recent push: contributed=true; observed pushedAt=2026-10-15T00:00:00.000Z",
+          "kind": "strength:push",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "The Star rises: 4 of five strengths endure in this repository."
+    }
+  ],
+  "engineVersion": "0.0.0",
+  "errors": [],
+  "repo": {
+    "defaultBranch": "main",
+    "name": "no-license",
+    "owner": "graveyard",
+    "sha": "d4e5f60718293a4b5c6d7e8f9001122334455667"
+  },
+  "spread": [
+    {
+      "draw": {
+        "card": "death",
+        "evidence": [
+          {
+            "detail": "Module tests/test_lib.py is never imported by any other file and is not an entrypoint.",
+            "kind": "unreachable_module",
+            "path": "tests/test_lib.py",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+      },
+      "label": "The Corpse",
+      "position": 1
+    },
+    {
+      "draw": {
+        "card": "justice",
+        "evidence": [
+          {
+            "detail": "observed SPDX key: NOASSERTION",
+            "kind": "spdx-key",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "No law governs this code. The observed license key is 'NOASSERTION', so the repository has no clear, usable license."
+      },
+      "label": "The Wound",
+      "position": 2
+    },
+    {
+      "description": "This position holds no card — the void is a sign.",
+      "draw": null,
+      "label": "The Shadow",
+      "position": 3
+    },
+    {
+      "draw": {
+        "card": "star",
+        "evidence": [
+          {
+            "detail": "license: contributed=false; observed licenseKey=NOASSERTION",
+            "kind": "strength:license",
+            "source": "static"
+          },
+          {
+            "detail": "tests: contributed=true; observed test file count=1",
+            "kind": "strength:tests",
+            "source": "static"
+          },
+          {
+            "detail": "ci: contributed=true; observed CI config count=1",
+            "kind": "strength:ci",
+            "source": "static"
+          },
+          {
+            "detail": "readme: contributed=true; observed README byte length=312",
+            "kind": "strength:readme",
+            "source": "static"
+          },
+          {
+            "detail": "recent push: contributed=true; observed pushedAt=2026-10-15T00:00:00.000Z",
+            "kind": "strength:push",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "The Star rises: 4 of five strengths endure in this repository."
+      },
+      "label": "The Hope",
+      "position": 4
+    },
+    {
+      "description": "no ritual can be performed — here is why",
+      "draw": null,
+      "label": "The Call",
+      "position": 5
+    }
+  ],
+  "vitality": 68
+}

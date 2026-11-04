@@ -1,0 +1,112 @@
+{
+  "createdAt": "2026-11-03T12:00:00.000Z",
+  "draws": [
+    {
+      "card": "star",
+      "evidence": [
+        {
+          "detail": "license: contributed=true; observed licenseKey=MIT",
+          "kind": "strength:license",
+          "source": "static"
+        },
+        {
+          "detail": "tests: contributed=true; observed test file count=1",
+          "kind": "strength:tests",
+          "source": "static"
+        },
+        {
+          "detail": "ci: contributed=true; observed CI config count=1",
+          "kind": "strength:ci",
+          "source": "static"
+        },
+        {
+          "detail": "readme: contributed=true; observed README byte length=354",
+          "kind": "strength:readme",
+          "source": "static"
+        },
+        {
+          "detail": "recent push: contributed=true; observed pushedAt=2026-10-20T00:00:00.000Z",
+          "kind": "strength:push",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "The Star rises: 5 of five strengths endure in this repository."
+    }
+  ],
+  "engineVersion": "0.0.0",
+  "errors": [],
+  "repo": {
+    "defaultBranch": "main",
+    "name": "clean",
+    "owner": "graveyard",
+    "sha": "f60718293a4b5c6d7e8f90011223344556677889"
+  },
+  "spread": [
+    {
+      "description": "This position holds no card — the void is a sign.",
+      "draw": null,
+      "label": "The Corpse",
+      "position": 1
+    },
+    {
+      "description": "This position holds no card — the void is a sign.",
+      "draw": null,
+      "label": "The Wound",
+      "position": 2
+    },
+    {
+      "description": "This position holds no card — the void is a sign.",
+      "draw": null,
+      "label": "The Shadow",
+      "position": 3
+    },
+    {
+      "draw": {
+        "card": "star",
+        "evidence": [
+          {
+            "detail": "license: contributed=true; observed licenseKey=MIT",
+            "kind": "strength:license",
+            "source": "static"
+          },
+          {
+            "detail": "tests: contributed=true; observed test file count=1",
+            "kind": "strength:tests",
+            "source": "static"
+          },
+          {
+            "detail": "ci: contributed=true; observed CI config count=1",
+            "kind": "strength:ci",
+            "source": "static"
+          },
+          {
+            "detail": "readme: contributed=true; observed README byte length=354",
+            "kind": "strength:readme",
+            "source": "static"
+          },
+          {
+            "detail": "recent push: contributed=true; observed pushedAt=2026-10-20T00:00:00.000Z",
+            "kind": "strength:push",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "The Star rises: 5 of five strengths endure in this repository."
+      },
+      "label": "The Hope",
+      "position": 4
+    },
+    {
+      "description": "no ritual can be performed — here is why",
+      "draw": null,
+      "label": "The Call",
+      "position": 5
+    }
+  ],
+  "vitality": 100
+}

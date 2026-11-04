@@ -1,0 +1,192 @@
+{
+  "createdAt": "2026-11-03T12:00:00.000Z",
+  "draws": [
+    {
+      "card": "death",
+      "evidence": [
+        {
+          "detail": "Module calc.py is never imported by any other file and is not an entrypoint.",
+          "kind": "unreachable_module",
+          "path": "calc.py",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+    },
+    {
+      "card": "wheel",
+      "evidence": [
+        {
+          "detail": "0 test files found; the deck shows no tests at all.",
+          "kind": "test-coverage",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No test files found."
+    },
+    {
+      "card": "temperance",
+      "evidence": [
+        {
+          "detail": "no CI configuration detected",
+          "kind": "no-ci-found",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+    },
+    {
+      "card": "star",
+      "evidence": [
+        {
+          "detail": "license: contributed=true; observed licenseKey=MIT",
+          "kind": "strength:license",
+          "source": "static"
+        },
+        {
+          "detail": "tests: contributed=false; observed test file count=0",
+          "kind": "strength:tests",
+          "source": "static"
+        },
+        {
+          "detail": "ci: contributed=false; observed CI config count=0",
+          "kind": "strength:ci",
+          "source": "static"
+        },
+        {
+          "detail": "readme: contributed=true; observed README byte length=316",
+          "kind": "strength:readme",
+          "source": "static"
+        },
+        {
+          "detail": "recent push: contributed=true; observed pushedAt=2026-10-01T00:00:00.000Z",
+          "kind": "strength:push",
+          "source": "static"
+        }
+      ],
+      "grimoires": [],
+      "orientation": "upright",
+      "severity": 2,
+      "summary": "The Star rises: 3 of five strengths endure in this repository."
+    }
+  ],
+  "engineVersion": "0.0.0",
+  "errors": [],
+  "repo": {
+    "defaultBranch": "main",
+    "name": "no-tests",
+    "owner": "graveyard",
+    "sha": "c3d4e5f60718293a4b5c6d7e8f90011223344556"
+  },
+  "spread": [
+    {
+      "draw": {
+        "card": "wheel",
+        "evidence": [
+          {
+            "detail": "0 test files found; the deck shows no tests at all.",
+            "kind": "test-coverage",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "No test files found."
+      },
+      "label": "The Corpse",
+      "position": 1
+    },
+    {
+      "draw": {
+        "card": "death",
+        "evidence": [
+          {
+            "detail": "Module calc.py is never imported by any other file and is not an entrypoint.",
+            "kind": "unreachable_module",
+            "path": "calc.py",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
+      },
+      "label": "The Wound",
+      "position": 2
+    },
+    {
+      "draw": {
+        "card": "temperance",
+        "evidence": [
+          {
+            "detail": "no CI configuration detected",
+            "kind": "no-ci-found",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
+      },
+      "label": "The Shadow",
+      "position": 3
+    },
+    {
+      "draw": {
+        "card": "star",
+        "evidence": [
+          {
+            "detail": "license: contributed=true; observed licenseKey=MIT",
+            "kind": "strength:license",
+            "source": "static"
+          },
+          {
+            "detail": "tests: contributed=false; observed test file count=0",
+            "kind": "strength:tests",
+            "source": "static"
+          },
+          {
+            "detail": "ci: contributed=false; observed CI config count=0",
+            "kind": "strength:ci",
+            "source": "static"
+          },
+          {
+            "detail": "readme: contributed=true; observed README byte length=316",
+            "kind": "strength:readme",
+            "source": "static"
+          },
+          {
+            "detail": "recent push: contributed=true; observed pushedAt=2026-10-01T00:00:00.000Z",
+            "kind": "strength:push",
+            "source": "static"
+          }
+        ],
+        "grimoires": [],
+        "orientation": "upright",
+        "severity": 2,
+        "summary": "The Star rises: 3 of five strengths endure in this repository."
+      },
+      "label": "The Hope",
+      "position": 4
+    },
+    {
+      "description": "no ritual can be performed — here is why",
+      "draw": null,
+      "label": "The Call",
+      "position": 5
+    }
+  ],
+  "vitality": 42
+}

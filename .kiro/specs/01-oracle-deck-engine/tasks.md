@@ -249,13 +249,13 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Re-export all public types, schemas, registry, parser, builders (file-map only), manifest fns, the 11 detectors, `computeWorldDraw`, `assignSpread`, vitality fns, `runReading`, `maskSecret`, `NecroError`; confirm no `fs` import reaches the main entry and `src/node.ts` re-exports only `buildSnapshotFromDirectory`.
   - _Requirements: R2.3, R21.3_
 
-- [~] 32. Configure the package build to emit `dist/index.js` and `dist/node.js`
+- [x] 32. Configure the package build to emit `dist/index.js` and `dist/node.js`
   - Configure `packages/oracle` so `pnpm --filter @necro/oracle build` (tsc, per the existing `build` script) emits `dist/index.js` and `dist/node.js` along with their `.d.ts` declaration files; ensure `tsconfig.json` `outDir`/`declaration` produce both entry outputs.
   - Update `package.json` `exports` so production consumers resolve the built `dist` outputs while dev continues to use `src`: set `types` and `import` conditions for both the `"."` subpath (`dist/index.js` + `dist/index.d.ts`) and the `"./node"` subpath (`dist/node.js` + `dist/node.d.ts`); document the `development`/`default` condition split so `src` remains the dev entry.
   - Confirm `pnpm --filter @necro/oracle build` produces `dist/index.js`, `dist/node.js`, and their declarations, and that the main `"."` entry stays `fs`-free.
   - _Requirements: R21.3, R21.4, R21.7_
 
-- [~] 33. [PBT] Write the `runReading` orchestrator property tests — P1, P2, P3
+- [x] 33. [PBT] Write the `runReading` orchestrator property tests — P1, P2, P3
   - **Property 1: Determinism** — same snapshot + opts (fixed `now`) → identical `Reading`.
   - **Property 2: Detector never throws** — all errors captured in `Reading.errors`.
   - **Property 3: Evidence paths exist** — every `Evidence.path` is a key in `snapshot.contents`.
@@ -263,7 +263,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - **Validates: Requirements R17.8, R19.1, R19.4, R21.8, R2.1, R5.4, R20.2, R20.3** / **Properties: P1, P2, P3, P8**
 
 - [ ] 34. Create golden fixtures and the golden test runner
-  - [~] 34.1 Author fixture snapshots and expected readings
+  - [x] 34.1 Author fixture snapshots and expected readings
     - Create under `packages/oracle/fixtures/`: `py2-only`, `straddling`, `no-tests`, `no-license`, `archived`, `clean`, `secrets`, each with `snapshot.json` (file map + `RepoRef` + `RepoMeta` + `createdAt`) and `expected-reading.json`.
     - _Requirements: R5.2, R5.3, R7.4, R9.2, R11.2, R13.3, R15.2_
   - [~] 34.2 Implement the golden test runner
@@ -275,7 +275,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Add `@size-limit/preset-small-lib` dev dep and a `size-limit` config (`dist/index.js`, 50 KB gzipped) plus a `pnpm size` script; exempt `dist/node.js`; document that the tree-sitter WASM file is loaded separately and excluded.
   - _Requirements: R21.3, R21.7_
 
-- [~] 36. Add the performance check
+- [x] 36. Add the performance check
   - Add a test/script that builds a ≤ 500-file snapshot with pre-fetched (injected) `registryData`/`osvData` and asserts `runReading` completes within 5000 ms p50; assert zero outbound network calls occur (R21.2) and no secrets are required.
   - _Requirements: R21.1, R21.2_
 
