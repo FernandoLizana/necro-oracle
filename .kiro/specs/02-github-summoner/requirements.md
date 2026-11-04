@@ -370,7 +370,7 @@ property id and covered requirements.
   responses on the repository metadata, commit/ref resolution, or tarball
   requests the summon still raises `UPSTREAM_UNAVAILABLE`.
 
-- **P19 — Degraded-entry TTL (R8.2, R8.3, R8.11, R8.12, R8.13, R8.14):** For
+- **P34 — Degraded-entry TTL (R8.2, R8.3, R8.11, R8.12, R8.13, R8.14):** For
   all stored results, all configured TTL values of at least 1 ms, and all
   ClockPort instants, an entry whose Degraded_Fields list is non-empty is fresh
   if and only if its age is strictly less than `min(configured TTL, 600,000 ms)`

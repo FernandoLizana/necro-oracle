@@ -6,9 +6,9 @@
       "trigger": "PostTaskExec",
       "action": {
         "type": "agent",
-        "prompt": "Run pnpm --filter @necro/oracle typecheck and test. If both pass, git add the changed files (never .env or secrets) and commit with the message \"Spec 01 task <number>: <task title>\". Do not push. If anything fails, do not commit; fix it first."
+        "prompt": "Run pnpm -r typecheck and pnpm -r test (checks every package). If both pass, git add the changed files (never .env or secrets) and commit with the message \"Spec 02 task <number>: <task title>\". Do not push. If anything fails, do not commit; fix it first."
       },
-      "description": "Typecheck, test and commit after each spec task",
+      "description": "Typecheck and test every package (pnpm -r), then commit after each spec task",
       "enabled": true
     }
   ]

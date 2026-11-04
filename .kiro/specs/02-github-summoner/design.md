@@ -211,7 +211,7 @@ To carry machine-readable context (wait minutes, HTTP status) without changing `
 The tarball request has its own, separate redirect rule (token path: one redirect to `https://codeload.github.com`, no auth; no-token path: none expected, any redirect refused). That rule is in "GitHub client".
 
 **D3. Gzip uses web streams; tar decoding uses `tar-stream@3.2.2`; caps are ours.**
-`tar-stream` is the single tar library: mature, pure JavaScript, zero native code, and its `extract()` stream hands us entries one at a time with `{ header, body }` semantics. The pipeline is `body → compressed guard → DecompressionStream("gzip") → uncompressed guard → Readable.fromWeb → tar.extract()`. Byte-counting `TransformStream` guards sit before and after the decompressor, so a decompression bomb is stopped by our code regardless of how the tar library buffers. Details of the bridge, entry consumption, and cancellation are in "Tarball extraction". Version check (`pnpm view tar-stream versions --json`): the latest 3.x is `3.2.2`, so it is pinned exactly.
+`tar-stream` is the single tar library: mature, pure JavaScript, zero native code, and its `extract()` stream hands us entries one at a time. The extractor consumes it through the **event form** `extract.on("entry", (header, stream, next) => ...)` with an explicit `next()`, not through the async-iterator form. The task 1 spike on `tar-stream@3.2.2` found that `for await (const entry of extract)` does not block on an unconsumed entry: its `next()` auto-drains and discards the previous entry, so sequential delivery and the "every skipped entry is drained by us" discipline would no longer be ours to guarantee. Only the event form blocks until `next()` is called after the body is consumed (`stream.resume()` to drain). The same spike confirmed that pax global (`g`) and extended (`x`) headers and GNU long names resolve into `header.name` and never surface as entries, and that destroying the extract stream and the `Readable.fromWeb` bridge cancels the upstream reader and stops pulling (a guard error placed before the bridge does the same). The pipeline is `body → compressed guard → DecompressionStream("gzip") → uncompressed guard → Readable.fromWeb → tar.extract()`. Byte-counting `TransformStream` guards sit before and after the decompressor, upstream of `tar-stream`, so a decompression bomb is stopped by our code regardless of how the tar library buffers or discards, and every byte of a skipped entry is counted toward the compressed, uncompressed, and entry-count caps. Details of the bridge, entry consumption, and cancellation are in "Tarball extraction". Version check (`pnpm view tar-stream versions --json`): the latest 3.x is `3.2.2`, so it is pinned exactly. Spike finding (task 21): destroying `extract` with an error also makes the in-flight entry stream emit `error`, so every entry handler must attach `stream.on("error", ...)` first (see "Tarball extraction").
 
 **D4. Oversize text files are represented by one shared sentinel string.**
 `buildSnapshotFromFileMap` is the only place the 1 MB cap lives (R3.8), but it measures strings it is handed. Holding up to 200 MB of text just so the builder can measure and discard it would waste memory. When an entry's declared size exceeds 1 MiB and its first 8000 bytes are text, the extractor passes a single module-level string of 1 MiB + 1 bytes under that path. The builder then records the path in `oversizeFiles` exactly as it would for the real content, and the retained file map stays small. The sentinel never reaches `snapshot.contents` because the builder drops oversize files.
@@ -629,13 +629,47 @@ export function extractTarball(
 1. Build the guarded web pipeline: `body.pipeThrough(compressedGuard).pipeThrough(new DecompressionStream("gzip")).pipeThrough(uncompressedGuard)`.
 2. `const source = Readable.fromWeb(guarded)` (Node 22; the type is cast from the global `ReadableStream` to `node:stream/web`'s `ReadableStream` at this one call site).
 3. `const extract = tar.extract()` and `source.pipe(extract)`. Errors on `source` (including the guards' `DOWNLOAD_TOO_LARGE`) are forwarded with `source.on("error", e => extract.destroy(e))`, so the consumer sees one failure.
-4. Consume entries with `for await (const entry of extract)`. `entry.header` carries `name`, `size`, `type`; the entry object is itself the body stream.
-5. Corrupt gzip or tar framing surfaces as an error from `DecompressionStream` or `extract`; it is mapped to `VALIDATION_FAILED` unless it is already one of our `SummonerError`s (the guards throw those, and they win over the secondary stream-destroy error).
+4. Consume entries with the event form `extract.on("entry", (header, stream, next) => { ... })`. `header` carries `name`, `size`, `type`; `stream` is the entry body. The iterator form `for await (const entry of extract)` is **not used**: per the spike it auto-drains the previous entry on `next()` instead of blocking (see D3).
+5. The extraction settles through a single promise: it resolves on `extract` `'finish'` and rejects on the first error. Corrupt gzip or tar framing surfaces as an error from `DecompressionStream` or `extract`; it is mapped to `VALIDATION_FAILED` unless it is already one of our `SummonerError`s. The guards throw those, and the first guard error wins: once the promise is settled, later secondary errors from stream destruction are ignored.
 
-**One entry at a time.** `tar-stream` does not emit the next entry until the current entry stream has been fully consumed, so processing is sequential by construction and memory stays bounded by one text file plus the retained file map. Every entry must be consumed:
+Pseudo-code of the loop (not source code; names indicative):
 
-- *Read a prefix, then drain.* To sniff, read the first `BINARY_SNIFF_BYTES` from the entry's async iterator. Skipping an entry (traversal, link, special, vendored, binary, oversize) calls `entry.resume()` and awaits its `end`. Unlike a cancellable web body, the bytes of a skipped entry are discarded but still flow through the guards, so a hostile archive cannot hide bulk in skipped entries (this is why the early declared-size check matters for oversize files: a declared size beyond the remaining budget fails immediately).
-- *Cancellation.* On any failure or when the caller aborts, the extractor `destroy`s `extract` and `source` (which cancels the underlying web reader and so the HTTP body) and rethrows. The pipeline never keeps reading after a cap error: the guard errors first, and nothing after the failure point is consumed or retained.
+```
+extractTarball(body, limits):
+  return new Promise((resolve, reject) =>
+    settled = false
+    fail(err): if settled return; settled = true
+               extract.destroy(err); source.destroy(err)   // cancels the Readable.fromWeb bridge and the upstream reader
+               reject(err)                                  // guard error recorded first wins over secondary destroy errors
+    source.on("error", fail); extract.on("error", e => fail(mapCorrupt(e)))
+    extract.on("finish", () => if !settled: settled = true; resolve(tree))
+    extract.on("entry", (header, stream, next) =>
+      stream.on("error", fail)                             // FIRST statement, before any read or drain (spike finding)
+      count += 1; if count > limits.maxEntries: return fail(DOWNLOAD_TOO_LARGE)
+      path = normalizeEntryPath(header.name)
+      if path is traversal | header.type in {symlink, link} | special type | vendored:
+          skip(stream, next)                               // stream.resume(); next() on 'end'
+      else if directory / root: record hasWorkflowsDir; skip(stream, next)
+      else:
+          read first BINARY_SNIFF_BYTES; if NUL: skip(stream, next)           // binary
+          else if header.size > TEXT_FILE_CEILING_BYTES: store sentinel; skip(stream, next)   // oversize
+          else: read rest, decode, store text; next()                          // kept
+    )
+    source.pipe(extract))
+```
+
+The settle-once flag is the whole error-handling story: every failure path calls `fail`, which destroys `extract` and `source` and rejects once.
+
+**Entry streams need their own error listener (spike finding).** When `extract` is destroyed with an error (for example a byte-count guard trip), the entry stream currently in flight also emits `error`; with no listener that is an uncaught exception (Vitest reports it as an unhandled error). Every entry handler therefore attaches `stream.on("error", ...)` immediately, before reading or draining, routing into `fail`; secondary errors after the first are ignored by the settle-once flag.
+
+**One entry at a time, explicit `next()`.** In the event form, `tar-stream` does not emit the next `entry` event until `next()` is called, and each handler calls it only after the body is consumed, so processing is sequential by construction and memory stays bounded by one text file plus the retained file map. Each entry handler does exactly one of:
+
+- *Keep (text file).* Read the body, decode, store, then call `next()`.
+- *Skip (traversal, link, special, vendored, binary after sniff, oversize sentinel).* Drain the body with `stream.resume()`, then call `next()` once the body has ended. To sniff, the handler reads the first `BINARY_SNIFF_BYTES`, then either continues reading (text) or drains the rest (binary or oversize).
+
+**Guards sit upstream of `tar-stream` (P11, R3.10, R3.11).** The compressed guard, the decompressor, and the uncompressed guard all run before bytes reach `tar-stream`, and the entry-count check runs in the handler before any skip or keep decision. Therefore every byte of a skipped entry is counted toward the compressed, uncompressed, and entry-count caps regardless of how `tar-stream` discards it, so a hostile archive cannot hide bulk in skipped entries. A dedicated test (task 21.1, and the P11 property in 21.4) builds an archive whose bulk sits entirely in skipped entries (traversal, symlink payload, vendored, binary, oversize) and asserts the caps fire. The early declared-size check still fails immediately when an entry's declared size exceeds the remaining uncompressed budget.
+
+- *Cancellation and failure.* Errors and cap violations call `extract.destroy(err)` and destroy `source`, which cancels the `Readable.fromWeb` bridge and so the upstream reader and HTTP body, then reject the single settle-once promise. The first error wins: a guard error beats the secondary errors that stream destruction emits afterward. The pipeline never keeps reading after a cap error, and nothing after the failure point is consumed or retained.
 - *Sentinel (D4).* For an entry whose declared size exceeds 1 MiB and whose sniffed prefix is text, the extractor drains the rest and stores the shared oversize sentinel. The content is not accumulated.
 
 **Per-entry rules** applied in this order to each decoded entry (header + body stream):
@@ -646,14 +680,14 @@ export function extractTarball(
    - drop empty and `.` segments;
    - drop the first segment (the `<owner>-<repo>-<sha>/` prefix, R3.13);
    - a result with no remaining segments (the root directory entry) is skipped silently.
-3. Entry type (`header.type` strings from `tar-stream`: `file`, `link`, `symlink`, `directory`, `block-device`, `character-device`, `fifo`, `contiguous-file`): only `file` is a candidate. `symlink` and `link` are skipped (R3.4); devices, FIFOs, `contiguous-file`, and other types are skipped as *special*. `directory` entries contribute only to `hasWorkflowsDir`. Every skipped entry is drained (see above).
+3. Entry type (`header.type` strings from `tar-stream`: `file`, `link`, `symlink`, `directory`, `block-device`, `character-device`, `fifo`, `contiguous-file`): only `file` is a candidate. `symlink` and `link` are skipped (R3.4); devices, FIFOs, `contiguous-file`, and other types are skipped as *special*. `directory` entries contribute only to `hasWorkflowsDir`. Every skipped entry is drained with `stream.resume()` before `next()` (see above).
 4. Vendored: any segment in `VENDORED_SEGMENTS` (`node_modules`, `.git`, `vendor`, `third_party`, `bower_components`, `site-packages`; list final, Q8) → skip (R3.5).
 5. `hasWorkflowsDir` becomes true if the normalized path's first two segments are `.github`, `workflows` (file or directory entry, checked before the binary and size filters).
 6. Read the first `BINARY_SNIFF_BYTES` of the body. A NUL byte means *binary*: drain the body and skip (R3.6).
 7. If the declared size exceeds `TEXT_FILE_CEILING_BYTES`: drain the body and store the oversize sentinel (D4).
 8. Otherwise read the rest, decode as UTF-8 with `TextDecoder("utf-8", { fatal: false, ignoreBOM: true })` (BOM preserved), and store. A repeated path overwrites the earlier one, as `tar -x` would.
 
-Entries are processed strictly one at a time (`tar-stream` does not advance until each entry stream is consumed), which keeps memory bounded by one text file plus the retained file map.
+Entries are processed strictly one at a time (the event form does not advance until the handler calls `next()` after consuming or draining the body), which keeps memory bounded by one text file plus the retained file map.
 
 Nothing here touches the filesystem. Extracted bytes become strings and are never passed to `eval`, `import`, `Function`, or a child process.
 
@@ -1043,7 +1077,7 @@ RepoSnapshot + {registryData, osvData, now} ──▶ runReading (oracle)
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-P1–P18 are the properties named in the requirements document and keep their numbers and meaning (P16 now also covers R7.6, and P18 is the optional-call degradation property added by the Q16 carve-out). The requirements document also lists a P19 (degraded-entry TTL, R8.2, R8.3, R8.11 to R8.14); that numbering is local to the requirements document and is realized here by the extended design P31, not by design P19, which is the unrelated ref-resolution property below. P19–P33 are added by this design from the prework analysis and were renumbered after P18 (they were P18–P32 before the requirements gained P18; the former REST-budget property is subsumed by requirements P13; P32 and P33 are design-only). Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P23, R8.1–R8.3 and R8.6–R8.9 into the single model-based P31, and R5.2/R5.4/R5.9 into P24. P12 and P27 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P27 is the pure host-policy function. P13 (budget as observed over whole scenarios) and P32 (the client's hard guard in isolation) both bound REST calls but fail for different reasons. P16 owns the ref, `401`, and repo/commit/tarball `5xx` and timeout mapping; P18 owns the optional pulls/release degradation (and the rate-limit and `401` rows on those calls); P29 owns the remaining classification rows.
+P1–P18 and P34 are the properties named in the requirements document and keep their numbers and meaning (P16 now also covers R7.6, and P18 is the optional-call degradation property added by the Q16 carve-out). The requirements document numbers its degraded-entry TTL property P34 (R8.2, R8.3, R8.11 to R8.14), so it follows P18 without colliding with the design's own P19–P33. Requirements P34 is realized by the extended design P31 and is owned by the same cache-model test; design P19 is the unrelated ref-resolution property below and is untouched. P19–P33 are added by this design from the prework analysis and were renumbered after P18 (they were P18–P32 before the requirements gained P18; the former REST-budget property is subsumed by requirements P13; P32 and P33 are design-only). Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P23, R8.1–R8.3 and R8.6–R8.9 into the single model-based P31, and R5.2/R5.4/R5.9 into P24. P12 and P27 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P27 is the pure host-policy function. P13 (budget as observed over whole scenarios) and P32 (the client's hard guard in isolation) both bound REST calls but fail for different reasons. P16 owns the ref, `401`, and repo/commit/tarball `5xx` and timeout mapping; P18 owns the optional pulls/release degradation (and the rate-limit and `401` rows on those calls); P29 owns the remaining classification rows.
 
 PBT applies to this package because the interesting logic is pure (parser, path normalizer, metadata mapper, failure mapper, cache, dependency collection) or sits behind ports that fakes can drive deterministically. Criteria that are structural (no globals in package logic) are verified by lint and smoke tests, not properties.
 
@@ -1227,11 +1261,11 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 **Validates: Requirements 7.4, 7.5**
 
-### Property 31: Snapshot cache behaves like a TTL + LRU model
+### Property 31: Snapshot cache behaves like a TTL + LRU model (also realizes requirements P34, degraded-entry TTL)
 
 *For any* sequence of `get` and `set` operations on arbitrary keys with a monotonic fixed clock, any configured `ttlMs ≥ 1`, any `maxEntries ≥ 1`, and any per-entry `set` option (absent, or a `ttlMs ≥ 1` that may exceed the configured TTL), `SnapshotCache` agrees with a reference model at every step. The model stores `(key, setTime, entryTtl)` with `entryTtl = min(configured ttlMs, option ?? configured ttlMs)`: a `get` hits if and only if the key was set and `now − setTime < entryTtl` of the latest `set` for that key (an age equal to the entry's TTL is a miss); a hit makes the key most-recently-used; `set` on an existing key replaces it, including its TTL (at most one entry per key); inserting beyond capacity evicts the least-recently-used key; `size ≤ maxEntries` always. *For any* `degradedFields` list and configured TTL, `effectiveTtlMs` returns `min(configured, 600_000)` when the list is non-empty and the configured TTL when it is empty, so a degraded entry is a hit at age `effective − 1` and a miss at age `effective`. *For any* build request whose key is fresh in the cache, the `FetchPort` call count is unchanged; *for any* build whose cached entry is an expired degraded entry, the rebuild repeats the `pulls` and `release` calls and replaces the entry.
 
-**Validates: Requirements 8.1, 8.2, 8.3, 8.6, 8.8, 8.9, 8.11, 8.12, 8.13, 8.14**
+**Validates: Requirements 8.1, 8.2, 8.3, 8.6, 8.8, 8.9, 8.11, 8.12, 8.13, 8.14** (requirements P34 covers 8.2, 8.3, 8.11 to 8.14 through the degraded-entry half of this property)
 
 ### Property 32: Hard REST budget guard
 
@@ -1361,7 +1395,7 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 | P1, P2, P3, P4 | `intake.ts` (`parseRepoRef`) | `intake.pbt.test.ts` |
 | P5, P7 | `snapshot.ts` + `tar-extract.ts` + oracle builder | `snapshot.pbt.test.ts` |
 | P6, P11 | `tar-extract.ts` | `tar-extract.pbt.test.ts` |
-| P8, P31 (also the requirements-document P19, degraded-entry TTL) | `snapshot-cache.ts` (`SnapshotCache` with per-entry TTL, `effectiveTtlMs`) | `snapshot-cache.pbt.test.ts` |
+| P8, P31, P34 (P34 is the requirements-document degraded-entry TTL property, realized by the P31 cache-model test) | `snapshot-cache.ts` (`SnapshotCache` with per-entry TTL, `effectiveTtlMs`) | `snapshot-cache.pbt.test.ts` |
 | P9 | `errors.ts`, `github-client.ts`, `snapshot.ts` | `secrets.pbt.test.ts` |
 | P10 | `snapshot.ts` + `external-data.ts` | `determinism.pbt.test.ts` |
 | P12, P15, P27, P32, P33 | `github-client.ts` (`headersFor`, tarball path selection, redirect policy, budget guard) | `github-client.pbt.test.ts` |
@@ -1375,7 +1409,7 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 | P24, P25, P26 | `external-data.ts`, `registries.ts`, `osv.ts` | `external-data.pbt.test.ts` |
 | P28, P29, P30 | `errors.ts`, `http-failure.ts` | `http-failure.pbt.test.ts` |
 
-P8 and P31 are both in `snapshot-cache.pbt.test.ts`. The tests for P6 and P11 exercise `extractTarball` through the real `Readable.fromWeb` + `tar-stream` bridge, not a stub, so backpressure and cancellation behaviour is what ships.
+P8, P31, and P34 are all in `snapshot-cache.pbt.test.ts`; P31 and P34 share one cache-model test (task 22.3), whose `describe` title names both. The tests for P6 and P11 exercise `extractTarball` through the real `Readable.fromWeb` + `tar-stream` bridge, not a stub, so backpressure and cancellation behaviour is what ships.
 
 Generators worth naming: valid owner/name/ref strings (with noise decorators), hostile tar entry sequences, repo/commit/pulls/release payload builders with schema-violating mutators and rename-redirect responses (status, `Location` host/scheme/port, first or later call, one or two hops), token strings (valid and malformed, to check `AUTH_INVALID` non-leak), dependency lists with case and duplicate variants, per-dependency outcome assignments, and `(reset, now, retry-after)` triples. For P31 the model is a ten-line list-based LRU with timestamps and a per-entry TTL (`min(configured, option)`), with an arbitrary `degradedFields` list driving `effectiveTtlMs`. For P13, P15, P32, and P33 the fixture `FetchPort` records every request (URL, headers) and the test asserts over the recording.
 
@@ -1455,7 +1489,7 @@ Also: `tsconfig.json` gets `"references": [{ "path": "../oracle" }]`; add `vites
 - **`nanotar@0.3.0`, rejected:** parses a whole buffer, so it cannot stop at the cap before buffering the data.
 - **Gzip:** the global `DecompressionStream("gzip")`, not `node:zlib`, so the byte-counting guards compose as web `TransformStream`s before the Node-stream bridge. The only `node:` import is `node:stream` for `Readable.fromWeb`.
 
-Task 1 should confirm two facts about `tar-stream@3.2.2` against the real package (not only its README): that pax global and extended headers and GNU long names are resolved into `header.name` and the pax global header is not surfaced as an entry, and that destroying the `extract` stream mid-archive releases the upstream reader promptly. Neither affects the public design.
+The task 1 spike confirmed both facts about `tar-stream@3.2.2` against the real package: pax global and extended headers and GNU long names resolve into `header.name` and the pax global header never surfaces as an entry, and destroying the `extract` stream and the bridge cancels the upstream reader and stops pulling. The spike also found that the async-iterator form does not block on an unconsumed entry (its `next()` auto-drains), so the extractor uses the event form `extract.on("entry", (header, stream, next) => ...)` with an explicit `next()`. None of this affects the public design.
 
 ### Root and docs
 
@@ -1485,7 +1519,13 @@ Task 1 should confirm two facts about `tar-stream@3.2.2` against the real packag
 
 **Q8. Vendored-folder list. RESOLVED (final).** `node_modules`, `.git`, `vendor`, `third_party`, `bower_components`, `site-packages`. A repository with a first-party `vendor/` directory loses those files from readings; that is accepted.
 
-**Q9. Tar library. RESOLVED (D3).** `tar-stream@3.2.2`, pinned exactly. No alternative library is planned. Residual note: `tar-stream@3.2.2` declares `bare-fs` among its dependencies; the package never exercises it, but it enlarges the install footprint. Task 1 confirms the two behaviours listed under "Tar library choice".
+**Q9. Tar library. RESOLVED (D3).** `tar-stream@3.2.2`, pinned exactly. No alternative library is planned. Residual note: `tar-stream@3.2.2` declares `bare-fs` among its dependencies; the package never exercises it, but it enlarges the install footprint.
+
+**Q9a. Pax headers and GNU long names. RESOLVED by the task 1 spike.** Pax global (`g`) and extended (`x`) headers and GNU long names resolve correctly into `header.name` and never surface as entries.
+
+**Q9b. Destroy and cancellation. RESOLVED by the task 1 spike.** Destroying the `extract` stream and the `Readable.fromWeb` bridge cancels the upstream reader and stops pulling, and a guard error placed before the bridge does the same.
+
+**Q9c. Async-iterator blocking. RESOLVED by choosing the event form.** The spike found that `for await (const entry of extract)` does not block on an unconsumed entry (its `next()` auto-drains and discards the previous one). The extractor therefore uses `extract.on("entry", (header, stream, next) => ...)` with an explicit `next()` after the body is consumed or drained. The byte-count guards sit upstream of `tar-stream`, so skipped-entry bytes are counted either way; a dedicated test covers it.
 
 **Q10. Memory on serverless. RESOLVED (accepted as a deployment decision).** Retained text can approach the 200 MB uncompressed cap, and JavaScript strings holding non-Latin-1 text use two bytes per character. `ExtractionLimits` is injectable so the web app can set tighter limits (for example 64 MB) without a code change.
 

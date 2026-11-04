@@ -23,6 +23,11 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877301
+      },
+      {
+        "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793771959979
       }
     ],
     "1.3 Run the spike and record the findings": [
@@ -30,6 +35,16 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877338
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793772848714
+      },
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773638469
       }
     ],
     "2.1 Write the scaffolding smoke test": [
@@ -709,6 +724,13 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880385
+      }
+    ],
+    "1. Spike: characterize `tar-stream@3.2.2` before anything depends on it": [
+      {
+        "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
+        "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
+        "timestamp": 1793773638544
       }
     ]
   }

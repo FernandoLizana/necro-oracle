@@ -19,6 +19,7 @@
     }
   },
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "lint": "eslint .",
     "build": "tsc",
