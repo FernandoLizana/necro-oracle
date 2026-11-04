@@ -85,3 +85,32 @@ export type {
 export { MAX_ENTRY_LENGTH } from "./command/types.js";
 export { parseCommand } from "./command/parse.js";
 export { printCommand } from "./command/print.js";
+
+// Render — the block/line output model and the only Evidence_Link builder.
+export { blockText, lineText } from "./render/blocks.js";
+export type {
+  BlockDraft,
+  BlockKind,
+  OutputBlock,
+  OutputLine,
+} from "./render/blocks.js";
+export { buildEvidenceLink } from "./render/evidence-link.js";
+
+// Session — command history, the bounded output log, and the pinned reference.
+export {
+  HISTORY_MAX,
+  historyNext,
+  historyPrev,
+  historyPush,
+} from "./session/history.js";
+export type { History } from "./session/history.js";
+export { LOG_MAX_LINES, appendBlocks } from "./session/log.js";
+export { formatPinnedRef } from "./session/pinned-ref.js";
+
+// Demo — the fixed Demo_Catalog and the Demo_Name validation pattern.
+export { DEMO_CATALOG, DEMO_NAME_PATTERN } from "./demo/catalog.js";
+export type { DemoCatalogEntry } from "./demo/catalog.js";
+
+// Sound loader — the production SoundLoaderPort. The engine itself stays a
+// separate lazy chunk behind `loadEngine`; engine.ts is never barrelled.
+export { loadEngine } from "./sound/load-engine.js";

@@ -86,12 +86,12 @@ Conventions that apply to every task:
     - Implement `VOICE_TABLE` (`Record<CardId, Record<Orientation, string>>`, exhaustive from the `oracle-voice` steering), `PHASE_VOICE`, `EXTERNAL_SKIP_NOTE`, `vitalityVoice`, and the fixed phrases.
     - _Requirements: R7.3, R7.4, R6.15, R6.21_
 
-- [ ] 8. Evidence-link builder and block/line primitives
-  - [~] 8.1 Write `P17` and block/line examples first
+- [x] 8. Evidence-link builder and block/line primitives
+  - [x] 8.1 Write `P17` and block/line examples first
     - Add `render/evidence-link.pbt.test.ts` for **Property 17 (R14.4, R14.5)** — target begins with `https://github.com/{owner}/{name}/blob/{sha}/`, every path segment percent-encoded, decodes back to the original segments, `#L{line}` only when `line` is defined, `null` when `path` absent.
     - Add examples for `OutputLine`/`OutputBlock`/`Segment`/`BlockDraft`, `lineText`, `blockText`. Confirm they fail first.
     - _Requirements: R14.4, R14.5_
-  - [~] 8.2 Implement `render/blocks.ts` and `render/evidence-link.ts`
+  - [x] 8.2 Implement `render/blocks.ts` and `render/evidence-link.ts`
     - Implement the block/line/segment model and `buildEvidenceLink` (segment-by-segment `encodeURIComponent`).
     - _Requirements: R14.4, R14.5, R14.6_
 
@@ -119,11 +119,11 @@ Conventions that apply to every task:
     - Implement `resolveMotionMode`, `parseMotionPreference`, `parseSoundPreference`, `revealRate`, `revealedChars`, `revealDurationMs`, and the storage-key constants.
     - _Requirements: R10.1, R10.2, R10.3, R10.6, R10.7, R10.10, R10.12, R19.1, R19.12_
 
-- [ ] 12. History and output log
-  - [~] 12.1 Write `P15`, `P20` and examples first
+- [x] 12. History and output log
+  - [x] 12.1 Write `P15`, `P20` and examples first
     - Add `session/history.pbt.test.ts` for **Property 15 (R3.2, R3.3)** (≤ 50 entries, index within bounds no wrap, oldest discarded first) and `session/log.pbt.test.ts` for **Property 20 (R17.6)** (≤ 500 lines, retained lines are the most recent suffix in order). Confirm they fail first.
     - _Requirements: R3.2, R3.3, R17.6_
-  - [~] 12.2 Implement `session/history.ts` and `session/log.ts`
+  - [x] 12.2 Implement `session/history.ts` and `session/log.ts`
     - Implement `historyPush`, `historyPrev`, `historyNext`, `appendBlocks`, and the `HISTORY_MAX`/`LOG_MAX_LINES` constants.
     - _Requirements: R3.2, R3.3, R17.6_
 
@@ -135,11 +135,11 @@ Conventions that apply to every task:
     - Implement `SoundState`, `SoundEvent`, `soundReducer` (`load` resets `gesture: false`), and `soundActivity`.
     - _Requirements: R19.1, R19.2, R19.7, R19.8, R19.13, R19.16_
 
-- [ ] 14. Pinned reference and demo catalog
-  - [~] 14.1 Write pinned-ref and catalog examples first
+- [x] 14. Pinned reference and demo catalog
+  - [x] 14.1 Write pinned-ref and catalog examples first
     - Add examples for `formatPinnedRef` and the `DEMO_CATALOG`/`DEMO_NAME_PATTERN` shape (2-3 entries: `lich-py2`, `mixed-ruins`, `green-garden`). Confirm they fail first. (The `P18` round-trip through `parseRepoRef` lives server-side in task 20.)
     - _Requirements: R5.3, R6.1, R18.1_
-  - [~] 14.2 Implement `session/pinned-ref` helper and `demo/catalog.ts`
+  - [x] 14.2 Implement `session/pinned-ref` helper and `demo/catalog.ts`
     - _Requirements: R5.3, R6.1, R18.1_
 
 - [ ] 15. Session reducer and effects
@@ -151,11 +151,11 @@ Conventions that apply to every task:
     - Implement `initialState`, `step(state, action)` producing `{ state, effects }` with all the branch rules in the design's "Session reducer and effects", `withDemoLabel` applied to non-echo demo blocks, `appendBlocks` on every new block, reveal-queue only in `full` motion.
     - _Requirements: R1.6, R2.10, R2.13, R3.1, R3.4, R3.5, R3.6, R3.11, R5.4, R6.1, R6.2, R6.3, R6.12, R6.13, R6.15, R10.5, R15.4, R15.5, R15.10, R15.13, R16.8, R18.3, R18.4, R18.5, R18.6, R18.7, R18.14, R18.15, R19.11_
 
-- [ ] 16. Sound engine lazy chunk
-  - [~] 16.1 Write sound-engine examples first
+- [x] 16. Sound engine lazy chunk
+  - [x] 16.1 Write sound-engine examples first
     - Add examples (injected `AudioContext` constructor): `start`/`apply`/`release` graph; `MASTER_GAIN` ≤ `MAX_MASTER_GAIN` = 0.2 (R19.10); hum stops within 200 ms (R19.4); missing/failing Web Audio → rejection path that drives `sound_off` and the in-world message (R19.14); generated click/hum use Web Audio nodes only, no file (R19.9). Confirm they fail first.
     - _Requirements: R19.3, R19.4, R19.9, R19.10, R19.14_
-  - [~] 16.2 Implement `sound/{engine-types,load-engine,engine}.ts`
+  - [x] 16.2 Implement `sound/{engine-types,load-engine,engine}.ts`
     - Implement `createEngine(ctor?)`, the `loadEngine` literal-path dynamic import (separate chunk), and the hum/click Web Audio graph capped at `MASTER_GAIN`.
     - _Requirements: R19.3, R19.4, R19.9, R19.10, R19.17_
 
