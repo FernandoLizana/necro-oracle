@@ -3,6 +3,10 @@
     "5.3 [PBT] Write property tests for masking — P8, P9": {
       "status": "passed",
       "lastRunTimestamp": 1793762337064
+    },
+    "6.3 [PBT] Write property tests for registry weights — P4, P14": {
+      "status": "passed",
+      "lastRunTimestamp": 1793762572552
     }
   },
   "executionHistory": {
@@ -176,6 +180,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761021146
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762497614
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762676465
       }
     ],
     "7. Define snapshot types and schemas": [
@@ -234,6 +248,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761021321
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762498519
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762677841
       }
     ],
     "9.1 Write unit tests for the directory builder (test-first)": [
@@ -258,6 +282,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761021394
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762495214
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762679282
       }
     ],
     "10. Create the Vitest WASM setup file": [
@@ -350,6 +384,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761021631
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762496176
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762680149
       }
     ],
     "13. Define the shared `DetectorOpts` and `Detector` types": [
@@ -682,6 +726,34 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793762479852
+      }
+    ],
+    "6. Implement the card registry": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762676555
+      }
+    ],
+    "8. Implement `buildSnapshotFromFileMap` (browser-safe)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762677895
+      }
+    ],
+    "9. Implement `buildSnapshotFromDirectory` on the Node-only entry": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762679328
+      }
+    ],
+    "12. Implement manifest parsing": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793762680272
       }
     ]
   }
