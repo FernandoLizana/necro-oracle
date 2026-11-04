@@ -7,22 +7,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@necro/config": "workspace:*",
+    "@necro/github": "workspace:*",
     "@necro/oracle": "workspace:*",
+    "@necro/ui-crt": "workspace:*",
+    "@upstash/ratelimit": "2.2.0",
+    "@upstash/redis": "1.41.0",
     "next": "^15.1.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tree-sitter-python": "0.25.0",
-    "web-tree-sitter": "0.27.1"
+    "web-tree-sitter": "0.27.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.8.3"
+    "fast-check": "^3.23.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }

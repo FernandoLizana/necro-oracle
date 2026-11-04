@@ -164,7 +164,10 @@ export function extractTarball(
             fail(tooLarge("compressed"));
             return;
           }
-          await writer.write(value);
+          // Copy into a fresh ArrayBuffer-backed view: the reader yields
+          // Uint8Array<ArrayBufferLike> (which may wrap a SharedArrayBuffer),
+          // but the writer's BufferSource parameter requires ArrayBuffer backing.
+          await writer.write(new Uint8Array(value));
         }
       } catch (e) {
         fail(e);

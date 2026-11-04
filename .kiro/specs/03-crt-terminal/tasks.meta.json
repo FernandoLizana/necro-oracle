@@ -643,6 +643,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989745
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825110514
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825766918
       }
     ],
     "19.2 Implement `protocol/schemas.ts`, `protocol/stream.ts`, and `terminal/ndjson.ts`": [
@@ -650,6 +660,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989795
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825778500
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826274186
       }
     ],
     "20.1 Write `P18` and client-ip examples first": [
@@ -657,6 +677,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989843
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825109347
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825767871
       }
     ],
     "20.2 Implement `server/pinned-ref.ts` and `server/client-ip.ts`": [
@@ -664,6 +694,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989887
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825779905
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826275554
       }
     ],
     "21.1 Write `P13`, `P14` and error-map examples first": [
@@ -671,6 +711,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989928
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825108405
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825768956
       }
     ],
     "21.2 Implement `server/error-map.ts` and `server/redact.ts`": [
@@ -678,6 +728,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814989982
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825780964
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826276965
       }
     ],
     "22.1 Write `P16`, `P21` and limiter examples first": [
@@ -685,6 +745,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990029
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825107244
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825770216
       }
     ],
     "22.2 Implement `server/limiter/{port,upstash,fallback,chain}.ts`": [
@@ -692,6 +762,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990067
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825783292
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826278107
       }
     ],
     "23.1 Write `P28`, `P29` and wrapper examples first": [
@@ -699,6 +779,26 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990107
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825106055
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825771214
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826469266
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826620689
       }
     ],
     "23.2 Implement `server/handlers/phase.ts` and `server/handlers/external-skip.ts`": [
@@ -706,6 +806,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990153
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793825782247
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826279045
       }
     ],
     "24.1 Write composition/deps examples first": [
@@ -965,6 +1075,41 @@
         "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793824892846
+      }
+    ],
+    "19. `apps/web` protocol schemas, NDJSON stream schemas and incremental parser": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826274247
+      }
+    ],
+    "20. Pinned-reference round-trip and client IP hashing": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826275580
+      }
+    ],
+    "21. Error mapper and redaction": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826276998
+      }
+    ],
+    "22. Rate limiter: Upstash primary, Fallback_Limiter, and chain": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826278138
+      }
+    ],
+    "23. Phase reporter and external-skip decision": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793826279112
       }
     ]
   }

@@ -171,50 +171,50 @@ Conventions that apply to every task:
 - [x] 18. Checkpoint - `@necro/ui-crt` is complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 19. `apps/web` protocol schemas, NDJSON stream schemas and incremental parser
-  - [~] 19.1 Write protocol/stream schema conformance and NDJSON parser examples first
+- [x] 19. `apps/web` protocol schemas, NDJSON stream schemas and incremental parser
+  - [x] 19.1 Write protocol/stream schema conformance and NDJSON parser examples first
     - Add examples asserting `SummonRequestSchema`, `ReadingRequestSchema`, `SummonSummarySchema`, `ReadingResponseSchema`, `ErrorEnvelopeSchema` shapes and the compile-time conformance assertions against the `ui-crt` types (D2); `ReadingRequestSchema` rejects `celtic` (Q15) and non-40-hex refs.
     - Add `protocol/stream.ts` schema examples (`PhaseLineSchema`, `SkipNoteLineSchema`, `ResultLineSchema`, `ErrorLineSchema`, `StreamLineSchema`).
     - Add `terminal/ndjson.ts` `createNdjsonParser` examples: a line split across several `push` chunks reassembles; multiple complete lines in one chunk yield ordered `StreamLine`s; a chunk with no trailing newline buffers until `flush`; a malformed line (bad JSON or failing `StreamLineSchema`) is reported as an error. Confirm all fail first.
     - _Requirements: R6.14, R6.18, R12.1, R12.3_
-  - [~] 19.2 Implement `protocol/schemas.ts`, `protocol/stream.ts`, and `terminal/ndjson.ts`
+  - [x] 19.2 Implement `protocol/schemas.ts`, `protocol/stream.ts`, and `terminal/ndjson.ts`
     - _Requirements: R6.14, R6.18, R12.1, R12.3_
 
-- [ ] 20. Pinned-reference round-trip and client IP hashing
-  - [~] 20.1 Write `P18` and client-ip examples first
+- [x] 20. Pinned-reference round-trip and client IP hashing
+  - [x] 20.1 Write `P18` and client-ip examples first
     - Add `apps/web/src/server/pinned-ref.pbt.test.ts` for **Property 18 (R5.3, R6.1, R6.4)** — for all valid `RepoRef`, `parseRepoRef(formatPinnedRef(ref))` yields the same owner/name/sha.
     - Add `client-ip` examples: configured header read, IPv4/IPv6 validation, missing/invalid → `"anonymous"`, id is `sha256(ip).slice(0,32)` (never raw IP, R13.9). Confirm they fail first.
     - _Requirements: R5.3, R6.1, R6.4, R13.9_
-  - [~] 20.2 Implement `server/pinned-ref.ts` and `server/client-ip.ts`
+  - [x] 20.2 Implement `server/pinned-ref.ts` and `server/client-ip.ts`
     - _Requirements: R5.3, R6.1, R6.4, R13.9_
 
-- [ ] 21. Error mapper and redaction
-  - [~] 21.1 Write `P13`, `P14` and error-map examples first
+- [x] 21. Error mapper and redaction
+  - [x] 21.1 Write `P13`, `P14` and error-map examples first
     - Add `server/error-map.pbt.test.ts` for **Property 13 (R12.4, R12.5)** — full code→status table (R12.4/Q2/Q10): `INVALID_REPO_URL`/`VALIDATION_FAILED` → 400, `REPO_PRIVATE` → 403, `REPO_NOT_FOUND`/`REF_NOT_FOUND` → 404, `DOWNLOAD_TOO_LARGE` → 413, `RATE_LIMITED` → 429, `AUTH_INVALID`/`UPSTREAM_UNAVAILABLE` → 502, `NETWORK_TIMEOUT` → 504, every other → 500, non-NecroError → 500/`UPSTREAM_UNAVAILABLE` with no exception text and no `cause`.
     - Add `server/redact.pbt.test.ts` for **Property 14 (R12.6, R14.7)** — for all token values, `redactString`/`redactDeep` leave no token in any string leaf; undefined token leaves input unchanged.
     - Add examples: `rateLimitedError`/`Retry-After` arithmetic; `cause` never serialized (R12.7). Confirm all fail first.
     - _Requirements: R12.4, R12.5, R12.6, R12.7, R14.7_
-  - [~] 21.2 Implement `server/error-map.ts` and `server/redact.ts`
+  - [x] 21.2 Implement `server/error-map.ts` and `server/redact.ts`
     - Implement `statusFor`, `mapError`, `rateLimitedError`, `redactString`, `redactDeep`.
     - _Requirements: R12.4, R12.5, R12.6, R12.7, R14.7_
 
-- [ ] 22. Rate limiter: Upstash primary, Fallback_Limiter, and chain
-  - [~] 22.1 Write `P16`, `P21` and limiter examples first
+- [x] 22. Rate limiter: Upstash primary, Fallback_Limiter, and chain
+  - [x] 22.1 Write `P16`, `P21` and limiter examples first
     - Add `server/limiter/arithmetic.pbt.test.ts` for **Property 16 (R13.2, R13.5)** — 11th readings request from one IP within one hour → `RATE_LIMITED`, `Retry-After` ≥ 1 s, wait ≥ 1 whole minute, no GitHub request for a limited request.
     - Add `server/limiter/fallback.pbt.test.ts` for **Property 21 (R13.2, R13.3, R13.5, R13.6, R13.7, R13.8)** — against a RateLimitPort that always fails, the Fallback_Limiter allows exactly the same requests (≤ 20 summon, ≤ 10 readings per IP/hour, ≤ daily ceiling), rejects the rest with `RATE_LIMITED`, never returns `UPSTREAM_UNAVAILABLE` from a limiter outage, and makes no GitHub request for a limited request.
     - Add examples: `createRateLimitChain` 30 s open-circuit on `RateLimitUnavailableError` measured only with `ClockPort`, `primary: null` always uses fallback (D5); Upstash adapter timeout race → `RateLimitUnavailableError`; `evaluateFixedWindow` pure core; window reset on access. Add request-sequence and clock-timeline arbitraries. Confirm all fail first.
     - _Requirements: R13.1, R13.2, R13.3, R13.5, R13.6, R13.7, R13.8, R13.10_
-  - [~] 22.2 Implement `server/limiter/{port,upstash,fallback,chain}.ts`
+  - [x] 22.2 Implement `server/limiter/{port,upstash,fallback,chain}.ts`
     - Implement `RateLimitPort`/`RateLimitUnavailableError`, `createUpstashLimiter` (own timeout race, never the Upstash fail-open option), `FallbackLimiter` (ClockPort-aligned fixed windows, `maxKeys` eviction), and `createRateLimitChain` (per-request primary with 30 s open-circuit).
     - _Requirements: R13.1, R13.2, R13.3, R13.5, R13.6, R13.7, R13.8, R13.10_
 
-- [ ] 23. Phase reporter and external-skip decision
-  - [~] 23.1 Write `P28`, `P29` and wrapper examples first
+- [x] 23. Phase reporter and external-skip decision
+  - [x] 23.1 Write `P28`, `P29` and wrapper examples first
     - Add `server/handlers/phase.pbt.test.ts` for **Property 28 (R6.14, R6.15, R6.16)** — `advancePhase` emits a prefix of `SUMMON`, `DOWNLOAD`, `EXTERNAL`, `READING`, each at most once, never backwards, one Progress_Line per emitted phase; throws on out-of-order/repeat. Add out-of-order/repeated phase-sequence arbitraries.
     - Add `server/handlers/external-skip.pbt.test.ts` for **Property 29 (R6.20, R6.21, R6.22)** — `decideExternalSkip({elapsedMs, skipped})` returns skip exactly when `elapsedMs > 10000` or `skipped`, and on skip produces a non-empty Oracle_Voice note and omits both `registryData`/`osvData`. Add `{elapsedMs, skipped}` arbitraries spanning both sides of 10 s.
     - Add phase-reporting wrapper examples: happy-path emits `SUMMON`/`DOWNLOAD`/`EXTERNAL`/`READING` then a `result` line; cache-hit still emits `DOWNLOAD` once (R6.16). Confirm all fail first.
     - _Requirements: R6.14, R6.15, R6.16, R6.20, R6.21, R6.22_
-  - [~] 23.2 Implement `server/handlers/phase.ts` and `server/handlers/external-skip.ts`
+  - [x] 23.2 Implement `server/handlers/phase.ts` and `server/handlers/external-skip.ts`
     - Implement `advancePhase`, `initialPhaseState`, `createPhaseReporter`, `EXTERNAL_SUB_BUDGET_MS`, and `decideExternalSkip`.
     - _Requirements: R6.14, R6.15, R6.16, R6.20, R6.21, R6.22_
 
