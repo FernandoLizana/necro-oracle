@@ -37,13 +37,13 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Provides the fast-check arbitraries consumed by all downstream `[PBT]` tasks.
   - _Requirements: R21.5_
 
-- [ ] 5. Implement secret masking utility
+- [x] 5. Implement secret masking utility
   - [x] 5.1 Write unit tests for `maskSecret` (test-first)
     - Length ≥ 4 → first 4 chars + `"****"`; length < 4 → `"****"`; verify AWS/private-key inputs are reduced.
     - _Requirements: R20.1, R20.4_
   - [x] 5.2 Implement `src/util/mask.ts` `maskSecret(value: string): string`
     - _Requirements: R20.1, R20.4_
-  - [~] 5.3 [PBT] Write property tests for masking — P8, P9
+  - [x] 5.3 [PBT] Write property tests for masking — P8, P9
     - **Property 9: Secret masking length invariant** — len ≥ 4 ⇒ exactly 8 chars; len < 4 ⇒ `"****"`.
     - **Property 8: No raw secrets in evidence** — `maskSecret` output never matches `/AKIA[0-9A-Z]{16}/` or private-key headers (the evidence-side of P8 is re-checked in the runReading PBT).
     - **Validates: Requirements R20.1, R20.2, R20.3, R20.4** / **Properties: P8, P9**
@@ -52,7 +52,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - [x] 6.1 Write unit tests for the registry (test-first)
     - Assert exactly 12 cards with correct ids/numerals; `getCard` happy path and `CARD_NOT_FOUND` sad path; weights match R18.3 (`star`/`world` = 0); duplicate `id` or `numeral` throws `REGISTRY_INVALID` at load.
     - _Requirements: R1.1, R1.2, R1.4, R1.5, R1.6, R18.3_
-  - [~] 6.2 Implement `src/registry/cards.ts`
+  - [x] 6.2 Implement `src/registry/cards.ts`
     - Build the 12 `CardDefinition` entries, validate each with `CardDefinitionSchema` at module load, guard against duplicate `id`/`numeral`, throw `NecroError(REGISTRY_INVALID)` on failure before any export is usable.
     - Export `CARD_REGISTRY: ReadonlyMap<CardId, CardDefinition>` and `getCard(id)`.
     - Set weights: judgement 20, tower 15, devil 18, death 10, wheel 12, hermit 5, hanged_man 8, temperance 7, justice 6, moon 9, star 0, world 0; set `linkedGrimoireIds` (e.g. judgement → `["py2to3","pyproject"]`).
@@ -70,7 +70,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - [x] 8.1 Write unit tests for the file-map builder (test-first)
     - Lang assigned by extension (`.py`/`.js`/`.ts`/`.html`/other); 1 MB oversize files land in `oversizeFiles` and are absent from `contents`; > 5000 files → first 5000 lexicographic, `truncated: true`; ≤ 5000 → `truncated: false`; `createdAt` equals the supplied `opts.createdAt` (builder never calls `Date.now()`); default neutral `meta` applied when omitted.
     - _Requirements: R2.1, R2.2, R2.5, R2.6, R2.7_
-  - [~] 8.2 Implement `src/snapshot/builder-file-map.ts`
+  - [x] 8.2 Implement `src/snapshot/builder-file-map.ts`
     - Accept `(ref, files, opts: { meta?, createdAt })`, build `FileEntry[]` + `contents` Map, apply size filter and file cap, set `truncated`, default `meta` to neutral values.
     - Export from `src/index.ts`.
     - _Requirements: R2.1, R2.2, R2.5, R2.6, R2.7_
@@ -80,7 +80,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Validates: Requirements R2.6, R2.7** / **Properties: P12, P13**
 
 - [ ] 9. Implement `buildSnapshotFromDirectory` on the Node-only entry
-  - [~] 9.1 Write unit tests for the directory builder (test-first)
+  - [x] 9.1 Write unit tests for the directory builder (test-first)
     - Reads an existing temp directory into a snapshot; missing/inaccessible path rejects with `NecroError(SNAPSHOT_DIR_NOT_FOUND)`; honours explicit `createdAt`.
     - _Requirements: R2.3, R2.4_
   - [~] 9.2 Implement `src/snapshot/builder-directory.ts` and wire `src/node.ts`
@@ -105,7 +105,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Validates: Requirements R3.7** / **Properties: P15**
 
 - [ ] 12. Implement manifest parsing
-  - [~] 12.1 Write unit tests for manifest parsing (test-first)
+  - [x] 12.1 Write unit tests for manifest parsing (test-first)
     - `requirements*.txt` → `ParsedDependency[]` (name/versionSpec/extras); `setup.py` parsed via AST only and never executed (`install_requires`, `python_requires`, `classifiers`, `name`; dynamic fields omitted); `pyproject.toml` (`[project]` + `[tool.poetry]`); `Pipfile`; `package.json`; invalid content → `{ parsed: false, parseError, dependencies: [] }`; `detectPythonVersion` priority (setup.py classifiers > pyproject requires-python > Pipfile) with `"unknown"` fallback.
     - _Requirements: R4.1, R4.2, R4.3, R4.4, R4.5, R4.6, R4.7, R4.8_
   - [~] 12.2 Implement `src/parser/manifest.ts`
