@@ -5,5 +5,6 @@ export default defineConfig({
     name: "oracle",
     include: ["src/**/*.test.ts", "src/**/*.pbt.test.ts"],
     environment: "node",
+    setupFiles: ["./vitest.setup.ts"],
   },
 });
