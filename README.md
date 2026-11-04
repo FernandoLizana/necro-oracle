@@ -1,4 +1,4 @@
-# 🔮 The Necro-Oracle
+# The Necro-Oracle
 
 > *The cards read your code. The necromancer brings it back to life.*
 
@@ -6,7 +6,7 @@ A retro CRT terminal that performs **tarot readings on GitHub repositories**: ev
 
 Built with [Kiro](https://kiro.dev) for **Kiroween 2026** — *Frankenstein* category.
 
-🚧 Work in progress.
+Work in progress.
 
 ## Docs
 - [Design](docs/DESIGN.md)
