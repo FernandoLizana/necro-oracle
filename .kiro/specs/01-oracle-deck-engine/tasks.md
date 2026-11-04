@@ -262,15 +262,15 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Also assert the P8 evidence-side: no `Evidence.detail` matches AWS/private-key patterns.
   - **Validates: Requirements R17.8, R19.1, R19.4, R21.8, R2.1, R5.4, R20.2, R20.3** / **Properties: P1, P2, P3, P8**
 
-- [ ] 34. Create golden fixtures and the golden test runner
+- [x] 34. Create golden fixtures and the golden test runner
   - [x] 34.1 Author fixture snapshots and expected readings
     - Create under `packages/oracle/fixtures/`: `py2-only`, `straddling`, `no-tests`, `no-license`, `archived`, `clean`, `secrets`, each with `snapshot.json` (file map + `RepoRef` + `RepoMeta` + `createdAt`) and `expected-reading.json`.
     - _Requirements: R5.2, R5.3, R7.4, R9.2, R11.2, R13.3, R15.2_
-  - [~] 34.2 Implement the golden test runner
+  - [x] 34.2 Implement the golden test runner
     - For each fixture, build via `buildSnapshotFromFileMap(ref, files, { meta, createdAt })`, run `runReading(snapshot, { spreadKind: "necropsy", now })`, deep-equal against `expected-reading.json` excluding only `id`; verify `secrets` fixture evidence is masked.
     - _Requirements: R19.1, R19.5, R20.2_
 
-- [~] 35. Add bundle-size verification for the main entry
+- [x] 35. Add bundle-size verification for the main entry
   - Depends on the package build task (task 32) so `dist/index.js` and `dist/node.js` exist to measure.
   - Add `@size-limit/preset-small-lib` dev dep and a `size-limit` config (`dist/index.js`, 50 KB gzipped) plus a `pnpm size` script; exempt `dist/node.js`; document that the tree-sitter WASM file is loaded separately and excluded.
   - _Requirements: R21.3, R21.7_
