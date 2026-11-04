@@ -116,27 +116,27 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Add `DetectorOpts` (`registryData?`, `osvData?`, `now`, `trees`, `parseErrors`) and the `Detector` function type to the detectors barrel; add `RegistryEntry`/`RegistryData` and `OsvVulnerability`/`OsvData` shapes used by Tower/Devil.
   - _Requirements: R6.6, R7.6, R19.2, R21.2_
 
-- [ ] 14. Implement `detectJudgement` (XX — Dead Runtime)
-  - [~] 14.1 Write unit tests (test-first)
+- [x] 14. Implement `detectJudgement` (XX — Dead Runtime)
+  - [x] 14.1 Write unit tests (test-first)
     - py2 syntax → drawn; py2-only manifests → severity 3 upright; straddling (`six`/`__future__`/2to3 shims) → severity 1 reversed (precedence over R5.2); evidence per construct type with first-occurrence path/line; no Python files and no Python manifests → null; vendor/.tox/node_modules/site-packages excluded.
     - _Requirements: R5.1, R5.2, R5.3, R5.4, R5.5, R5.6_
-  - [~] 14.2 Implement `src/detectors/judgement.ts`
+  - [x] 14.2 Implement `src/detectors/judgement.ts`
     - Read pre-parsed trees from `opts.trees` (never call `parsePython`); skip `opts.parseErrors` paths; use `hasLegacyPythonNodes` + `detectPythonVersion`; set `linkedGrimoireIds = ["py2to3","pyproject"]`.
     - _Requirements: R5.1, R5.2, R5.3, R5.4, R5.5, R5.6_
 
-- [ ] 15. Implement `detectTower` (XVI — Rotting Dependencies)
-  - [~] 15.1 Write unit tests (test-first)
+- [x] 15. Implement `detectTower` (XVI — Rotting Dependencies)
+  - [x] 15.1 Write unit tests (test-first)
     - Yanked/deprecated/py2-only/≥2 majors behind → severity 2 upright; unpinned or exactly 1 major behind → severity 1 reversed; clean → null; dependency missing from injected `registryData` is skipped (no evidence, not a staleness signal); evidence carries name/versionSpec/detail.
     - _Requirements: R6.1, R6.2, R6.3, R6.4, R6.5, R6.6, R6.7_
-  - [~] 15.2 Implement `src/detectors/tower.ts`
+  - [x] 15.2 Implement `src/detectors/tower.ts`
     - Pure; consume injected `opts.registryData` only (no network, R6.6/R21.2); leftmost-non-zero-segment major comparison.
     - _Requirements: R6.1, R6.2, R6.3, R6.4, R6.5, R6.6, R6.7_
 
-- [ ] 16. Implement `detectDevil` (XV — Security Sins)
-  - [~] 16.1 Write unit tests (test-first)
+- [x] 16. Implement `detectDevil` (XV — Security Sins)
+  - [x] 16.1 Write unit tests (test-first)
     - Dangerous patterns (`eval`, `exec(`, `pickle.loads`, `yaml.load` w/o `Loader=`, `shell=True`, `os.system`, `verify=False`, weak-hash near secret names) in prod → severity 2 upright; test/example-only → severity 1 reversed; secret patterns (AWS key, private-key headers, high-entropy assignments) masked in evidence with no raw value retained; injected `osvData` → one `kind:"osv"` evidence each; none → null.
     - _Requirements: R7.1, R7.2, R7.3, R7.4, R7.5, R7.6, R7.7, R20.2, R20.3_
-  - [~] 16.2 Implement `src/detectors/devil.ts`
+  - [x] 16.2 Implement `src/detectors/devil.ts`
     - Read pre-parsed trees from `opts.trees` (never call `parsePython`); skip `opts.parseErrors`; call `maskSecret` immediately on raw secrets and apply the safety-net re-mask to any `Evidence.detail` matching AWS/private-key patterns.
     - _Requirements: R7.1, R7.2, R7.3, R7.4, R7.5, R7.6, R7.7, R20.2, R20.3_
 
@@ -210,10 +210,10 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - _Requirements: R16.1, R16.2, R16.3, R16.4, R16.5_
 
 - [ ] 27. Implement vitality scoring
-  - [~] 27.1 Write unit tests (test-first)
+  - [x] 27.1 Write unit tests (test-first)
     - `computeVitality` formula `Math.round(Math.max(0, 100 - Σ(weight×severity)))`; empty/all-null → 100; sum > 100 → 0; `computeVitalityDelta(before, after) === after - before`.
     - _Requirements: R18.1, R18.2, R18.3, R18.4, R18.5, R18.6_
-  - [~] 27.2 Implement `src/scoring/vitality.ts`
+  - [x] 27.2 Implement `src/scoring/vitality.ts`
     - _Requirements: R18.1, R18.2, R18.3, R18.4, R18.5, R18.6_
   - [~] 27.3 [PBT] Write property tests for vitality — P7, P10
     - **Property 7: Vitality monotonic** — lowering severities never lowers vitality.
@@ -221,10 +221,10 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Validates: Requirements R18.1, R18.2, R18.3, R18.4, R18.5** / **Properties: P7, P10**
 
 - [ ] 28. Implement the spread engine
-  - [~] 28.1 Write unit tests (test-first)
+  - [x] 28.1 Write unit tests (test-first)
     - Fates (3) / necropsy (5) / celtic (10) exact counts and labels; necropsy selection rules (Corpse/Wound/Shadow/Hope/Call, "no ritual can be performed"); void sentinel fill; no duplicate `CardId`; identical result for same `(draws, kind, sha)`; djb2 SHA-seeded tiebreak determinism.
     - _Requirements: R17.1, R17.2, R17.3, R17.4, R17.5, R17.6, R17.7, R17.8_
-  - [~] 28.2 Implement `src/spread/assign.ts`
+  - [x] 28.2 Implement `src/spread/assign.ts`
     - Pure `assignSpread` with djb2 hash tiebreak, void sentinel, `Set<CardId>` no-duplicate guard.
     - _Requirements: R17.1, R17.2, R17.3, R17.4, R17.5, R17.6, R17.7, R17.8_
   - [~] 28.3 [PBT] Write property tests for spreads — P5, P6, P11
