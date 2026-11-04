@@ -6,7 +6,4 @@
 // It re-exports the Node-only directory snapshot builder. This is the ONLY
 // place `buildSnapshotFromDirectory` is exported — it must never be re-exported
 // from src/index.ts, which would pull `node:fs` into the browser-safe bundle.
-export {
-  buildSnapshotFromDirectory,
-  type SnapshotFromFileMapOpts,
-} from "./snapshot/builder-directory.js";
+export { buildSnapshotFromDirectory } from "./snapshot/builder-directory.js";

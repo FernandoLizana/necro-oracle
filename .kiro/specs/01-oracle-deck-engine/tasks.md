@@ -245,7 +245,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - Parse `.py` files once (feeding `DetectorOpts.trees`/`parseErrors`), run `parseAllManifests`, run the 11 detectors via `Promise.allSettled`, filter nulls, `assignSpread`, `computeVitality`, assemble `Reading` with `createdAt = opts.now` and `id = crypto.randomUUID()`; propagate `PARSER_INIT_FAILED` as a whole-reading failure.
     - _Requirements: R19.1, R19.2, R19.3, R19.4, R19.5, R21.8_
 
-- [~] 31. Wire the public barrel (`src/index.ts`)
+- [x] 31. Wire the public barrel (`src/index.ts`)
   - Re-export all public types, schemas, registry, parser, builders (file-map only), manifest fns, the 11 detectors, `computeWorldDraw`, `assignSpread`, vitality fns, `runReading`, `maskSecret`, `NecroError`; confirm no `fs` import reaches the main entry and `src/node.ts` re-exports only `buildSnapshotFromDirectory`.
   - _Requirements: R2.3, R21.3_
 
