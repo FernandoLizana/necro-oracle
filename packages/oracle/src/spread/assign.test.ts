@@ -187,16 +187,23 @@ describe("R17.3: necropsy selection rules", () => {
     );
   });
 
-  it("The Call holds judgement when judgement is drawn and has linked grimoires", () => {
+  it("The Call is void when judgement is consumed by The Corpse (R17.3/R17.7 reconciliation)", () => {
     // judgement has linkedGrimoireIds ["py2to3","pyproject"] in the registry.
     expect(
       (CARD_REGISTRY.get("judgement")?.linkedGrimoireIds.length ?? 0),
     ).toBeGreaterThan(0);
+    // With judgement@3 (product 60) judgement is the GLOBAL top draw, so R17.3
+    // places it in The Corpse. R17.7 forbids the same CardId appearing twice,
+    // so judgement CANNOT also echo into The Call — The Call is void. The Call
+    // only holds judgement when judgement survives Corpse/Wound/Shadow unplaced.
     const draws = [draw("judgement", 3), draw("tower", 2)];
     const positions = assignSpread(draws, "necropsy", SHA);
+    expect(positions[0]!.label).toBe("The Corpse");
+    expect(positions[0]!.draw?.card).toBe("judgement");
     const call = positions[4]!;
     expect(call.label).toBe("The Call");
-    expect(call.draw?.card).toBe("judgement");
+    expect(call.draw).toBeNull();
+    expect(call.description).toContain("no ritual can be performed");
   });
 
   it('The Call is void with "no ritual can be performed" when judgement is absent', () => {

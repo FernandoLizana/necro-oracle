@@ -932,6 +932,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761023048
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764175035
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764587998
       }
     ],
     "29. Define reading schemas and `ReadingOpts`": [
@@ -956,6 +966,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761023128
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764175954
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764358674
       }
     ],
     "30.2 Implement `src/reading/run.ts` `runReading`": [
@@ -963,6 +983,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761023177
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764402433
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764586885
       }
     ],
     "31. Wire the public barrel (`src/index.ts`)": [
@@ -1159,6 +1189,20 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793764159740
+      }
+    ],
+    "30. Implement the `runReading` orchestrator": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764586986
+      }
+    ],
+    "28. Implement the spread engine": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764588070
       }
     ]
   }

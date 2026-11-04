@@ -220,14 +220,14 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Property 10: Vitality bounds** — always an integer in `[0,100]`.
     - **Validates: Requirements R18.1, R18.2, R18.3, R18.4, R18.5** / **Properties: P7, P10**
 
-- [ ] 28. Implement the spread engine
+- [x] 28. Implement the spread engine
   - [x] 28.1 Write unit tests (test-first)
     - Fates (3) / necropsy (5) / celtic (10) exact counts and labels; necropsy selection rules (Corpse/Wound/Shadow/Hope/Call, "no ritual can be performed"); void sentinel fill; no duplicate `CardId`; identical result for same `(draws, kind, sha)`; djb2 SHA-seeded tiebreak determinism.
     - _Requirements: R17.1, R17.2, R17.3, R17.4, R17.5, R17.6, R17.7, R17.8_
   - [x] 28.2 Implement `src/spread/assign.ts`
     - Pure `assignSpread` with djb2 hash tiebreak, void sentinel, `Set<CardId>` no-duplicate guard.
     - _Requirements: R17.1, R17.2, R17.3, R17.4, R17.5, R17.6, R17.7, R17.8_
-  - [~] 28.3 [PBT] Write property tests for spreads — P5, P6, P11
+  - [x] 28.3 [PBT] Write property tests for spreads — P5, P6, P11
     - **Property 5: No duplicate card in spread.**
     - **Property 6: Primary position holds most severe** (necropsy "The Corpse").
     - **Property 11: Spread count invariant** (3/5/10).
@@ -237,11 +237,11 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Implement the schema section of `src/reading/run.ts`: `SpreadKindSchema`, `ReadingOptsSchema` (default `"necropsy"`, optional `registryData`/`osvData`, required `now`), `ReadingSchema` (id UUID, repo, draws, spread, vitality, createdAt, engineVersion, errors).
   - _Requirements: R19.2, R19.5_
 
-- [ ] 30. Implement the `runReading` orchestrator
-  - [~] 30.1 Write unit tests (test-first)
+- [x] 30. Implement the `runReading` orchestrator
+  - [x] 30.1 Write unit tests (test-first)
     - Happy path end-to-end; `initParser` called once then all `.py` parsed once into `trees`/`parseErrors`; `Promise.allSettled` isolates a throwing detector into `errors[]` while others complete; `createdAt === opts.now`; `engineVersion` from package.json; non-Python-only snapshot completes with Python detectors returning null (R21.8).
     - _Requirements: R19.1, R19.2, R19.3, R19.4, R19.5, R21.8_
-  - [~] 30.2 Implement `src/reading/run.ts` `runReading`
+  - [x] 30.2 Implement `src/reading/run.ts` `runReading`
     - Parse `.py` files once (feeding `DetectorOpts.trees`/`parseErrors`), run `parseAllManifests`, run the 11 detectors via `Promise.allSettled`, filter nulls, `assignSpread`, `computeVitality`, assemble `Reading` with `createdAt = opts.now` and `id = crypto.randomUUID()`; propagate `PARSER_INIT_FAILED` as a whole-reading failure.
     - _Requirements: R19.1, R19.2, R19.3, R19.4, R19.5, R21.8_
 

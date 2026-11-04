@@ -193,73 +193,60 @@ function assignFates(
 
 /**
  * Necropsy (5): The Corpse, The Wound, The Shadow, The Hope, The Call.
- * - Corpse = highest `severity × weight`; Wound = second highest.
- * - Shadow = `devil` if drawn, otherwise third highest.
+ * - Corpse = GLOBAL highest `severity × weight` (SHA tiebreak), ALWAYS (R17.3 /
+ *   P6, non-negotiable). Wound = second highest.
+ * - Shadow = `devil` if drawn and not already placed, otherwise third highest.
  * - Hope = `star` if drawn, otherwise void.
- * - Call = `judgement` if drawn and its registry `linkedGrimoireIds.length > 0`,
+ * - Call = `judgement` ONLY if drawn, its registry `linkedGrimoireIds.length >
+ *   0`, AND it is still unplaced after Corpse/Wound/Shadow assignment;
  *   otherwise void with the "no ritual can be performed" description.
+ *
+ * R17.7 / R17.3 reconciliation: The Corpse always anchors the global top draw,
+ * so a high-scoring `judgement` is consumed by The Corpse and CANNOT also echo
+ * into The Call (that would place one CardId twice — an R17.7 violation).
+ * Every placement below is guarded by the `placed` Set and records its draw via
+ * `placed.add`, so no card is ever assigned to two positions. The Call only
+ * holds `judgement` when it survives the higher-priority slots unplaced.
  */
 function assignNecropsy(
   ranked: readonly CardDraw[],
   placed: Set<CardId>,
 ): SpreadPosition[] {
-  // Resolve the card-specific positions first (design.md necropsy table): The
-  // Shadow keeps `devil`, The Hope keeps `star`, The Call keeps `judgement`
-  // (when its registry entry links at least one grimoire). Reserving these
-  // dedicated cards up front stops the greedy Corpse/Wound slots from consuming
-  // them — but The Corpse still outranks The Call for `judgement` when enough
-  // other cards exist to anchor the greedy slots (see the fallback below).
+  // The Hope is reserved first (design.md necropsy table): `star` is bound to
+  // The Hope and must not be consumed by the greedy Corpse/Wound/Shadow slots.
   const hope = pickCard(ranked, placed, "star");
   if (hope) placed.add(hope.card);
 
-  const shadow = pickCard(ranked, placed, "devil");
-  if (shadow) placed.add(shadow.card);
+  // The Corpse = the global highest-ranked unplaced draw, unconditionally.
+  const corpse = pickFirst(ranked, placed, () => true);
+  if (corpse) placed.add(corpse.card);
 
-  const judgementLinked =
-    (CARD_REGISTRY.get("judgement")?.linkedGrimoireIds.length ?? 0) > 0;
-  const judgementDraw = judgementLinked
-    ? pickCard(ranked, placed, "judgement")
-    : undefined;
-
-  // The Corpse anchors the highest-scoring draw. Judgement, when drawn and
-  // linked, is the strongest affliction: it anchors The Corpse as long as at
-  // least two other (non-judgement) draws remain to fill The Corpse's
-  // neighbouring slots — in that case The Call stays void (no echo, keeping the
-  // no-duplicate guarantee). When fewer than two other draws remain, judgement
-  // is the answer to The Call instead, and The Corpse falls back to the next
-  // card.
-  const otherCount = ranked.filter(
-    (d) => d.card !== "judgement" && !placed.has(d.card),
-  ).length;
-
-  let corpse: CardDraw | undefined;
-  let call: CardDraw | undefined;
-  if (judgementDraw && otherCount >= 2) {
-    corpse = judgementDraw;
-    placed.add(corpse.card);
-  } else if (judgementDraw) {
-    call = judgementDraw;
-    corpse = pickFirst(ranked, placed, () => true);
-    if (corpse) placed.add(corpse.card);
-  } else {
-    corpse = pickFirst(ranked, placed, () => true);
-    if (corpse) placed.add(corpse.card);
-  }
-
+  // The Wound = the next highest-ranked unplaced draw.
   const wound = pickFirst(ranked, placed, () => true);
   if (wound) placed.add(wound.card);
 
-  // The Shadow falls back to the third-highest draw when devil was not drawn.
-  const shadowDraw = shadow ?? pickFirst(ranked, placed, () => true);
-  if (shadowDraw && shadowDraw !== shadow) placed.add(shadowDraw.card);
+  // The Shadow = `devil` when drawn and still unplaced, else the next
+  // highest-ranked unplaced draw.
+  const shadow =
+    pickCard(ranked, placed, "devil") ?? pickFirst(ranked, placed, () => true);
+  if (shadow) placed.add(shadow.card);
+
+  // The Call = `judgement` only when drawn, linked to at least one grimoire,
+  // and still unplaced after the slots above. Otherwise void ("no ritual").
+  const judgementLinked =
+    (CARD_REGISTRY.get("judgement")?.linkedGrimoireIds.length ?? 0) > 0;
+  const call = judgementLinked
+    ? pickCard(ranked, placed, "judgement")
+    : undefined;
+  if (call) placed.add(call.card);
 
   return [
     corpse
       ? filledPosition(1, "The Corpse", corpse)
       : voidPosition(1, "The Corpse"),
     wound ? filledPosition(2, "The Wound", wound) : voidPosition(2, "The Wound"),
-    shadowDraw
-      ? filledPosition(3, "The Shadow", shadowDraw)
+    shadow
+      ? filledPosition(3, "The Shadow", shadow)
       : voidPosition(3, "The Shadow"),
     hope ? filledPosition(4, "The Hope", hope) : voidPosition(4, "The Hope"),
     call
