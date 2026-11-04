@@ -95,6 +95,25 @@ export type {
   OutputLine,
 } from "./render/blocks.js";
 export { buildEvidenceLink } from "./render/evidence-link.js";
+export {
+  renderCardBlock,
+  renderEcho,
+  renderProgress,
+  renderReading,
+  renderSkipNote,
+  type RenderContext,
+} from "./render/reading.js";
+export { renderSummary } from "./render/summary.js";
+export { renderHelp } from "./render/help.js";
+export { renderExplain } from "./render/explain.js";
+export {
+  demoUnavailableError,
+  invalidResponseError,
+  networkError,
+  renderError,
+  upstreamError,
+} from "./render/errors.js";
+export { withDemoLabel } from "./render/demo-label.js";
 
 // Session — command history, the bounded output log, and the pinned reference.
 export {

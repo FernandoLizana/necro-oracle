@@ -304,3 +304,279 @@ export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
         arg === undefined ? { kind: "sound" } : { kind: "sound", arg },
       ),
   ) as fc.Arbitrary<Exclude<Command, { kind: "unknown" }>>;
+
+// ============================================================================
+// Reading / SpreadPosition / Evidence builders (task 9.1 — renderers P7, P8, P12)
+// ============================================================================
+//
+// These arbitraries build the real `@necro/oracle/client` shapes the reading,
+// explain, summary and error renderers consume: `Evidence`, `CardDraw`,
+// `SpreadPosition`, `RepoRef`, `Reading`, and the `ui-crt` `SummonSummary` /
+// `ReadingResponse` wrappers. They use the REAL field names from the oracle
+// schemas (CardDraw: `card`, `orientation`, `severity`, `summary`, `evidence`,
+// `grimoires`; SpreadPosition: `position`, `label`, `draw`, `description`) and
+// are validated against their schemas so a drift in the oracle shape is caught
+// here rather than deep inside a renderer test.
+//
+// A void SpreadPosition carries `draw: null` and a `description` sentinel; a
+// drawn position carries a `CardDraw` and no description. Positions are
+// renumbered 1..n in order so a built Reading always has a well-formed spread.
+
+import {
+  CardDrawSchema,
+  EvidenceSchema,
+  ReadingSchema,
+  RepoRefSchema,
+  SpreadPositionSchema,
+  type CardDraw,
+  type Evidence,
+  type Reading,
+  type RepoRef,
+  type Severity,
+  type SpreadPosition,
+} from "@necro/oracle/client";
+
+import type { ReadingResponse, SummonSummary } from "../protocol.js";
+
+// `CardIdSchema` is already imported above (for the Command arbitrary); reuse
+// its `.options` here rather than re-importing it.
+/** Every CardId literal, for drawing a card. */
+const ALL_CARD_IDS = CardIdSchema.options;
+
+/** The two orientations an oracle CardDraw can carry. */
+const ORIENTATIONS = ["upright", "reversed"] as const;
+
+/** The five Evidence sources the oracle schema allows. */
+const EVIDENCE_SOURCES = [
+  "static",
+  "github",
+  "osv",
+  "registry",
+  "sandbox",
+] as const;
+
+/** A 40-character lowercase hex sha, as GitHub (and RepoRefSchema) accept. */
+const arbSha: fc.Arbitrary<string> = fc.stringMatching(/^[0-9a-f]{40}$/);
+
+/** An owner/name token over GitHub's safe set (non-empty for `.min(1)`). */
+const arbOwnerName: fc.Arbitrary<string> = fc.stringMatching(
+  /^[A-Za-z0-9._-]{1,30}$/,
+);
+
+/** A well-formed `RepoRef` (owner, name, 40-hex sha, default branch). */
+export const arbRepoRef: fc.Arbitrary<RepoRef> = fc
+  .record({
+    owner: arbOwnerName,
+    name: arbOwnerName,
+    sha: arbSha,
+    defaultBranch: fc.constantFrom("main", "master", "develop", "trunk"),
+  })
+  .map((ref) => RepoRefSchema.parse(ref));
+
+/** A severity literal in the real 0..3 range (0 is valid — a latent card). */
+export const arbSeverity: fc.Arbitrary<Severity> = fc.constantFrom<Severity[]>(
+  0,
+  1,
+  2,
+  3,
+);
+
+/**
+ * A single path segment that never contains a path separator and stays short.
+ * Built from `fc.fullUnicode()` so renderers must survive surrogate pairs.
+ */
+const arbPathSegment: fc.Arbitrary<string> = fc
+  .array(fc.fullUnicode().filter((c) => c !== "/" && c !== "\n"), {
+    minLength: 1,
+    maxLength: 8,
+  })
+  .map((chars) => chars.join(""));
+
+/** A repository path of 1..4 `/`-joined segments (e.g. `src/app/main.py`). */
+const arbEvidencePath: fc.Arbitrary<string> = fc
+  .array(arbPathSegment, { minLength: 1, maxLength: 4 })
+  .map((segments) => segments.join("/"));
+
+/**
+ * An `Evidence` item. `path` and `line` are optional (the schema allows both to
+ * be absent); when present they are a repo path and a nonnegative integer line.
+ */
+export const arbEvidence: fc.Arbitrary<Evidence> = fc
+  .record(
+    {
+      kind: fc.stringMatching(/^[a-z_]{1,20}$/),
+      detail: fc.string({ maxLength: 40 }),
+      source: fc.constantFrom(...EVIDENCE_SOURCES),
+      path: fc.option(arbEvidencePath, { nil: undefined }),
+      line: fc.option(fc.integer({ min: 0, max: 100_000 }), { nil: undefined }),
+    },
+    { requiredKeys: ["kind", "detail", "source"] },
+  )
+  .map((raw) => EvidenceSchema.parse(raw));
+
+/** An `Evidence` item that always carries a `path` (for the P8 link gate). */
+export const arbEvidenceWithPath: fc.Arbitrary<Evidence> = fc
+  .record(
+    {
+      kind: fc.stringMatching(/^[a-z_]{1,20}$/),
+      detail: fc.string({ maxLength: 40 }),
+      source: fc.constantFrom(...EVIDENCE_SOURCES),
+      path: arbEvidencePath,
+      line: fc.option(fc.integer({ min: 0, max: 100_000 }), { nil: undefined }),
+    },
+    { requiredKeys: ["kind", "detail", "source", "path"] },
+  )
+  .map((raw) => EvidenceSchema.parse(raw));
+
+/**
+ * A `CardDraw`: a drawn card with its orientation, severity, deterministic
+ * summary, a (possibly empty) evidence list, and an empty grimoire list (the
+ * oracle package leaves `grimoires` empty). `narration` is omitted — the oracle
+ * never writes it, and the renderer uses `VOICE_TABLE`, not `narration`.
+ */
+export const arbCardDraw: fc.Arbitrary<CardDraw> = fc
+  .record({
+    card: fc.constantFrom(...ALL_CARD_IDS),
+    severity: arbSeverity,
+    orientation: fc.constantFrom(...ORIENTATIONS),
+    evidence: fc.array(arbEvidence, { maxLength: 5 }),
+    summary: fc.string({ maxLength: 60 }),
+    grimoires: fc.constant([] as string[]),
+  })
+  .map((raw) => CardDrawSchema.parse(raw));
+
+/** A `CardDraw` whose evidence list always has at least one path-bearing item. */
+export const arbCardDrawWithEvidence: fc.Arbitrary<CardDraw> = fc
+  .record({
+    card: fc.constantFrom(...ALL_CARD_IDS),
+    severity: arbSeverity,
+    orientation: fc.constantFrom(...ORIENTATIONS),
+    evidence: fc.array(arbEvidenceWithPath, { minLength: 1, maxLength: 5 }),
+    summary: fc.string({ maxLength: 60 }),
+    grimoires: fc.constant([] as string[]),
+  })
+  .map((raw) => CardDrawSchema.parse(raw));
+
+/** Options for building a single `SpreadPosition`. */
+interface PositionOptions {
+  /** 1-based index assigned to this position. */
+  readonly position: number;
+  /** The draw for a drawn position, or `null` for a void position. */
+  readonly draw: CardDraw | null;
+}
+
+/** Build one validated `SpreadPosition` from a draw-or-void and an index. */
+function buildPosition({ position, draw }: PositionOptions): SpreadPosition {
+  const base = {
+    position,
+    label: `POSITION ${position}`,
+    draw,
+  };
+  // A void position carries a description sentinel; a drawn position omits it.
+  const raw =
+    draw === null ? { ...base, description: "No card fell here." } : base;
+  return SpreadPositionSchema.parse(raw);
+}
+
+/**
+ * A spread of 1..5 positions, renumbered 1..n in order, mixing drawn and void
+ * positions. The `allDrawn` option forces every position to carry a draw (used
+ * by the evidence property so every position is a card block).
+ */
+export function arbSpread(
+  options: { readonly allDrawn?: boolean; readonly drawArb?: fc.Arbitrary<CardDraw> } = {},
+): fc.Arbitrary<SpreadPosition[]> {
+  const drawArb = options.drawArb ?? arbCardDraw;
+  const slotArb: fc.Arbitrary<CardDraw | null> = options.allDrawn
+    ? drawArb
+    : fc.option(drawArb, { nil: null });
+  return fc
+    .array(slotArb, { minLength: 1, maxLength: 5 })
+    .map((slots) =>
+      slots.map((draw, index) =>
+        buildPosition({ position: index + 1, draw }),
+      ),
+    );
+}
+
+/** A `Reading.errors` entry: a failed detector with a code and message. */
+const arbReadingError = fc.record(
+  {
+    code: fc.stringMatching(/^[A-Z_]{3,30}$/),
+    userMessage: fc.string({ maxLength: 60 }),
+    cardId: fc.option(fc.constantFrom(...ALL_CARD_IDS), { nil: undefined }),
+  },
+  { requiredKeys: ["code", "userMessage"] },
+);
+
+/** Options steering `arbReading`. */
+export interface ReadingOptions {
+  /** Force every spread position to carry a draw. */
+  readonly allDrawn?: boolean;
+  /** The CardDraw arbitrary to use for drawn positions. */
+  readonly drawArb?: fc.Arbitrary<CardDraw>;
+  /** Force `errors` to be empty (true) or allow failures (false). */
+  readonly noErrors?: boolean;
+}
+
+/**
+ * A complete, schema-valid `Reading`. `draws` mirrors the drawn positions of
+ * `spread` so the two stay consistent (the renderer reads `spread`). `id` is a
+ * valid UUID and `createdAt === now` per the oracle contract.
+ */
+export function arbReading(options: ReadingOptions = {}): fc.Arbitrary<Reading> {
+  return fc
+    .record({
+      repo: arbRepoRef,
+      spread: arbSpread({
+        ...(options.allDrawn !== undefined ? { allDrawn: options.allDrawn } : {}),
+        ...(options.drawArb !== undefined ? { drawArb: options.drawArb } : {}),
+      }),
+      vitality: fc.integer({ min: 0, max: 100 }),
+      createdAt: fc.date({ min: new Date("2000-01-01T00:00:00.000Z"), max: new Date("2030-01-01T00:00:00.000Z") }).map((d) => d.toISOString()),
+      id: fc.uuid(),
+      engineVersion: fc.stringMatching(/^[0-9]+\.[0-9]+\.[0-9]+$/),
+      errors: options.noErrors
+        ? fc.constant([])
+        : fc.array(arbReadingError, { maxLength: 3 }),
+    })
+    .map((raw) => {
+      const draws = raw.spread
+        .filter((p): p is SpreadPosition & { draw: CardDraw } => p.draw !== null)
+        .map((p) => p.draw);
+      return ReadingSchema.parse({ ...raw, draws });
+    });
+}
+
+/** A `SummonSummary` for the summary renderer examples. */
+export function arbSummonSummary(
+  options: { readonly demo?: boolean } = {},
+): fc.Arbitrary<SummonSummary> {
+  return fc
+    .record({
+      ref: arbRepoRef,
+      stars: fc.integer({ min: 0, max: 1_000_000 }),
+      hasWorkflowsDir: fc.boolean(),
+      degradedFields: fc.subarray(["pulls", "release"] as const),
+      cache: fc.constantFrom<SummonSummary["cache"][]>("hit", "miss"),
+      fileCount: fc.integer({ min: 0, max: 5000 }),
+      truncated: fc.boolean(),
+    })
+    .map((raw): SummonSummary =>
+      options.demo ? { ...raw, demo: true } : raw,
+    );
+}
+
+/** A `ReadingResponse` pairing a summary with a reading that shares its ref. */
+export function arbReadingResponse(
+  options: ReadingOptions & { readonly demo?: boolean } = {},
+): fc.Arbitrary<ReadingResponse> {
+  return arbReading(options).chain((reading) =>
+    arbSummonSummary({
+      ...(options.demo !== undefined ? { demo: options.demo } : {}),
+    }).map((summary) => ({
+      summary: { ...summary, ref: reading.repo },
+      reading,
+    })),
+  );
+}

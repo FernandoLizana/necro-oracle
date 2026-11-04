@@ -95,20 +95,20 @@ Conventions that apply to every task:
     - Implement the block/line/segment model and `buildEvidenceLink` (segment-by-segment `encodeURIComponent`).
     - _Requirements: R14.4, R14.5, R14.6_
 
-- [ ] 9. Reading, summary, help, explain, demo-label and error renderers
-  - [~] 9.1 Write `P7`, `P8`, `P12` and renderer examples first
+- [x] 9. Reading, summary, help, explain, demo-label and error renderers
+  - [x] 9.1 Write `P7`, `P8`, `P12` and renderer examples first
     - Add `render/reading.pbt.test.ts` for **Property 7 (R7.1, R7.2, R7.11, R7.12)**, `render/evidence.pbt.test.ts` for **Property 8 (R7.5, R8.1)**, and `render/errors.pbt.test.ts` for **Property 12 (R11.1, R11.3, R11.9)**.
     - Add example tests: `renderSummary` (degraded, cache hit, truncated, star/file counts, R5.4-R5.8); `renderHelp` content and no-network (R4.1-R4.4); `renderExplain` targets and errors (R8.2-R8.6); vitality gauge shape (R7.7); void position (R6.10, R7-void); `reading.errors` closing block (Q7); live-vs-demo link gate (R7.6); severity rendered exactly as received including `SEVERITY 0` (R7.2); uppercase names, no emoji (R7.10); `withDemoLabel` prepends the `DEMO_LABEL` (R18.5). Add a `MockReading`/`SpreadPosition`/`Evidence` builder. Confirm all fail first.
     - _Requirements: R4.1, R4.2, R4.3, R4.4, R5.4, R5.5, R5.6, R5.7, R5.8, R6.10, R7.1, R7.2, R7.3, R7.5, R7.6, R7.7, R7.9, R7.10, R7.11, R7.12, R8.1, R8.2, R8.3, R8.4, R8.5, R8.6, R11.1, R11.2, R11.3, R11.8, R11.9, R18.5, R18.11_
-  - [~] 9.2 Implement `render/{reading,summary,help,explain,demo-label,errors}.ts`
+  - [x] 9.2 Implement `render/{reading,summary,help,explain,demo-label,errors}.ts`
     - Implement `renderReading`, `renderCardBlock`, `renderExplain`, `renderSummary`, `renderHelp`, `renderError` (splits `userMessage` at first `\n`, `ERROR <CODE>` first line, table entry for all 18 codes), `renderEcho`, `renderProgress`, `renderSkipNote`, `withDemoLabel`, and `RenderContext`.
     - _Requirements: R4.1, R4.2, R4.3, R5.4, R5.5, R5.6, R5.7, R5.8, R6.10, R6.15, R6.21, R7.1, R7.2, R7.3, R7.5, R7.6, R7.7, R7.9, R7.10, R7.12, R8.1, R8.2, R8.3, R8.5, R8.6, R11.1, R11.2, R11.3, R11.8, R11.9, R18.5, R18.11_
 
-- [ ] 10. Terminal-raised errors
-  - [~] 10.1 Write error-builder examples first
+- [x] 10. Terminal-raised errors
+  - [x] 10.1 Write error-builder examples first
     - Add examples asserting `networkError()` (`NETWORK_TIMEOUT`), `upstreamError()` (`UPSTREAM_UNAVAILABLE`), `invalidResponseError()` (`VALIDATION_FAILED`), and `demoUnavailableError()` (`NETWORK_TIMEOUT`, "reload while online") each build a two-line Oracle_Voice `NecroError` with no stack/cause. Confirm they fail first.
     - _Requirements: R11.4, R11.5, R11.6, R18.9, R18.10_
-  - [~] 10.2 Implement the four builders in `render/errors.ts`
+  - [x] 10.2 Implement the four builders in `render/errors.ts`
     - _Requirements: R11.4, R11.5, R11.6, R18.9, R18.10_
 
 - [x] 11. Motion mode, reveal schedule, and preference loaders
