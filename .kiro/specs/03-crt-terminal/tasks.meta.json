@@ -1,0 +1,477 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Split the Reading schemas out of the orchestrator (behaviour-preserving)": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814987700
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793815002420
+      },
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793815121781
+      }
+    ],
+    "1.2 Next `development` export-condition and Vercel tree-sitter WASM file-tracing spike": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814987767
+      }
+    ],
+    "2.1 Write the source-level import-closure guard test first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814987860
+      }
+    ],
+    "2.2 Implement `src/client.ts` and the `./client` export": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814987908
+      }
+    ],
+    "2.3 Write the dist-level guard test first, then wire the size-limit entry": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814987951
+      }
+    ],
+    "3.1 Write `P22` and the config examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988000
+      }
+    ],
+    "3.2 Implement the schema keys and `EnvValidationError`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988061
+      }
+    ],
+    "4.1 Write the barrel and conformance smoke test first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988128
+      }
+    ],
+    "4.2 Implement package deps, `protocol.ts`, `ports.ts`, and the barrel": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988172
+      }
+    ],
+    "5.1 Write `P1`, `P2`, `P3` and parser examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988210
+      }
+    ],
+    "5.2 Implement `command/{types,parse,print}.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988256
+      }
+    ],
+    "6.1 Write `P4`, `P5` and wrap/sanitize examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988308
+      }
+    ],
+    "6.2 Implement `text/sanitize.ts` and `text/wrap.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988349
+      }
+    ],
+    "7.1 Write `P6` and phrase examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988379
+      }
+    ],
+    "7.2 Implement `voice/voice-table.ts` and `voice/phrases.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988421
+      }
+    ],
+    "8.1 Write `P17` and block/line examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988475
+      }
+    ],
+    "8.2 Implement `render/blocks.ts` and `render/evidence-link.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988590
+      }
+    ],
+    "9.1 Write `P7`, `P8`, `P12` and renderer examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988652
+      }
+    ],
+    "9.2 Implement `render/{reading,summary,help,explain,demo-label,errors}.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988712
+      }
+    ],
+    "10.1 Write error-builder examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988774
+      }
+    ],
+    "10.2 Implement the four builders in `render/errors.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988844
+      }
+    ],
+    "11.1 Write `P9`, `P10`, `P11` first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988912
+      }
+    ],
+    "11.2 Implement `motion/{reveal,motion-mode}.ts` and `prefs/prefs.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814988975
+      }
+    ],
+    "12.1 Write `P15`, `P20` and examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989042
+      }
+    ],
+    "12.2 Implement `session/history.ts` and `session/log.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989100
+      }
+    ],
+    "13.1 Write `P26` first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989147
+      }
+    ],
+    "13.2 Implement `sound/sound-reducer.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989195
+      }
+    ],
+    "14.1 Write pinned-ref and catalog examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989238
+      }
+    ],
+    "14.2 Implement `session/pinned-ref` helper and `demo/catalog.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989282
+      }
+    ],
+    "15.1 Write `P19`, `P24`, `P25`, `P27` and reducer examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989343
+      }
+    ],
+    "15.2 Implement `session/state.ts` and `session/reducer.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989412
+      }
+    ],
+    "16.1 Write sound-engine examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989465
+      }
+    ],
+    "16.2 Implement `sound/{engine-types,load-engine,engine}.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989515
+      }
+    ],
+    "17.1 Write the tokens/CSS test and component/hook examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989560
+      }
+    ],
+    "17.2 Implement `tokens.ts`, `crt.css`, components and hooks": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989651
+      }
+    ],
+    "18. Checkpoint - `@necro/ui-crt` is complete": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989698
+      }
+    ],
+    "19.1 Write protocol/stream schema conformance and NDJSON parser examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989745
+      }
+    ],
+    "19.2 Implement `protocol/schemas.ts`, `protocol/stream.ts`, and `terminal/ndjson.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989795
+      }
+    ],
+    "20.1 Write `P18` and client-ip examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989843
+      }
+    ],
+    "20.2 Implement `server/pinned-ref.ts` and `server/client-ip.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989887
+      }
+    ],
+    "21.1 Write `P13`, `P14` and error-map examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989928
+      }
+    ],
+    "21.2 Implement `server/error-map.ts` and `server/redact.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814989982
+      }
+    ],
+    "22.1 Write `P16`, `P21` and limiter examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990029
+      }
+    ],
+    "22.2 Implement `server/limiter/{port,upstash,fallback,chain}.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990067
+      }
+    ],
+    "23.1 Write `P28`, `P29` and wrapper examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990107
+      }
+    ],
+    "23.2 Implement `server/handlers/phase.ts` and `server/handlers/external-skip.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990153
+      }
+    ],
+    "24.1 Write composition/deps examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990196
+      }
+    ],
+    "24.2 Implement `server/deps.ts` and `server/composition.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990247
+      }
+    ],
+    "25.1 Write summon-handler examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990295
+      }
+    ],
+    "25.2 Implement `server/handlers/guard.ts` and `server/handlers/summon.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990346
+      }
+    ],
+    "26.1 Write reading-handler streaming and budget examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990387
+      }
+    ],
+    "26.2 Implement `server/handlers/readings.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990427
+      }
+    ],
+    "27.1 Write route and middleware examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990491
+      }
+    ],
+    "27.2 Implement `app/api/summon/route.ts`, `app/api/readings/route.ts`, `app/{layout,page}.tsx`, `components/TerminalScreen.tsx`, `terminal/{api-client,browser-ports}.ts`, and `src/middleware.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990549
+      }
+    ],
+    "28.1 Write API-client examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990610
+      }
+    ],
+    "28.2 Implement the streaming-reader and summon paths in `terminal/api-client.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990662
+      }
+    ],
+    "29.1 Write `P23` and demo examples first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990717
+      }
+    ],
+    "29.2 Implement `demo/build-demo.ts`, `scripts/demo-bundle/generate.ts`, `bundle.generated.json`, and `demo/load-bundle.ts`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990765
+      }
+    ],
+    "30. Checkpoint - server, routes and demo are complete": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990816
+      }
+    ],
+    "31.1 Write lint/grep boundary tests and budget-script checks first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990857
+      }
+    ],
+    "31.2 Implement the ESLint `no-restricted-syntax`/import rules and `scripts/check-web-budget.mjs`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990896
+      }
+    ],
+    "32.1 Write the e2e and axe specs first": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814990944
+      }
+    ],
+    "32.2 Implement any `data-*`/ARIA adjustments the e2e/axe specs require": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814991046
+      }
+    ],
+    "33.1 Update `docs/ARCHITECTURE.md`": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814991087
+      }
+    ],
+    "33.2 Add a dated `docs/KIRO_USAGE.md` entry": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814991127
+      }
+    ],
+    "34. Final verification checkpoint": [
+      {
+        "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793814991180
+      }
+    ]
+  }
+}
