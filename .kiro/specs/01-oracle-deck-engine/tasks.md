@@ -180,42 +180,42 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - [x] 22.2 Implement `src/detectors/temperance.ts`
     - _Requirements: R12.1, R12.2, R12.3, R12.4, R12.5_
 
-- [ ] 23. Implement `detectJustice` (XI — Missing License)
-  - [~] 23.1 Write unit tests (test-first)
+- [x] 23. Implement `detectJustice` (XI — Missing License)
+  - [x] 23.1 Write unit tests (test-first)
     - `licenseKey` NOASSERTION/null → severity 2 upright (precedence); no license file + valid key → severity 2 upright; exactly 1 file + valid key → null; > 1 distinct file + valid key → severity 1 reversed; evidence reports only detected paths + observed key; never suggests a license.
     - _Requirements: R13.1, R13.2, R13.3, R13.4, R13.5, R13.6_
-  - [~] 23.2 Implement `src/detectors/justice.ts`
+  - [x] 23.2 Implement `src/detectors/justice.ts`
     - _Requirements: R13.1, R13.2, R13.3, R13.4, R13.5, R13.6_
 
-- [ ] 24. Implement `detectMoon` (XVIII — Complexity and Illusion)
-  - [~] 24.1 Write unit tests (test-first)
+- [x] 24. Implement `detectMoon` (XVIII — Complexity and Illusion)
+  - [x] 24.1 Write unit tests (test-first)
     - ≥ 2 files > 1000 lines or any nesting depth > 6 → severity 2 upright (precedence); else exactly 1 large file or > 10 confusion markers → severity 1 reversed; none → null; evidence records path + exact line count / depth / marker count; multi-marker line counted once.
     - _Requirements: R14.1, R14.2, R14.3, R14.4, R14.5, R14.6_
-  - [~] 24.2 Implement `src/detectors/moon.ts`
+  - [x] 24.2 Implement `src/detectors/moon.ts`
     - Nesting depth computed from `opts.trees` (skip `opts.parseErrors`); never call `parsePython`.
     - _Requirements: R14.1, R14.2, R14.3, R14.4, R14.5, R14.6_
 
-- [ ] 25. Implement `detectStar` (XVII — Hope and Strengths)
-  - [~] 25.1 Write unit tests (test-first)
+- [x] 25. Implement `detectStar` (XVII — Hope and Strengths)
+  - [x] 25.1 Write unit tests (test-first)
     - Strength score 0–5 (license, tests, CI, README, recent push); ≥ 3 → severity 2 upright; 1–2 → severity 1 reversed; 0 → null; one evidence item per factor with name/contributed/observed value; null `pushedAt` contributes 0; uses `opts.now`.
     - _Requirements: R15.1, R15.2, R15.3, R15.4, R15.5_
-  - [~] 25.2 Implement `src/detectors/star.ts`
+  - [x] 25.2 Implement `src/detectors/star.ts`
     - _Requirements: R15.1, R15.2, R15.3, R15.4, R15.5_
 
-- [ ] 26. Implement `computeWorldDraw` (XXI — Destiny)
-  - [-] 26.1 Write unit tests (test-first)
+- [x] 26. Implement `computeWorldDraw` (XXI — Destiny)
+  - [x] 26.1 Write unit tests (test-first)
     - REVIVED → world severity 2 upright; UNDEAD → world severity 1 reversed; STILL_DEAD → null; non-null draws include vitalityDelta + passed/failed gate ids as evidence.
     - _Requirements: R16.1, R16.2, R16.3, R16.4, R16.5_
-  - [~] 26.2 Implement `src/detectors/world.ts`
+  - [x] 26.2 Implement `src/detectors/world.ts`
     - _Requirements: R16.1, R16.2, R16.3, R16.4, R16.5_
 
-- [ ] 27. Implement vitality scoring
+- [x] 27. Implement vitality scoring
   - [x] 27.1 Write unit tests (test-first)
     - `computeVitality` formula `Math.round(Math.max(0, 100 - Σ(weight×severity)))`; empty/all-null → 100; sum > 100 → 0; `computeVitalityDelta(before, after) === after - before`.
     - _Requirements: R18.1, R18.2, R18.3, R18.4, R18.5, R18.6_
   - [x] 27.2 Implement `src/scoring/vitality.ts`
     - _Requirements: R18.1, R18.2, R18.3, R18.4, R18.5, R18.6_
-  - [~] 27.3 [PBT] Write property tests for vitality — P7, P10
+  - [x] 27.3 [PBT] Write property tests for vitality — P7, P10
     - **Property 7: Vitality monotonic** — lowering severities never lowers vitality.
     - **Property 10: Vitality bounds** — always an integer in `[0,100]`.
     - **Validates: Requirements R18.1, R18.2, R18.3, R18.4, R18.5** / **Properties: P7, P10**
@@ -233,7 +233,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Property 11: Spread count invariant** (3/5/10).
     - **Validates: Requirements R17.2, R17.3, R17.4, R17.7** / **Properties: P5, P6, P11**
 
-- [~] 29. Define reading schemas and `ReadingOpts`
+- [x] 29. Define reading schemas and `ReadingOpts`
   - Implement the schema section of `src/reading/run.ts`: `SpreadKindSchema`, `ReadingOptsSchema` (default `"necropsy"`, optional `registryData`/`osvData`, required `now`), `ReadingSchema` (id UUID, repo, draws, spread, vitality, createdAt, engineVersion, errors).
   - _Requirements: R19.2, R19.5_
 

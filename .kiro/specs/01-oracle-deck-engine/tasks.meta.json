@@ -7,6 +7,10 @@
     "6.3 [PBT] Write property tests for registry weights — P4, P14": {
       "status": "passed",
       "lastRunTimestamp": 1793762572552
+    },
+    "27.3 [PBT] Write property tests for vitality — P7, P10": {
+      "status": "passed",
+      "lastRunTimestamp": 1793764119178
     }
   },
   "executionHistory": {
@@ -707,6 +711,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022476
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763820406
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764009030
       }
     ],
     "23.2 Implement `src/detectors/justice.ts`": [
@@ -714,6 +728,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022513
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764020098
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764158506
       }
     ],
     "24.1 Write unit tests (test-first)": [
@@ -721,6 +745,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022551
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763821368
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764007944
       }
     ],
     "24.2 Implement `src/detectors/moon.ts`": [
@@ -728,6 +762,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022591
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764019408
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764156161
       }
     ],
     "25.1 Write unit tests (test-first)": [
@@ -735,6 +779,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022630
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763822761
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764006746
       }
     ],
     "25.2 Implement `src/detectors/star.ts`": [
@@ -742,6 +796,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022676
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764017980
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764157609
       }
     ],
     "26.1 Write unit tests (test-first)": [
@@ -754,6 +818,11 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793763275872
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764010282
       }
     ],
     "26.2 Implement `src/detectors/world.ts`": [
@@ -761,6 +830,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022749
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764017079
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764155225
       }
     ],
     "27.1 Write unit tests (test-first)": [
@@ -802,6 +881,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761022919
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764025445
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764159679
       }
     ],
     "28.1 Write unit tests (test-first)": [
@@ -850,6 +939,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761023088
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793763823579
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764011346
       }
     ],
     "30.1 Write unit tests (test-first)": [
@@ -1025,6 +1124,41 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793763800601
+      }
+    ],
+    "26. Implement `computeWorldDraw` (XXI — Destiny)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764155306
+      }
+    ],
+    "24. Implement `detectMoon` (XVIII — Complexity and Illusion)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764156212
+      }
+    ],
+    "25. Implement `detectStar` (XVII — Hope and Strengths)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764157676
+      }
+    ],
+    "23. Implement `detectJustice` (XI — Missing License)": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764158597
+      }
+    ],
+    "27. Implement vitality scoring": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793764159740
       }
     ]
   }
