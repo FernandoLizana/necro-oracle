@@ -43,13 +43,23 @@ scope here.
   at a commit (`ref`, `files`, `meta`, `manifests`, `contents`, `oversizeFiles`,
   `truncated`, `createdAt`).
 - **Tarball_Snapshot**: A repository downloaded as a single gzip-compressed tar
-  archive in one HTTP request and extracted entirely in memory, never written to
-  disk, and never executed. Two independent caps guard against decompression
-  bombs: a 50 MB cap on the COMPRESSED bytes downloaded, and a 200 MB cap on the
-  cumulative UNCOMPRESSED bytes extracted plus a maximum extracted-entry count
-  (default 100,000). A small compressed archive can expand into a far larger
+  archive in one logical download request and extracted entirely in memory,
+  never written to disk, and never executed. Without a `GITHUB_TOKEN` the
+  archive is fetched directly from
+  `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}` with no
+  Authorization header and no GitHub REST API call; with a `GITHUB_TOKEN` it is
+  fetched from the `api.github.com` tarball endpoint, following at most one
+  redirect to `codeload.github.com`. Two independent caps guard against
+  decompression bombs: a 50 MB cap on the COMPRESSED bytes downloaded, and a
+  200 MB cap on the cumulative UNCOMPRESSED bytes extracted (counted as
+  decompressed tar-stream bytes) plus a maximum extracted-entry count (default
+  100,000). A small compressed archive can expand into a far larger
   uncompressed stream, so the uncompressed and entry-count caps are necessary in
   addition to the download cap.
+- **REST_Call**: One request made through the FetchPort to `api.github.com`
+  other than the tarball download request, including a followed repository
+  rename redirect. The tarball download request, on either path, is not a
+  REST_Call.
 - **FetchPort**: The injected HTTP dependency. All network access inside the
   package goes through `FetchPort`; no global `fetch` is called inside package
   logic. Tests supply a `FetchPort` backed by recorded fixtures.
@@ -74,7 +84,8 @@ scope here.
   GitHub REST API.
 - **Vendored_Folder**: A directory excluded before building the file map because
   it holds third-party or VCS data rather than first-party source, specifically
-  `node_modules`, `.git`, and recognized vendored paths.
+  the directories `node_modules`, `.git`, `vendor`, `third_party`,
+  `bower_components`, and `site-packages`.
 - **Oracle_Voice**: The narration persona defined in the `oracle-voice`
   steering: a short mystical line followed by an actionable technical line;
   used for every `NecroError.userMessage` surfaced by this package.
@@ -114,10 +125,14 @@ scope here.
 1. WHEN a parsed reference without an explicit ref is resolved, THE GitHub_Summoner SHALL query the GitHub REST API through the FetchPort for the repository's default branch and SHALL produce a RepoRef whose `defaultBranch` equals the repository's reported default branch name and whose `sha` equals that branch's head commit SHA expressed as exactly 40 lowercase hexadecimal characters.
 2. WHEN a parsed reference includes an explicit branch name or ref name, THE GitHub_Summoner SHALL resolve that ref through the FetchPort to a commit SHA of exactly 40 lowercase hexadecimal characters and SHALL set it as the RepoRef `sha`.
 3. WHEN a parsed reference includes a commit SHA that is already exactly 40 lowercase hexadecimal characters, THE GitHub_Summoner SHALL verify that the commit exists through the FetchPort and SHALL set the verified 40-character SHA as the RepoRef `sha`; WHEN the included commit SHA is a partial SHA shorter than 40 characters, THE GitHub_Summoner SHALL resolve it through the FetchPort to its full 40-character form.
-4. THE GitHub_Summoner SHALL populate the resulting RepoRef so that `owner`, `name`, and `defaultBranch` are non-empty strings of length at least 1 and `sha` matches exactly 40 lowercase hexadecimal characters, and SHALL set `defaultBranch` to the repository's reported default branch name regardless of which ref was requested.
+4. THE GitHub_Summoner SHALL populate the resulting RepoRef so that `owner` and `name` are the canonical owner and repository name taken from the validated repository metadata response (not from the Repo_Reference_String), `owner`, `name`, and `defaultBranch` are non-empty strings of length at least 1 and `sha` matches exactly 40 lowercase hexadecimal characters, and SHALL set `defaultBranch` to the repository's reported default branch name regardless of which ref was requested.
 5. THE GitHub_Summoner SHALL validate every GitHub REST API response with a zod schema before reading any field from that response.
 6. IF a GitHub REST API response fails zod validation, THEN THE GitHub_Summoner SHALL raise a NecroError with code `VALIDATION_FAILED` and an Oracle_Voice userMessage, SHALL NOT read any field from the unvalidated response, and SHALL NOT return a partially populated RepoRef.
-7. THE GitHub_Summoner SHALL resolve the ref within the overall GitHub REST API call budget defined in Requirement 4 criterion 8 (at most 5 REST calls per summon, excluding the tarball download).
+7. THE GitHub_Summoner SHALL resolve the ref within the overall GitHub REST API call budget defined in Requirement 4 criterion 8 (at most 5 REST_Calls per summon, excluding the tarball download request, and including a followed rename redirect).
+8. WHEN the first repository metadata call (`GET /repos/{owner}/{repo}`) receives a 301, 307, or 308 response whose target is on `https://api.github.com`, THE GitHub_Summoner SHALL follow at most one such redirect and SHALL report the canonical owner and name from the validated final response in the resulting RepoRef.
+9. IF any REST_Call other than the first repository metadata call receives a redirect response, OR the first repository metadata call receives a redirect whose target is on another host or another scheme, OR the first repository metadata call receives a second redirect, THEN THE GitHub_Summoner SHALL refuse to follow the redirect and SHALL raise a NecroError with code `VALIDATION_FAILED` and an Oracle_Voice userMessage.
+10. THE GitHub_Summoner SHALL count a followed rename redirect as one REST_Call toward the budget of at most 5 REST_Calls per summon defined in Requirement 4 criterion 8.
+11. IF the requested branch name, ref name, or commit SHA does not exist in an existing repository, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REF_NOT_FOUND` and an Oracle_Voice userMessage, and SHALL NOT raise `INVALID_REPO_URL`.
 
 ### Requirement 3: Download and build the snapshot from a single tarball
 
@@ -125,20 +140,22 @@ scope here.
 
 #### Acceptance Criteria
 
-1. WHEN a RepoRef is built, THE GitHub_Summoner SHALL download the repository at that SHA as a single Tarball_Snapshot in one logical request through the FetchPort, following at most one redirect to `codeload.github.com`, rather than fetching files individually.
+1. WHEN a RepoRef is built, THE GitHub_Summoner SHALL download the repository at that SHA as a single Tarball_Snapshot in one logical download request through the FetchPort, rather than fetching files individually; the unauthenticated path of criterion 15 and the authenticated path of criterion 16 are each one logical download request.
 2. THE GitHub_Summoner SHALL extract the Tarball_Snapshot entirely in memory and SHALL NOT execute, import, evaluate, or spawn any extracted file as code.
 3. IF a tar entry resolves to a path outside the extraction root (a path-traversal entry containing `..` segments or an absolute path), THEN THE GitHub_Summoner SHALL skip that entry and SHALL exclude it from the file map.
 4. IF a tar entry is a symbolic link or hard link, THEN THE GitHub_Summoner SHALL skip that entry and SHALL exclude it from the file map.
-5. BEFORE building the file map, THE GitHub_Summoner SHALL exclude Vendored_Folder paths (`node_modules`, `.git`, and recognized vendored directories).
+5. BEFORE building the file map, THE GitHub_Summoner SHALL exclude Vendored_Folder paths (the directories `node_modules`, `.git`, `vendor`, `third_party`, `bower_components`, and `site-packages`).
 6. BEFORE building the file map, THE GitHub_Summoner SHALL exclude any entry classified as binary, where binary is determined by the presence of a NUL byte within the first 8000 bytes of the entry content.
 7. THE GitHub_Summoner SHALL construct the RepoSnapshot by calling `buildSnapshotFromFileMap` from `@necro/oracle` with the extracted text file map, and SHALL rely on that function for the 1 MB per-file cap and the 5000-file lexicographic cap.
 8. THE GitHub_Summoner SHALL NOT reimplement the 1 MB per-file cap or the 5000-file lexicographic cap, and SHALL delegate both caps exclusively to `buildSnapshotFromFileMap`.
 9. WHILE accumulating the Tarball_Snapshot, IF the cumulative downloaded size exceeds 50 MB (52,428,800 bytes), THEN THE GitHub_Summoner SHALL stop downloading, SHALL retain no partial snapshot, and SHALL raise a NecroError with code `DOWNLOAD_TOO_LARGE` and an Oracle_Voice userMessage indicating the download exceeded the size limit.
-10. WHILE extracting the Tarball_Snapshot, IF the cumulative UNCOMPRESSED size of extracted entries exceeds 200 MB (209,715,200 bytes), THEN THE GitHub_Summoner SHALL stop extracting, SHALL retain no partial snapshot, and SHALL raise a NecroError with code `DOWNLOAD_TOO_LARGE` and an Oracle_Voice userMessage.
+10. WHILE extracting the Tarball_Snapshot, IF the cumulative UNCOMPRESSED size, counted as decompressed tar-stream bytes, exceeds 200 MB (209,715,200 bytes), THEN THE GitHub_Summoner SHALL stop extracting, SHALL retain no partial snapshot, and SHALL raise a NecroError with code `DOWNLOAD_TOO_LARGE` and an Oracle_Voice userMessage.
 11. WHILE extracting the Tarball_Snapshot, IF the number of entries exceeds a configured maximum entry count (default 100,000), THEN THE GitHub_Summoner SHALL stop extracting and SHALL raise a NecroError with code `DOWNLOAD_TOO_LARGE`.
-12. THE GitHub_Summoner SHALL NOT forward the Authorization header to `codeload.github.com` or to any redirect target host other than `github.com` or `api.github.com`.
+12. THE GitHub_Summoner SHALL NOT forward the Authorization header to `codeload.github.com` or to any redirect target host other than `github.com` or `api.github.com`, and SHALL send no Authorization header on any request made directly to `codeload.github.com`.
 13. THE GitHub_Summoner SHALL strip the tarball's top-level `<owner>-<repo>-<sha>/` directory prefix from every entry path before building the file map, so snapshot paths are repository-root-relative.
 14. WHEN constructing the RepoSnapshot, THE GitHub_Summoner SHALL set the RepoSnapshot `createdAt` from the injected ClockPort rather than from the system clock.
+15. WHERE no `GITHUB_TOKEN` is present, THE GitHub_Summoner SHALL download the Tarball_Snapshot directly from `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}` with no Authorization header and no GitHub REST API call, so that the download consumes no REST API quota and makes zero REST_Calls.
+16. WHERE a `GITHUB_TOKEN` is present, THE GitHub_Summoner SHALL download the Tarball_Snapshot from the `api.github.com` tarball endpoint and SHALL follow at most one redirect, whose target host is `codeload.github.com`.
 
 ### Requirement 4: Map repository metadata
 
@@ -153,7 +170,7 @@ scope here.
 5. THE GitHub_Summoner SHALL set RepoMeta `oldestOpenPRAgeDays` to the whole number of days (elapsed seconds divided by 86,400, rounded down, minimum `0`) from the oldest open pull request's creation time to the snapshot time, or to `null` when no open pull request exists.
 6. WHERE GitHub repository attributes exist that are not fields of RepoMeta — specifically star count (an integer of at least `0`), the default branch name (a non-empty string), and the presence of a `.github/workflows` directory (a boolean) — THE GitHub_Summoner SHALL expose those attributes through its own public result type separate from RepoMeta, and SHALL derive the presence of a `.github/workflows` directory from the downloaded Tarball_Snapshot entries rather than from a separate GitHub REST API call.
 7. IF a RepoMeta field cannot be derived from validated GitHub data, whether because the data is absent or because it fails zod validation, THEN THE GitHub_Summoner SHALL use the neutral default for that field (counts `0`, booleans `false`, and `pushedAt`, `oldestOpenPRAgeDays`, `latestReleaseAt`, and `licenseKey` set to `null`).
-8. THE GitHub_Summoner SHALL complete a full summon using at most 5 GitHub REST API calls, excluding the single tarball download, so that an unauthenticated summon stays within GitHub's 60-requests-per-hour unauthenticated budget.
+8. THE GitHub_Summoner SHALL complete a full summon using at most 5 REST_Calls, excluding the tarball download request and including a followed rename redirect (Requirement 2 criterion 10), so that an unauthenticated summon stays within GitHub's 60-requests-per-hour unauthenticated budget; the unauthenticated tarball download makes zero REST_Calls (Requirement 3 criterion 15).
 
 ### Requirement 5: Provide injectable external data for detectors
 
@@ -181,7 +198,7 @@ scope here.
 
 1. THE GitHub_Summoner SHALL read the optional `GITHUB_TOKEN` only through the injected EnvPort backed by the `@necro/config` zod env schema.
 2. WHERE a `GITHUB_TOKEN` is present AND the request target host is `github.com` or `api.github.com`, THE GitHub_Summoner SHALL attach the token as an Authorization header to GitHub REST API requests made through the FetchPort.
-3. IF a `GITHUB_TOKEN` is present AND the request target host is any host other than `github.com` or `api.github.com` (including PyPI, npm, and OSV hosts), THEN THE GitHub_Summoner SHALL omit the Authorization header from that request.
+3. IF a `GITHUB_TOKEN` is present AND the request target host is any host other than `github.com` or `api.github.com` (including `codeload.github.com`, PyPI, npm, and OSV hosts), THEN THE GitHub_Summoner SHALL omit the Authorization header from that request.
 4. WHERE no `GITHUB_TOKEN` is present, THE GitHub_Summoner SHALL operate against public repositories without authentication and SHALL send no Authorization header.
 5. THE GitHub_Summoner SHALL exclude the `GITHUB_TOKEN` value and any Authorization header value from log output, error messages, NecroError fields, and returned results, replacing any such value with a fixed redaction marker so no character of the token is observable; and SHALL NOT alter repository file contents, which are preserved byte-for-byte for the detectors to inspect.
 
@@ -191,14 +208,17 @@ scope here.
 
 #### Acceptance Criteria
 
-1. THE GitHub_Summoner SHALL introduce the error codes `INVALID_REPO_URL`, `REPO_NOT_FOUND`, `REPO_PRIVATE`, `RATE_LIMITED`, `NETWORK_TIMEOUT`, `DOWNLOAD_TOO_LARGE`, and `VALIDATION_FAILED` consistent with the typed-error rule, either by extending the `@necro/oracle` NecroError code enum or through a declared package-local extension of that enum, such that each raised error is an instance of NecroError whose `code` equals the listed string and whose `userMessage` is non-empty.
+1. THE GitHub_Summoner SHALL introduce exactly ten error codes, `INVALID_REPO_URL`, `REPO_NOT_FOUND`, `REPO_PRIVATE`, `RATE_LIMITED`, `NETWORK_TIMEOUT`, `DOWNLOAD_TOO_LARGE`, `VALIDATION_FAILED`, `REF_NOT_FOUND`, `AUTH_INVALID`, and `UPSTREAM_UNAVAILABLE`, consistent with the typed-error rule, either by extending the `@necro/oracle` NecroError code enum or through a declared package-local extension of that enum, such that each raised error is an instance of NecroError whose `code` equals the listed string and whose `userMessage` is a non-empty Oracle_Voice message.
 2. IF a Repo_Reference_String is invalid, THEN THE GitHub_Summoner SHALL raise a NecroError with code `INVALID_REPO_URL` and an Oracle_Voice userMessage.
 3. IF the GitHub REST API confirms, for an authenticated request, that a repository is absent, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REPO_NOT_FOUND` and an Oracle_Voice userMessage; IF a repository exists but is private, or an unauthenticated request reports not-found in a way that cannot be proven to mean absence, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REPO_PRIVATE` and an Oracle_Voice userMessage.
 4. IF the GitHub REST API reports that the request is rate limited, THEN THE GitHub_Summoner SHALL raise a NecroError with code `RATE_LIMITED` and an Oracle_Voice userMessage that states the wait duration, computed as the rate-limit reset instant minus the current ClockPort time, expressed in whole minutes rounded up with a minimum of one minute.
 5. IF the GitHub REST API responds with a secondary rate limit, indicated by a `403` or `429` response carrying a `Retry-After` value, THEN THE GitHub_Summoner SHALL raise a NecroError with code `RATE_LIMITED` whose userMessage states the wait duration taken from the `Retry-After` value when present, otherwise falling back to the reset-instant computation specified in criterion 4.
 6. IF a GitHub REST API or tarball-download request exceeds its timeout or fails with a connection-level network error, THEN THE GitHub_Summoner SHALL raise a NecroError with code `NETWORK_TIMEOUT` and an Oracle_Voice userMessage; a per-dependency registry or OSV timeout or failure is isolated per Requirement 5 criterion 5 and SHALL NOT raise `NETWORK_TIMEOUT`.
-7. THE GitHub_Summoner SHALL attach the originating error as the `cause` of each raised NecroError and SHALL NOT suppress, discard, or replace an error without rethrowing it as a NecroError whose `cause` preserves the original.
-8. THE GitHub_Summoner SHALL phrase every NecroError userMessage in the Oracle_Voice as a short mystical line followed by a technical line that states what happened and what to do next.
+7. IF the requested branch name, ref name, or commit SHA does not exist in an existing repository, THEN THE GitHub_Summoner SHALL raise a NecroError with code `REF_NOT_FOUND` and an Oracle_Voice userMessage that names the missing ref, and SHALL NOT raise `INVALID_REPO_URL` or `REPO_NOT_FOUND`.
+8. IF the GitHub REST API responds with status 401 or the supplied `GITHUB_TOKEN` is rejected as malformed or invalid, THEN THE GitHub_Summoner SHALL raise a NecroError with code `AUTH_INVALID` and an Oracle_Voice userMessage that does not contain any character sequence of the token.
+9. IF a GitHub REST API request or the tarball download request to a GitHub host responds with a 5xx status, THEN THE GitHub_Summoner SHALL raise a NecroError with code `UPSTREAM_UNAVAILABLE` and an Oracle_Voice userMessage; a per-dependency registry or OSV 5xx response is isolated per Requirement 5 criterion 5 and SHALL NOT raise `UPSTREAM_UNAVAILABLE`.
+10. THE GitHub_Summoner SHALL attach the originating error as the `cause` of each raised NecroError and SHALL NOT suppress, discard, or replace an error without rethrowing it as a NecroError whose `cause` preserves the original.
+11. THE GitHub_Summoner SHALL phrase every NecroError userMessage in the Oracle_Voice as a short mystical line followed by a technical line that states what happened and what to do next.
 
 ### Requirement 8: Snapshot caching
 
@@ -224,7 +244,7 @@ scope here.
 #### Acceptance Criteria
 
 1. THE GitHub_Summoner SHALL perform all HTTP access through an injected FetchPort and SHALL NOT call a global `fetch` or any other non-injected network client from within package logic.
-2. THE GitHub_Summoner SHALL obtain the current time only through an injected ClockPort and SHALL NOT call `Date.now()`, `new Date()`, or any other system clock source from within package logic.
+2. THE GitHub_Summoner SHALL obtain the current time only through an injected ClockPort and SHALL NOT call `Date.now()`, `new Date()` with no argument, or any other system clock source from within package logic; formatting an instant obtained from the ClockPort, such as `new Date(ms).toISOString()`, is permitted.
 3. THE GitHub_Summoner SHALL read environment values only through an injected EnvPort and SHALL NOT read `process.env` or any other non-injected environment source from within package logic.
 4. WHEN a FetchPort backed by recorded fixtures, a fixed ClockPort, and a fixed EnvPort are supplied, THE GitHub_Summoner SHALL produce RepoSnapshot, RegistryData, and OsvData results that are byte-for-byte equal across repeated runs of the same operation.
 5. WHEN tests run against fixture-backed ports, THE GitHub_Summoner SHALL make no real network request.
@@ -265,8 +285,9 @@ property id and covered requirements.
 - **P5 — Per-file cap preserved (R3.7, R3.8):** For all generated file maps, no
   file in the resulting snapshot exceeds 1 MB, and the set of retained files
   matches what `buildSnapshotFromFileMap` retains (caps are not duplicated).
-- **P6 — Total download cap (R3.9):** For all simulated download streams whose
-  cumulative size crosses 50 MB, the builder raises a NecroError with code
+- **P6 — Total download cap (R3.9, R3.15, R3.16):** For all simulated download
+  streams on either the direct-codeload path or the token path whose
+  cumulative COMPRESSED size crosses 50 MB, the builder raises a NecroError with code
   `DOWNLOAD_TOO_LARGE` and never yields a snapshot.
 - **P7 — 5000-file cap (R3.7, R3.8):** For all generated file maps larger than
   5000 files, the resulting snapshot retains exactly the first 5000 paths in
@@ -285,7 +306,32 @@ property id and covered requirements.
   archives whose cumulative UNCOMPRESSED size crosses 200 MB, or whose entry
   count crosses the configured maximum, extraction raises a NecroError with code
   `DOWNLOAD_TOO_LARGE` and never yields a snapshot.
-- **P12 — Authorization header stripped on redirect (R6.3, R3.12):** For all token
-  values and all redirect targets other than `github.com`/`api.github.com`
-  (including `codeload.github.com`), no request to the redirect target carries an
-  Authorization header.
+- **P12 — Authorization header never reaches non-GitHub-API hosts (R6.3, R3.12,
+  R3.16):** For all token values and all redirect targets other than
+  `github.com`/`api.github.com` (including `codeload.github.com` reached by
+  redirect from the token path, and PyPI, npm, and OSV hosts), no request to
+  that target carries an Authorization header.
+- **P13 — REST call budget (R2.7, R2.8, R2.10, R4.8):** For all generated
+  fixture-backed summons, including those whose first repository metadata call
+  returns a followed rename redirect, the number of REST_Calls is at most 5
+  (excluding the tarball download request), and the RepoRef `owner` and `name`
+  equal the canonical values from the validated response (R2.4).
+- **P14 — Rename-redirect policy (R2.8, R2.9):** For all generated redirect
+  responses, a 301, 307, or 308 on the first repository metadata call whose
+  target stays on `https://api.github.com` is followed at most once; any
+  redirect to another host or scheme, any second redirect, and any redirect on
+  another REST_Call raises a NecroError with code `VALIDATION_FAILED`.
+- **P15 — Direct codeload path is unauthenticated and REST-free (R3.15, R3.12,
+  R6.4):** For all generated RepoRefs with no `GITHUB_TOKEN` present, the
+  download request targets `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}`,
+  carries no Authorization header, and contributes zero REST_Calls.
+- **P16 — Error-code mapping (R2.11, R7.7, R7.8, R7.9):** For all generated
+  responses, a nonexistent ref in an existing repository yields `REF_NOT_FOUND`
+  (never `INVALID_REPO_URL`), a 401 yields `AUTH_INVALID`, and a GitHub 5xx on a
+  REST_Call or tarball download yields `UPSTREAM_UNAVAILABLE`, while a
+  per-dependency registry or OSV 5xx yields none of these and is recorded in
+  Skipped_Dependencies (R5.5).
+- **P17 — AUTH_INVALID never leaks the token (R7.8, R6.5):** For all generated
+  `GITHUB_TOKEN` values and 401 responses, the raised `AUTH_INVALID` NecroError
+  userMessage and every other NecroError field contain no substring of the
+  token value.

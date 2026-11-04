@@ -12,18 +12,19 @@ It implements the `GitHubSnapshotBuilder` interface that `@necro/oracle` already
 Design stance, in priority order:
 
 - **Repository code is data.** Nothing extracted is executed, imported, evaluated, or written to disk. The tarball lives in memory as streamed chunks and text strings.
-- **Every side effect is a port.** HTTP, time, and environment arrive through `FetchPort`, `ClockPort`, and `EnvPort`. No `fetch`, `Date.now()`, `new Date()`, or `process.env` appears in package logic. Every test runs offline against recorded fixtures.
-- **Caps are layered and independent of the tar library.** Compressed bytes (50 MB), decompressed stream bytes (200 MB), and entry count (100,000) are enforced by our own stream guards. The 1 MB per-file and 5000-file caps stay in `buildSnapshotFromFileMap` and are never reimplemented.
-- **Honest degradation.** Optional metadata falls back to the neutral defaults `RepoMeta` already defines. Per-dependency registry/OSV failures land in `skipped`. The reading never fails because a registry was slow. A rate limit, a missing repo, or a size cap fails loudly with a typed `NecroError`.
+- **Every side effect is a port.** HTTP, time, and environment arrive through `FetchPort`, `ClockPort`, and `EnvPort`. No global `fetch`, `Date.now()`, zero-argument `new Date()`, or `process.env` appears in package logic. Every test runs offline against recorded fixtures.
+- **Caps are layered and independent of the tar library.** Compressed bytes (50 MB), decompressed tar-stream bytes (200 MB), and entry count (100,000) are enforced by our own stream guards. The 1 MB per-file and 5000-file caps stay in `buildSnapshotFromFileMap` and are never reimplemented.
+- **Quota-frugal and token-aware.** Without a `GITHUB_TOKEN` the archive comes straight from `codeload.github.com` with no Authorization header and zero REST calls. With a token it comes from the `api.github.com` tarball endpoint plus at most one redirect to codeload. A summon makes at most 5 REST calls (4 in the normal case, the fifth reserved for a rename redirect), and the client enforces that with a hard guard.
+- **Honest degradation.** Optional metadata falls back to the neutral defaults `RepoMeta` already defines. Per-dependency registry/OSV failures land in `skipped`. The reading never fails because a registry was slow. A rate limit, a missing repo or ref, a rejected token, an upstream outage, or a size cap fails loudly with a typed `NecroError`.
 - **Public repositories only.** A repository the API reports as `private: true` is refused before any content is downloaded.
 
 ### What this spec changes outside `packages/github`
 
 | Package | Change | Why |
 |---|---|---|
-| `@necro/oracle` | Add 7 codes to `NecroErrorCodeSchema` (additive, no logic change) | R7.1; see "Decision D1" |
+| `@necro/oracle` | Add 10 codes to `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts` (additive, no logic change) | R7.1; see "Decision D1" |
 | `@necro/config` | Add env schema with optional `GITHUB_TOKEN` | R6.1 |
-| root `eslint.config.js` | Restricted-syntax block for `packages/github/src` | R9.1–R9.3 enforcement |
+| root `eslint.config.js` | Restricted-syntax block for `packages/github/src` (bans `Date.now()` and zero-argument `new Date()`, allows `new Date(ms)`) | R9.1–R9.3 enforcement |
 | `docs/ARCHITECTURE.md` (new), `docs/KIRO_USAGE.md` | New adapter section, dated usage entry | Docs discipline |
 
 Full list with exact versions is in "Required Changes to Other Packages".
@@ -40,7 +41,7 @@ oracle  ←  grimoires  ←  coven  ←  (web, cli, mcp-server, action)
   └── github (adapter) ─────┘   injected into coven/web/cli via ports
 ```
 
-`@necro/github` imports from `@necro/oracle` (types, `NecroError`, `buildSnapshotFromFileMap`, `parseAllManifests`) and from third-party libraries (`zod`, `modern-tar`). `@necro/oracle` never imports `@necro/github`. The package imports `@necro/oracle` only through its `src/index.ts` entry. It does not use the Node-only `./node` entry, so it stays free of `fs`.
+`@necro/github` imports from `@necro/oracle` (types, `NecroError`, `buildSnapshotFromFileMap`, `parseAllManifests`) and from third-party libraries (`zod`, `tar-stream`). `@necro/oracle` never imports `@necro/github`. The package imports `@necro/oracle` only through its `src/index.ts` entry. It does not use the Node-only `./node` entry, so it stays free of `fs`. The one Node built-in it uses is `node:stream` (`Readable.fromWeb`) inside `tar-extract.ts` to bridge web streams to `tar-stream`.
 
 `@necro/github` does **not** import `@necro/config`. `EnvPort` is defined here, and composition roots (web, CLI, Action) wire it to the validated config. This keeps adapters independent of each other and keeps `process.env` out of package logic.
 
@@ -63,23 +64,25 @@ packages/github/
     errors.ts                      SummonerError, error factory, message catalog, redaction
     http-failure.ts                pure mapper: (status, headers, body hint, ctx) → SummonerError
     intake.ts                      parseRepoRef (pure), resolveRef
-    github-client.ts               auth + redirect policy, JSON reads, REST call counter
+    github-client.ts               auth + redirect policy, JSON reads, tarball path selection,
+                                   REST call counter and hard budget guard (5)
     repo-meta.ts                   mapRepoMeta (pure)
     entry-path.ts                  normalizeEntryPath, isVendoredPath, isBinarySample (pure)
-    tar-extract.ts                 capped streaming gunzip + tar decode → ExtractedTree
+    tar-extract.ts                 capped streaming gunzip + tar-stream decode → ExtractedTree
     snapshot-cache.ts              SnapshotCache (TTL + LRU, ClockPort-driven)
     snapshot.ts                    GitHubSummoner (implements GitHubSnapshotBuilder), createSummoner
     registries.ts                  PyPI + npm fetch and map → RegistryData
     osv.ts                         OSV querybatch + vuln detail fetch and map → OsvData
     external-data.ts               fetchExternalData orchestrator (dedupe, pool, skipped)
-    time.ts                        parseIsoMs, isoFromMs, daysBetween (pure, no clock reads)
+    time.ts                        parseIsoMs, isoFromMs, daysBetween (pure; no clock reads:
+                                   isoFromMs formats a ClockPort instant with new Date(ms), allowed by R9.2)
     schemas/
       github.ts  pypi.ts  npm.ts  osv.ts
     adapters/                      the ONLY place allowed to touch globals (lint-exempt)
       system-fetch.ts              FetchPort over global fetch (redirect: "manual", AbortSignal.timeout)
       system-clock.ts              ClockPort over Date.now()
     testing/                       fixture-backed ports and tar builders (not exported from index)
-      fixture-fetch.ts  fixed-clock.ts  make-tar-gz.ts
+      fixture-fetch.ts  fixed-clock.ts  make-tar-gz.ts  raw-tar.ts
 ```
 
 Tests sit next to the code (`*.test.ts`, `*.pbt.test.ts`), per the `structure` steering.
@@ -97,9 +100,9 @@ graph TD
         INT["intake.ts<br/>parseRepoRef, resolveRef"]
         SNP["snapshot.ts<br/>GitHubSummoner"]
         CACHE["snapshot-cache.ts<br/>TTL + LRU"]
-        CLI["github-client.ts<br/>auth, redirects, JSON"]
+        CLI["github-client.ts<br/>auth, redirects, JSON,<br/>tarball path, REST guard"]
         META["repo-meta.ts"]
-        TAR["tar-extract.ts"]
+        TAR["tar-extract.ts<br/>gunzip + tar-stream bridge"]
         EP["entry-path.ts"]
         EXT["external-data.ts"]
         REG["registries.ts"]
@@ -148,11 +151,12 @@ sequenceDiagram
     C->>S: summon("owner/repo#ref")
     S->>S: parseRepoRef (pure)
     S->>G: 1. GET /repos/{o}/{r}
-    G-->>S: repo payload (zod-validated)
-    Note over S: private:true → REPO_PRIVATE, stop
-    S->>G: 2. GET /repos/{o}/{r}/commits/{ref}
-    G-->>S: sha (40 lowercase hex)
-    S->>K: get(owner/repo@sha)
+    Note over S,G: only this first call may follow ONE 301/307/308<br/>to https://api.github.com (rename); the followed hop<br/>counts as a REST call (D2)
+    G-->>S: repo payload (zod-validated, canonical owner/name)
+    Note over S: private:true → REPO_PRIVATE, stop.<br/>All later requests use the canonical owner/name.
+    S->>G: 2. GET /repos/{canon}/commits/{ref}
+    G-->>S: sha (40 lowercase hex) or 404/422 → REF_NOT_FOUND
+    S->>K: get(canonOwner/canonName@sha)
     alt hit and age < TTL
         K-->>S: cached SummonResult
         S-->>C: result (no further network)
@@ -160,38 +164,52 @@ sequenceDiagram
         par metadata
             S->>G: 3. GET /pulls?state=open&sort=created&direction=asc&per_page=1
             S->>G: 4. GET /releases/latest
-        and tarball
-            S->>G: GET /repos/{o}/{r}/tarball/{sha} (Authorization if token)
-            G-->>S: 302 Location: codeload.github.com/...
-            S->>X: GET (no Authorization)
-            X-->>S: tar.gz stream
+        and tarball (variant chosen by token presence)
+            alt no GITHUB_TOKEN
+                S->>X: GET /{o}/{r}/tar.gz/{sha} (no Authorization, no REST call)
+                X-->>S: 200 tar.gz stream (any redirect → VALIDATION_FAILED)
+            else GITHUB_TOKEN present
+                S->>G: GET /repos/{o}/{r}/tarball/{sha} (Authorization: Bearer)
+                G-->>S: 302 Location: https://codeload.github.com/...
+                S->>X: GET (no Authorization)
+                X-->>S: 200 tar.gz stream (a second redirect → VALIDATION_FAILED)
+            end
         end
-        S->>S: capped gunzip + tar decode → text file map
+        S->>S: capped gunzip + tar-stream decode → text file map
         S->>S: buildSnapshotFromFileMap(ref, files, {meta, createdAt})
         S->>K: set(key, result)
         S-->>C: result
     end
 ```
 
+The tarball request is never a REST call on either variant, so it does not count toward the budget of 5 and does not touch `restCallCount`. A summon uses 4 REST calls (repo, commit, pulls, release); the fifth slot is headroom reserved for the rename redirect hop.
+
 ### Key design decisions
 
 **D1. New error codes are added to `@necro/oracle`'s enum (not a package-local extension).**
 `NecroError.code` is typed as `NecroErrorCode`, the inferred union of a closed `z.enum`. Two options satisfy R7.1:
 
-- *Option A: extend `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`* with the 7 codes.
+- *Option A: extend `NecroErrorCodeSchema` in `packages/oracle/src/util/errors.ts`* with the 10 codes (`INVALID_REPO_URL`, `REPO_NOT_FOUND`, `REPO_PRIVATE`, `RATE_LIMITED`, `NETWORK_TIMEOUT`, `DOWNLOAD_TOO_LARGE`, `VALIDATION_FAILED`, `REF_NOT_FOUND`, `AUTH_INVALID`, `UPSTREAM_UNAVAILABLE`).
 - *Option B: a package-local enum in `@necro/github`.*
 
 Option B cannot work while still honouring "each raised error is an instance of `NecroError`". A subclass cannot widen `readonly code: NecroErrorCode` to a wider union (TypeScript rejects the override), and `new NecroError("INVALID_REPO_URL", …)` does not compile against the closed union. Casting around it would defeat the type that makes the enum useful. Option B would also scatter error vocabulary: web, CLI, and MCP all need one exhaustive `switch` over codes to render in-world errors.
 
-**Choice: Option A.** The change is additive (7 string literals), has no logic, adds no import to `oracle`, and does not violate dependency direction, because `oracle` gains strings and not a reference to the adapter. The existing `errors.test.ts` iterates `NecroErrorCodeSchema.options`, so the new codes are covered automatically. The user-facing message catalog stays in `@necro/github` (`errors.ts`), because the wording belongs to the adapter that knows the failure context. This also sets the precedent the sandbox, LLM, and ledger specs will follow.
+**Choice: Option A.** The change is additive (10 string literals), has no logic, adds no import to `oracle`, and does not violate dependency direction, because `oracle` gains strings and not a reference to the adapter. The existing `errors.test.ts` iterates `NecroErrorCodeSchema.options`, so the new codes are covered automatically. The user-facing message catalog stays in `@necro/github` (`errors.ts`), because the wording belongs to the adapter that knows the failure context. This also sets the precedent the sandbox, LLM, and ledger specs will follow.
 
 To carry machine-readable context (wait minutes, HTTP status) without changing `NecroError`'s shape, the package raises `SummonerError extends NecroError` with a read-only `details` object. Callers that only know `NecroError` keep working.
 
-**D2. Redirects are never followed by the adapter; the client follows them under policy.**
-`FetchPort` is contractually `redirect: "manual"`. The client decides whether a `Location` is acceptable and re-evaluates the Authorization policy for the new host on every hop (R3.12, R6.3). REST redirects (301/302/307/308 from `api.github.com`) are *not* followed: they only occur for renamed or transferred repositories, following them would multiply the call count past the budget, and they map to `REPO_NOT_FOUND` with a "moved" message. The tarball request follows exactly one redirect, and only to `https://codeload.github.com`.
+**D2. Redirects are never followed by the adapter. The client follows at most one rename redirect, on the first repo call only, and enforces a hard REST budget.**
+`FetchPort` is contractually `redirect: "manual"`. The client decides whether a `Location` is acceptable and re-evaluates the header policy for the new target on every hop (R3.12, R6.3). The policy has four rules:
 
-**D3. Gzip and tar decoding use web streams plus `modern-tar`; caps are ours.**
-`DecompressionStream("gzip")` (global in Node 22) and `modern-tar`'s `createTarDecoder()` form a pull-based pipeline. Byte-counting `TransformStream` guards sit before and after the decompressor, so a decompression bomb is stopped by our code regardless of how the tar library buffers. Choice and fallback in "Required Changes".
+1. *Where.* Only the first `GET /repos/{owner}/{repo}` of an operation may be redirected. `getJson` takes `allowRepoRedirect: true` for that one call; every other REST call has it `false`, and a 3xx there is `VALIDATION_FAILED` (R2.9).
+2. *What.* The client follows at most one `301`, `307`, or `308`, and only when `Location` parses to scheme `https`, hostname exactly `api.github.com`, and the default port (a same-host path such as `/repositories/{id}`). The header policy is re-applied to the new request (Bearer when a token exists, since the host is still `api.github.com`). Any other status (`302`, `303`), any other host or scheme, or a second redirect is `VALIDATION_FAILED` and no further request is sent (R2.8, R2.9).
+3. *Canonical identity.* After a redirect (or none), the validated response body is the source of truth: `owner.login` and `name` (cross-checked against `full_name`) become the `RepoRef` `owner` and `name`, the cache key, every later REST path, and the tarball URL (R2.4). The user's spelling and the redirect path are never trusted.
+4. *Budget.* The followed hop is a REST call and increments `restCallCount` (R2.10). A hard guard throws before a request is sent when `restCallCount` would exceed `REST_CALL_BUDGET = 5` (`VALIDATION_FAILED`, reason `rest-budget-exceeded`; an internal-invariant failure, not a user-facing condition). Normal operation uses 4 calls, so the guard is dormant unless a redirect plus a design bug pushes past the budget (R4.8).
+
+The tarball request has its own, separate redirect rule (token path: one redirect to `https://codeload.github.com`, no auth; no-token path: none expected, any redirect refused). That rule is in "GitHub client".
+
+**D3. Gzip uses web streams; tar decoding uses `tar-stream@3.2.2`; caps are ours.**
+`tar-stream` is the single tar library: mature, pure JavaScript, zero native code, and its `extract()` stream hands us entries one at a time with `{ header, body }` semantics. The pipeline is `body → compressed guard → DecompressionStream("gzip") → uncompressed guard → Readable.fromWeb → tar.extract()`. Byte-counting `TransformStream` guards sit before and after the decompressor, so a decompression bomb is stopped by our code regardless of how the tar library buffers. Details of the bridge, entry consumption, and cancellation are in "Tarball extraction". Version check (`pnpm view tar-stream versions --json`): the latest 3.x is `3.2.2`, so it is pinned exactly.
 
 **D4. Oversize text files are represented by one shared sentinel string.**
 `buildSnapshotFromFileMap` is the only place the 1 MB cap lives (R3.8), but it measures strings it is handed. Holding up to 200 MB of text just so the builder can measure and discard it would waste memory. When an entry's declared size exceeds 1 MiB and its first 8000 bytes are text, the extractor passes a single module-level string of 1 MiB + 1 bytes under that path. The builder then records the path in `oversizeFiles` exactly as it would for the real content, and the retained file map stays small. The sentinel never reaches `snapshot.contents` because the builder drops oversize files.
@@ -203,7 +221,7 @@ To carry machine-readable context (wait minutes, HTTP status) without changing `
 The Devil turns every injected `OsvVulnerability` into evidence. A version-less OSV query returns every advisory ever filed against the package, including ones fixed years before the pinned version. That would put false evidence on a card, which violates "the cards cannot lie". The fetcher therefore queries OSV only when the manifest pins an exact version (`==1.2.3` for PyPI, `1.2.3`/`=1.2.3` for npm). Other dependencies are reported in `skipped` with reason `version-not-pinned`.
 
 **D7. Time is read once per operation.**
-`ClockPort` exposes only `nowMs()`. Each `build` reads it once; `createdAt`, the PR age arithmetic, and the cache entry timestamp derive from that single reading, so they cannot disagree. ISO strings are produced by `isoFromMs(ms)` (`new Date(ms).toISOString()`), which constructs a date from a given value and never reads the system clock (see Open Question Q5 on lint wording).
+`ClockPort` exposes only `nowMs()`. Each `build` reads it once; `createdAt`, the PR age arithmetic, and the cache entry timestamp derive from that single reading, so they cannot disagree. ISO strings are produced by `isoFromMs(ms)` (`new Date(ms).toISOString()`), which formats an instant that came from `ClockPort` and never reads the system clock. R9.2 explicitly permits this; `Date.now()` and zero-argument `new Date()` stay forbidden (Q5, resolved).
 
 ---
 
@@ -262,7 +280,8 @@ export const MAX_ENTRIES = 100_000;                  //         (R3.11)
 export const BINARY_SNIFF_BYTES = 8000;              // NUL within first 8000 bytes (R3.6)
 export const TEXT_FILE_CEILING_BYTES = 1_048_576;    // mirrors the oracle cap; used ONLY to decide
                                                      // whether to pass the oversize sentinel (D4)
-export const REST_CALL_BUDGET = 5;                   // R4.8
+export const REST_CALL_BUDGET = 5;                   // R4.8; hard guard in GitHubClient (D2).
+                                                     // Excludes the tarball download, includes a followed rename redirect
 export const DEFAULT_TTL_MS = 604_800_000;           // 7 days  (R8.5)
 export const DEFAULT_MAX_CACHE_ENTRIES = 20;         //         (R8.7)
 export const TIMEOUT_REST_MS = 15_000;
@@ -276,8 +295,10 @@ export const MAX_REST_JSON_BYTES = 2_097_152;        // 2 MiB
 export const MAX_REGISTRY_JSON_BYTES = 10_485_760;   // 10 MiB (large PyPI/npm documents)
 export const MAX_OSV_JSON_BYTES = 5_242_880;         // 5 MiB
 
+export const GITHUB_API_HOST = "api.github.com";
 export const GITHUB_AUTH_HOSTS: ReadonlySet<string> = new Set(["github.com", "api.github.com"]);
-export const TARBALL_REDIRECT_HOST = "codeload.github.com";
+export const CODELOAD_HOST = "codeload.github.com";   // direct tarball host (no token) and the only
+                                                     // permitted redirect target of the token path
 export const EXTERNAL_HOSTS: ReadonlySet<string> =
   new Set(["pypi.org", "registry.npmjs.org", "api.osv.dev"]);
 
@@ -306,7 +327,11 @@ export interface IntakeDeps {
   readonly client: GitHubClient;
 }
 
-/** Resolve to an immutable commit (R2). Calls: repo + commit = 2 REST calls. */
+/**
+ * Resolve to an immutable commit (R2). Calls: repo + commit = 2 REST calls, plus the one
+ * followed rename redirect if the repo call is redirected (never more than 5 per operation).
+ * The returned RepoRef carries the CANONICAL owner/name from the validated repo payload (R2.4).
+ */
 export function resolveRef(parsed: ParsedRepoRef, deps: IntakeDeps): Promise<RepoRef>;
 
 /** Same, but also returns the validated repo payload so build() does not fetch it again. */
@@ -341,6 +366,10 @@ Every rejection raises `INVALID_REPO_URL` with a *reason code* (`foreign-host`, 
 
 `defaultBranch` is always `repo.default_branch`, regardless of which ref was requested (R2.4). Both responses pass through zod before any field is read (R2.5, R2.6).
 
+**Canonical owner and name (R2.4, D2).** The `ParsedRepoRef` owner/name are only the spelling the user typed and the path of call 1. `resolveRefDetailed` builds `RepoRef.owner` and `RepoRef.name` from the validated repo payload (`owner.login` and `name`; `full_name` must equal `owner.login + "/" + name`, else `VALIDATION_FAILED`). This normalizes case (`Octocat/hello-world` → `octocat/Hello-World`) and renames. Call 2 (`commits/{ref}`) and every later request use the canonical pair, never the user's spelling. Call 1 is issued with `allowRepoRedirect: true`; if GitHub answers with a rename redirect to `https://api.github.com`, the client follows it once (counted as a REST call) and the canonical identity comes from the final body.
+
+**Ref failures (R2.11, R7.7).** Once call 1 has proven the repository exists and is public, a `404` or `422` from `commits/{ref}` (and `409` for an empty repository) raises `REF_NOT_FOUND`, naming the missing ref, never `INVALID_REPO_URL` or `REPO_NOT_FOUND`. A full 40-hex ref whose response `sha` differs from the request raises `VALIDATION_FAILED`.
+
 ### GitHub client (`github-client.ts`)
 
 ```typescript
@@ -352,17 +381,33 @@ export interface GitHubClientOptions {
 export class GitHubClient {
   constructor(deps: SummonerDeps, opts?: GitHubClientOptions);
 
-  /** Count of requests sent to api.github.com since construction (tarball first hop included). */
+  /**
+   * Number of REST_Calls sent to api.github.com by this client (R4.8). A REST_Call is any
+   * request to api.github.com other than the tarball download, so the tarball request
+   * (either path, including its api.github.com first hop when a token exists) is NOT counted.
+   * A followed rename redirect IS counted. Never exceeds REST_CALL_BUDGET.
+   */
   readonly restCallCount: number;
 
-  /** GET a REST path, validate against `schema`, map failures via http-failure.ts. */
+  /**
+   * GET a REST path, validate against `schema`, map failures via http-failure.ts.
+   * Throws VALIDATION_FAILED (reason "rest-budget-exceeded") BEFORE sending a request that
+   * would be the 6th REST_Call.
+   */
   getJson<T>(
     path: string,
     schema: z.ZodType<T>,
     ctx: RequestContext,
   ): Promise<{ data: T; headers: Readonly<Record<string, string>> }>;
 
-  /** GET the tarball: first hop on api.github.com, at most one redirect to codeload. */
+  /**
+   * Open the tarball. The path depends on token presence (R3.15, R3.16):
+   *  - no token: GET https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}
+   *    directly, no Authorization, no REST_Call, no redirect expected (a redirect is refused);
+   *  - token: GET https://api.github.com/repos/{owner}/{repo}/tarball/{sha} with Bearer,
+   *    then at most one redirect, only to https://codeload.github.com, without Authorization.
+   * owner/name are the canonical values from the RepoRef.
+   */
   openTarball(ref: RepoRef, signal?: AbortSignal): Promise<{
     body: ReadableStream<Uint8Array>;
     contentLength: number | null;
@@ -370,14 +415,22 @@ export class GitHubClient {
 }
 
 export interface RequestContext {
-  readonly endpoint: "repo" | "commit" | "pulls" | "release" | "tarball";
+  readonly endpoint: "repo" | "commit" | "pulls" | "release";
   readonly repo: { owner: string; name: string };
   /** true once the repo endpoint has returned 200 for this operation (changes 404 meaning). */
   readonly repoProven: boolean;
   /** true when a fatal failure should be thrown; false when the caller degrades (pulls, release). */
   readonly optional: boolean;
+  /**
+   * true ONLY for the first GET /repos/{owner}/{repo} of an operation. Permits one
+   * 301/307/308 whose Location is on https://api.github.com (D2). Every other call: false,
+   * and any 3xx is VALIDATION_FAILED.
+   */
+  readonly allowRepoRedirect: boolean;
 }
 ```
+
+One `GitHubClient` instance is scoped to one `summon` or `build` operation: the summoner constructs a fresh client per call, so `restCallCount` and the budget guard are per operation, not per process. (The tarball download carries its own context in `openTarball`, because it is not a JSON read and not a REST_Call.)
 
 The client is the only module that builds headers or touches `FetchPort` for GitHub hosts. Registries and OSV use a thinner helper `externalRequest(deps, host, ...)` that applies the host allow-list and *never* sets Authorization.
 
@@ -385,20 +438,28 @@ The client is the only module that builds headers or touches `FetchPort` for Git
 
 | Target host | Scheme | Authorization | Notes |
 |---|---|---|---|
-| `api.github.com` | https | `Bearer <token>` when a token exists | REST calls and tarball first hop |
+| `api.github.com` | https | `Bearer <token>` when a token exists | REST calls, the followed rename redirect hop, and the token path's tarball first hop |
 | `github.com` | https | `Bearer <token>` when a token exists | not contacted by this design; permitted by R6.2 |
-| `codeload.github.com` | https | **never** | tarball redirect hop (R3.12) |
+| `codeload.github.com` | https | **never** | direct tarball request (no-token path, R3.15) and the redirect hop of the token path (R3.12) |
 | `pypi.org`, `registry.npmjs.org`, `api.osv.dev` | https | **never** | R6.3 |
 | any other host, any `http:` URL, or any non-default port | | request refused | `VALIDATION_FAILED` (SSRF guard) |
 
-All GitHub requests send `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, and a `User-Agent` (GitHub rejects requests without one). The token is read from `EnvPort` per request, validated with `GithubTokenSchema` (non-empty, no whitespace or control characters, so no header injection), and never stored on the client, cache, error, or log line. A malformed token raises `VALIDATION_FAILED` with a message that names the variable and not its value.
+All GitHub requests send `Accept: application/vnd.github+json` (REST) or `Accept: application/gzip, application/x-gzip, */*` (tarball), `X-GitHub-Api-Version: 2022-11-28` on `api.github.com` only, and a `User-Agent` (GitHub rejects requests without one). The token is read from `EnvPort` per request, validated with `GithubTokenSchema` (non-empty, no whitespace or control characters, so no header injection), and never stored on the client, cache, error, or log line. A malformed token raises `AUTH_INVALID` (R7.8) with a message that names the variable and not its value, before any request is sent.
 
-**Redirect handling for the tarball:**
+**Tarball path selection (`openTarball`).** The path is chosen by token presence, read once per call:
 
-1. Request `https://api.github.com/repos/{owner}/{name}/tarball/{sha}` with auth per the table.
-2. On `302` (or `301/307/308`) read `Location`, parse it with `new URL`, and require `https:` and hostname exactly `codeload.github.com`. Anything else raises `VALIDATION_FAILED` ("unexpected redirect target") and the request is not sent.
-3. Cancel the first response body, then request the new URL with **no** Authorization header (`headersFor` returns none for that host).
-4. A second redirect from codeload is not followed: `VALIDATION_FAILED`. The one-redirect limit is therefore structural, not a counter.
+| | No token (R3.15) | Token (R3.16) |
+|---|---|---|
+| First request | `GET https://codeload.github.com/{owner}/{name}/tar.gz/{sha}` | `GET https://api.github.com/repos/{owner}/{name}/tarball/{sha}` |
+| Authorization | none | `Bearer <token>` |
+| REST_Calls | 0 | 0 (the download is not a REST_Call, even though its first hop is on `api.github.com`) |
+| Expected redirect | none; any 3xx is refused with `VALIDATION_FAILED` | exactly one `301/302/307/308` to `https://codeload.github.com` |
+| Second request | n/a | `GET <Location>` with **no** Authorization |
+| A further redirect | n/a | refused: `VALIDATION_FAILED` |
+
+Rules for the token path: read `Location`, parse with `new URL`, require `https:`, hostname exactly `codeload.github.com`, and the default port; anything else raises `VALIDATION_FAILED` ("unexpected redirect target") and the request is not sent. Cancel the first response body before issuing the second request. The one-redirect limit is structural (the second response is not eligible for redirect handling), not a counter. `owner`, `name`, and `sha` in both URLs come from the canonical `RepoRef`, each segment validated against `OwnerOrNameSchema`/`Sha40Schema` before interpolation.
+
+**Rename redirect on the first repo call.** Covered by D2: the client follows one `301/307/308` to `https://api.github.com` only on the call flagged `allowRepoRedirect`, increments `restCallCount` for the followed hop, and re-applies `headersFor` to the new URL.
 
 ### Repo metadata mapper (`repo-meta.ts`)
 
@@ -471,7 +532,7 @@ export interface ExtractedTree {
 }
 
 /**
- * Streams: body → compressed guard → gunzip → uncompressed guard → tar decoder.
+ * Streams: body → compressed guard → gunzip → uncompressed guard → Readable.fromWeb → tar-stream extract.
  * Raises SummonerError DOWNLOAD_TOO_LARGE on any cap; VALIDATION_FAILED on a corrupt archive.
  * Cancels the upstream body on every failure so the download stops (R3.9).
  */
@@ -481,7 +542,21 @@ export function extractTarball(
 ): Promise<ExtractedTree>;
 ```
 
-**Stream guards.** `capStream(maxBytes, onExceed)` is a `TransformStream<Uint8Array, Uint8Array>` that sums chunk lengths and errors the pipeline the moment the sum crosses `maxBytes`. The compressed guard sits before the decompressor, so the 50 MB limit counts bytes downloaded. The uncompressed guard sits after it and counts decompressed *tar stream* bytes. That measure includes at most 1024 bytes of tar framing per entry, so it is slightly stricter than "sum of entry payloads". It also cannot be fooled by a header that lies about `size` and does not depend on the tar library (see Open Question Q4). As an early exit, a declared entry `size` larger than the remaining uncompressed budget fails before its body is read. A `Content-Length` above the compressed cap fails before the first byte is read, and the missing header case is covered by the guard.
+**Stream guards.** `capStream(maxBytes, onExceed)` is a `TransformStream<Uint8Array, Uint8Array>` that sums chunk lengths and errors the pipeline the moment the sum crosses `maxBytes`. The compressed guard sits before the decompressor, so the 50 MB limit counts bytes downloaded. The uncompressed guard sits after it and counts **decompressed tar-stream bytes** (R3.10, Q4 resolved), which include at most 1024 bytes of tar framing per entry. It cannot be fooled by a header that lies about `size`, and it does not depend on the tar library: bytes are counted before `tar-stream` sees them. As an early exit, a declared entry `size` larger than the remaining uncompressed budget fails before its body is read. A `Content-Length` above the compressed cap fails before the first byte is read, and the missing header case is covered by the guard. Because skipped entries are drained through the same pipeline (below), their bytes count toward the uncompressed cap too.
+
+**Bridging web streams to `tar-stream`.** `tar-stream@3` is Node-streams based, so `tar-extract.ts` does the following (the only `node:` import in the package is `import { Readable } from "node:stream"`):
+
+1. Build the guarded web pipeline: `body.pipeThrough(compressedGuard).pipeThrough(new DecompressionStream("gzip")).pipeThrough(uncompressedGuard)`.
+2. `const source = Readable.fromWeb(guarded)` (Node 22; the type is cast from the global `ReadableStream` to `node:stream/web`'s `ReadableStream` at this one call site).
+3. `const extract = tar.extract()` and `source.pipe(extract)`. Errors on `source` (including the guards' `DOWNLOAD_TOO_LARGE`) are forwarded with `source.on("error", e => extract.destroy(e))`, so the consumer sees one failure.
+4. Consume entries with `for await (const entry of extract)`. `entry.header` carries `name`, `size`, `type`; the entry object is itself the body stream.
+5. Corrupt gzip or tar framing surfaces as an error from `DecompressionStream` or `extract`; it is mapped to `VALIDATION_FAILED` unless it is already one of our `SummonerError`s (the guards throw those, and they win over the secondary stream-destroy error).
+
+**One entry at a time.** `tar-stream` does not emit the next entry until the current entry stream has been fully consumed, so processing is sequential by construction and memory stays bounded by one text file plus the retained file map. Every entry must be consumed:
+
+- *Read a prefix, then drain.* To sniff, read the first `BINARY_SNIFF_BYTES` from the entry's async iterator. Skipping an entry (traversal, link, special, vendored, binary, oversize) calls `entry.resume()` and awaits its `end`. Unlike a cancellable web body, the bytes of a skipped entry are discarded but still flow through the guards, so a hostile archive cannot hide bulk in skipped entries (this is why the early declared-size check matters for oversize files: a declared size beyond the remaining budget fails immediately).
+- *Cancellation.* On any failure or when the caller aborts, the extractor `destroy`s `extract` and `source` (which cancels the underlying web reader and so the HTTP body) and rethrows. The pipeline never keeps reading after a cap error: the guard errors first, and nothing after the failure point is consumed or retained.
+- *Sentinel (D4).* For an entry whose declared size exceeds 1 MiB and whose sniffed prefix is text, the extractor drains the rest and stores the shared oversize sentinel. The content is not accumulated.
 
 **Per-entry rules** applied in this order to each decoded entry (header + body stream):
 
@@ -491,14 +566,14 @@ export function extractTarball(
    - drop empty and `.` segments;
    - drop the first segment (the `<owner>-<repo>-<sha>/` prefix, R3.13);
    - a result with no remaining segments (the root directory entry) is skipped silently.
-3. Entry type: only `file` is a candidate. `symlink` and `link` are skipped (R3.4); devices, FIFOs, and other types are skipped as *special*. `directory` entries contribute only to `hasWorkflowsDir`.
-4. Vendored: any segment in `VENDORED_SEGMENTS` → skip (R3.5).
+3. Entry type (`header.type` strings from `tar-stream`: `file`, `link`, `symlink`, `directory`, `block-device`, `character-device`, `fifo`, `contiguous-file`): only `file` is a candidate. `symlink` and `link` are skipped (R3.4); devices, FIFOs, `contiguous-file`, and other types are skipped as *special*. `directory` entries contribute only to `hasWorkflowsDir`. Every skipped entry is drained (see above).
+4. Vendored: any segment in `VENDORED_SEGMENTS` (`node_modules`, `.git`, `vendor`, `third_party`, `bower_components`, `site-packages`; list final, Q8) → skip (R3.5).
 5. `hasWorkflowsDir` becomes true if the normalized path's first two segments are `.github`, `workflows` (file or directory entry, checked before the binary and size filters).
-6. Read the first `BINARY_SNIFF_BYTES` of the body. A NUL byte means *binary*: cancel the body, skip (R3.6).
-7. If the declared size exceeds `TEXT_FILE_CEILING_BYTES`: cancel the body and store the oversize sentinel (D4).
+6. Read the first `BINARY_SNIFF_BYTES` of the body. A NUL byte means *binary*: drain the body and skip (R3.6).
+7. If the declared size exceeds `TEXT_FILE_CEILING_BYTES`: drain the body and store the oversize sentinel (D4).
 8. Otherwise read the rest, decode as UTF-8 with `TextDecoder("utf-8", { fatal: false, ignoreBOM: true })` (BOM preserved), and store. A repeated path overwrites the earlier one, as `tar -x` would.
 
-Entries are processed strictly one at a time (the tar decoder requires each body to be consumed or cancelled before advancing), which keeps memory bounded by one text file plus the retained file map.
+Entries are processed strictly one at a time (`tar-stream` does not advance until each entry stream is consumed), which keeps memory bounded by one text file plus the retained file map.
 
 Nothing here touches the filesystem. Extracted bytes become strings and are never passed to `eval`, `import`, `Function`, or a child process.
 
@@ -566,8 +641,8 @@ export function createSummoner(deps: SummonerDeps, opts?: SummonerOptions): GitH
 1. Validate `ref` with a strict schema (`sha` = 40 lowercase hex). A malformed ref raises `VALIDATION_FAILED`.
 2. `cacheKey(ref)`; fresh hit → return the cached result with zero network access (R8.2).
 3. If a build for the key is already in flight, await it.
-4. Otherwise: read the clock once (`startMs`). Fetch the repo payload (or reuse the one `summon` passes in). If `private: true`, raise `REPO_PRIVATE` before anything is downloaded.
-5. Run in parallel under one `AbortController`: `pulls` (optional), `release` (optional), and the tarball download + extraction. A fatal failure in any branch aborts the others.
+4. Otherwise: read the clock once (`startMs`). Fetch the repo payload (or reuse the one `summon` passes in; a standalone `build(ref)` issues call 1 with `allowRepoRedirect: true`). If `private: true`, raise `REPO_PRIVATE` before anything is downloaded. If the payload's canonical owner/name differ from `ref` (a hand-built ref), the canonical pair is used for every later URL and for the cache key.
+5. Run in parallel under one `AbortController`: `pulls` (optional), `release` (optional), and the tarball (`openTarball`, path chosen by token presence) + extraction. A fatal failure in any branch aborts the others.
 6. `mapRepoMeta(...)` with the single `startMs`; `buildSnapshotFromFileMap(ref, tree.files, { meta, createdAt: isoFromMs(startMs) })`.
 7. Store in the cache (the entry's creation time is `clock.nowMs()` at insertion) and return a shallow copy.
 
@@ -667,23 +742,25 @@ export { systemClock } from "./adapters/system-clock.js";
 
 Consumers never import a path other than the package entry (R10.1). `testing/` helpers are internal. The `adapters/` exports are conveniences for composition roots, and the logic modules never import them.
 
-### GitHub REST call plan (R2.7, R4.8)
+### GitHub REST call plan (R2.7, R2.10, R4.8)
 
 | # | Request | Gives | If it fails |
 |---|---|---|---|
-| 1 | `GET /repos/{o}/{r}` | default branch, `private`, archived, `pushed_at`, stars, open-issues count, license | fatal |
-| 2 | `GET /repos/{o}/{r}/commits/{ref}` | exact 40-char SHA | fatal |
-| 3 | `GET /repos/{o}/{r}/pulls?state=open&sort=created&direction=asc&per_page=1` | oldest open PR (first item) and, from the `Link: rel="last"` page number, the open PR count | rate limit is fatal; other failures degrade to neutral |
-| 4 | `GET /repos/{o}/{r}/releases/latest` | `published_at` | rate limit is fatal; `404` means no releases (`null`); other failures degrade |
-| – | `GET /repos/{o}/{r}/tarball/{sha}` (302 → codeload) | the archive | fatal |
+| 1 | `GET /repos/{o}/{r}` (may follow one rename redirect, D2) | canonical owner/name, default branch, `private`, archived, `pushed_at`, stars, open-issues count, license | fatal |
+| 2 | `GET /repos/{canon}/commits/{ref}` | exact 40-char SHA | fatal (`REF_NOT_FOUND` for a missing ref) |
+| 3 | `GET /repos/{canon}/pulls?state=open&sort=created&direction=asc&per_page=1` | oldest open PR (first item) and, from the `Link: rel="last"` page number, the open PR count | rate limit, `401`, `5xx`, and transport errors are fatal; other failures degrade to neutral |
+| 4 | `GET /repos/{canon}/releases/latest` | `published_at` | same as call 3; `404` means no releases (`null`) |
+| – | tarball: no token → `GET codeload.github.com/{o}/{r}/tar.gz/{sha}`; token → `GET api.github.com/repos/{o}/{r}/tarball/{sha}` then one redirect to codeload | the archive | fatal |
+
+The tarball row is **not** a REST_Call on either path (REST_Call glossary term), so it never touches `restCallCount`.
 
 Budget accounting:
 
-- `summon()`: calls 1 and 2 (resolve), then 3 and 4 (build reuses the call-1 payload) = **4 REST calls**, plus the tarball request.
-- `build(ref)` alone: calls 1, 3, 4 = **3 REST calls**, plus the tarball.
-- A cache hit inside `summon()` costs only calls 1 and 2; inside `build()` it costs **zero**.
-- The tarball request's first hop does hit `api.github.com`, so against the real 60/hour unauthenticated limit a miss consumes 5 units. R4.8 excludes it from the 5-call count, and the budget invariant still holds with that hop included (4 + 1 = 5). `GitHubClient.restCallCount` counts it so tests can assert `≤ 5` including it.
-- Hop 2 (codeload) is not a REST call.
+- `summon()`: calls 1 and 2 (resolve), then 3 and 4 (build reuses the call-1 payload) = **4 REST calls**.
+- `build(ref)` alone: calls 1, 3, 4 = **3 REST calls**.
+- A cache hit inside `summon()` costs only calls 1 and 2; inside `build()` it costs **zero** (the cache lookup precedes any network access).
+- The budget is 5 (R4.8). The headroom of 1 is consumed only by a followed rename redirect on call 1 (R2.10), giving a worst case of **5** for `summon()` and 4 for `build(ref)`. The client's hard guard throws before a 6th request is sent (D2), so the bound is enforced in code, not only in tests.
+- Without a token the whole summon touches `api.github.com` at most 4 times (5 with a rename), so against the 60/hour unauthenticated limit one cache-miss summon costs 4 units (about 15 summons per hour per IP). With a token the tarball's first hop also hits `api.github.com`, but that is authenticated quota (5,000/hour) and still not a REST_Call.
 
 The pull-request count uses the `Link` header trick rather than the Search API (`/search/issues`), which has its own, much lower unauthenticated limit (10 requests per minute) and is not worth a call.
 
@@ -721,9 +798,14 @@ export const GithubTokenSchema = z.string().min(1).regex(/^[^\s\x00-\x1f\x7f]+$/
 // src/schemas/github.ts (continued)
 const IsoDate = z.string().datetime({ offset: true });
 
+/**
+ * Canonical identity (R2.4): owner.login + name are the canonical spelling. A refinement on
+ * the schema requires full_name === `${owner.login}/${name}`; a mismatch is VALIDATION_FAILED.
+ */
 export const GhRepoSchema = z.object({
-  name: z.string().min(1),
+  name: OwnerOrNameSchema,
   full_name: z.string().min(1),
+  owner: z.object({ login: OwnerOrNameSchema }),
   default_branch: z.string().min(1),
   private: z.boolean(),
   archived: z.boolean(),
@@ -734,7 +816,7 @@ export const GhRepoSchema = z.object({
     .object({ spdx_id: z.string().nullable() })
     .nullish()
     .transform((v) => v ?? null),
-});
+}).refine((r) => r.full_name === `${r.owner.login}/${r.name}`);
 export type GhRepo = z.infer<typeof GhRepoSchema>;
 
 export const GhCommitSchema = z.object({ sha: Sha40Schema });
@@ -810,10 +892,13 @@ export const OsvVulnSchema = z.object({
 // src/errors.ts
 export type SummonerErrorCode = Extract<NecroErrorCode,
   | "INVALID_REPO_URL" | "REPO_NOT_FOUND" | "REPO_PRIVATE" | "RATE_LIMITED"
-  | "NETWORK_TIMEOUT" | "DOWNLOAD_TOO_LARGE" | "VALIDATION_FAILED">>;
+  | "NETWORK_TIMEOUT" | "DOWNLOAD_TOO_LARGE" | "VALIDATION_FAILED"
+  | "REF_NOT_FOUND" | "AUTH_INVALID" | "UPSTREAM_UNAVAILABLE">>;
 
 export interface SummonerErrorDetails {
-  readonly reason?: string;                   // machine reason, e.g. "foreign-host"
+  readonly reason?: string;                   // machine reason, e.g. "foreign-host", "empty-repository",
+                                              // "rest-budget-exceeded", "redirect-refused"
+  readonly ref?: string;                      // REF_NOT_FOUND only; grammar-validated and redacted
   readonly httpStatus?: number;
   readonly retryAfterMinutes?: number;        // RATE_LIMITED only
   readonly limit?: "compressed" | "uncompressed" | "entries";
@@ -834,9 +919,10 @@ export class SummonerError extends NecroError {
 export const NecroErrorCodeSchema = z.enum([
   "REGISTRY_INVALID", "CARD_NOT_FOUND", "PARSER_INIT_FAILED", "FILE_TOO_LARGE",
   "INVALID_QUERY_PATTERN", "SNAPSHOT_DIR_NOT_FOUND", "INVALID_REPO_META", "DETECTOR_FAILED",
-  // @necro/github (spec 02)
+  // @necro/github (spec 02): 10 codes
   "INVALID_REPO_URL", "REPO_NOT_FOUND", "REPO_PRIVATE", "RATE_LIMITED",
   "NETWORK_TIMEOUT", "DOWNLOAD_TOO_LARGE", "VALIDATION_FAILED",
+  "REF_NOT_FOUND", "AUTH_INVALID", "UPSTREAM_UNAVAILABLE",
 ]);
 ```
 
@@ -845,7 +931,7 @@ export const NecroErrorCodeSchema = z.enum([
 ```
 "owner/repo#ref" ──parseRepoRef──▶ ParsedRepoRef
    ──resolveRef (2 calls)──▶ RepoRef {owner,name,sha(40 hex),defaultBranch} + GhRepo
-   ──tarball (≤1 redirect)──▶ capped gunzip ▶ capped tar ▶ Record<path,string> (null-prototype)
+   ──tarball (no token: codeload direct; token: api + ≤1 redirect)──▶ capped gunzip ▶ capped tar-stream ▶ Record<path,string> (null-prototype)
    ──buildSnapshotFromFileMap(ref, files, {meta, createdAt})──▶ RepoSnapshot  ──▶ SnapshotCache
 RepoSnapshot ──parseAllManifests──▶ ParsedDependency[] ──fetchExternalData──▶ {registryData, osvData, skipped}
 RepoSnapshot + {registryData, osvData, now} ──▶ runReading (oracle)
@@ -857,7 +943,7 @@ RepoSnapshot + {registryData, osvData, now} ──▶ runReading (oracle)
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-P1–P12 are the properties named in the requirements document and keep their numbers. P13–P26 are added by this design from the prework analysis. Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P18, R8.1–R8.3 and R8.6–R8.9 into the single model-based P26, and R5.2/R5.4/R5.9 into P19. P12 and P22 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P22 is the pure host-policy function.
+P1–P17 are the properties named in the requirements document and keep their numbers and meaning. P18–P32 are added by this design from the prework analysis and were renumbered after P17 (the former design P13–P26 are now P18–P30, minus the former REST-budget property, which is subsumed by requirements P13; P31 and P32 are new). Property reflection removed these overlaps: the per-criterion tests for R1.1–R1.6 collapse into P1, R4.1–R4.7 into P22, R8.1–R8.3 and R8.6–R8.9 into the single model-based P30, and R5.2/R5.4/R5.9 into P23. P12 and P26 both concern the Authorization header but are kept apart because P12 exercises redirect hops end to end while P26 is the pure host-policy function. P13 (budget as observed over whole scenarios) and P31 (the client's hard guard in isolation) both bound REST calls but fail for different reasons. P16 owns the ref, `401`, and `5xx` error mapping; P28 owns the remaining classification rows.
 
 PBT applies to this package because the interesting logic is pure (parser, path normalizer, metadata mapper, failure mapper, cache, dependency collection) or sits behind ports that fakes can drive deterministically. Criteria that are structural (no globals in package logic) are verified by lint and smoke tests, not properties.
 
@@ -893,9 +979,9 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 ### Property 6: Compressed download cap
 
-*For any* download cap `L` and any valid gzip stream whose compressed length exceeds `L`, extraction throws `DOWNLOAD_TOO_LARGE` with `limit = "compressed"`, yields no snapshot, and cancels the upstream body before the stream is fully read. With the default limits, the cap is exactly 52,428,800 bytes.
+*For any* download cap `L`, either download path (direct codeload without a token, or the `api.github.com` tarball endpoint with a token), and any valid gzip stream whose compressed length exceeds `L`, extraction throws `DOWNLOAD_TOO_LARGE` with `limit = "compressed"`, yields no snapshot, and cancels the upstream body before the stream is fully read. With the default limits, the cap is exactly 52,428,800 bytes.
 
-**Validates: Requirements 3.9**
+**Validates: Requirements 3.9, 3.15, 3.16**
 
 ### Property 7: File-count cap is preserved
 
@@ -923,99 +1009,135 @@ PBT applies to this package because the interesting logic is pure (parser, path 
 
 ### Property 11: Uncompressed and entry-count caps
 
-*For any* limits `(U, E)` and any archive whose decompressed tar stream exceeds `U` bytes or whose entry count exceeds `E`, extraction throws `DOWNLOAD_TOO_LARGE` (with `limit = "uncompressed"` or `"entries"` respectively) and yields no snapshot, regardless of how small the compressed archive is. With the default limits the caps are exactly 209,715,200 bytes and 100,000 entries.
+*For any* limits `(U, E)` and any archive whose decompressed tar-stream byte count (including tar framing, and including the bytes of skipped entries) exceeds `U` or whose entry count exceeds `E`, extraction throws `DOWNLOAD_TOO_LARGE` (with `limit = "uncompressed"` or `"entries"` respectively) and yields no snapshot, regardless of how small the compressed archive is. With the default limits the caps are exactly 209,715,200 bytes and 100,000 entries.
 
 **Validates: Requirements 3.10, 3.11**
 
-### Property 12: Authorization is never sent across a redirect to another host
+### Property 12: Authorization is never sent to codeload or to non-GitHub-API hosts
 
-*For any* token value and any redirect `Location`, no request sent to a host other than `github.com` or `api.github.com` carries an `Authorization` header; a redirect to a host other than `codeload.github.com` is refused (`VALIDATION_FAILED`) and no request is sent to it; at most one redirect is followed.
+*For any* token value and any redirect `Location`: no request sent to a host other than `github.com` or `api.github.com` carries an `Authorization` header, including `codeload.github.com` reached by redirect from the token path and the PyPI, npm, and OSV hosts; a redirect to a host other than `codeload.github.com` is refused (`VALIDATION_FAILED`) and no request is sent to it; at most one redirect is followed on the tarball path.
 
-**Validates: Requirements 3.1, 3.12, 6.3**
+**Validates: Requirements 3.1, 3.12, 3.16, 6.3**
 
-### Property 13: Resolved references are fully populated and immutable
+### Property 13: REST call budget, including the rename redirect
+
+*For any* scripted scenario (success, `404` on releases, failing pulls call, cache hit, cache miss, explicit or default ref, token or no token, and a first repository call that returns a followed rename redirect), the number of REST_Calls (requests to `api.github.com` other than the tarball download) during one `summon` is at most 5 and during one `build` at most 4, the tarball download request never contributes to the count on either path, `hasWorkflowsDir` is derived with no additional request, and the `RepoRef` `owner` and `name` equal the canonical values from the validated repo response (not the requested spelling).
+
+**Validates: Requirements 2.4, 2.7, 2.8, 2.10, 4.6, 4.8**
+
+### Property 14: Rename-redirect policy
+
+*For any* generated redirect response, a `301`, `307`, or `308` on the first repository metadata call whose `Location` is on `https://api.github.com` is followed exactly once and re-applies the Authorization policy to the new request; any other status (such as `302`), a redirect to another host or scheme or port, a second redirect, and any redirect on a REST_Call other than the first repository call raises `VALIDATION_FAILED` and sends no further request.
+
+**Validates: Requirements 2.8, 2.9**
+
+### Property 15: Direct codeload path is unauthenticated and REST-free
+
+*For any* `RepoRef` (canonical owner, name, 40-hex sha) with no `GITHUB_TOKEN` present, the tarball request targets exactly `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}`, carries no `Authorization` header, contributes zero REST_Calls, and a `3xx` response from codeload is refused with `VALIDATION_FAILED`.
+
+**Validates: Requirements 3.15, 3.12, 6.4**
+
+### Property 16: Error-code mapping for ref, auth, and upstream failures
+
+*For any* generated response: a nonexistent ref (`404`/`422`, or `409` empty repository) in an existing, proven repository yields `REF_NOT_FOUND` naming the ref and never `INVALID_REPO_URL` or `REPO_NOT_FOUND`; a `401` yields `AUTH_INVALID`; a GitHub `5xx` on a REST_Call or on the tarball download yields `UPSTREAM_UNAVAILABLE` and never `NETWORK_TIMEOUT`; while a per-dependency registry or OSV `5xx` yields none of these and is recorded in Skipped_Dependencies.
+
+**Validates: Requirements 2.11, 5.5, 7.7, 7.8, 7.9**
+
+### Property 17: AUTH_INVALID never leaks the token
+
+*For any* generated `GITHUB_TOKEN` value (including malformed ones) and any `401` response, the raised `AUTH_INVALID` `userMessage` and every other `NecroError` field (`message`, `details`, and the full `cause` chain) contain no substring of the token value.
+
+**Validates: Requirements 6.5, 7.8**
+
+### Property 18: Resolved references are fully populated and immutable
 
 *For any* valid repo payload and commit payload (any default branch name, any requested ref form: none, branch, tag, full SHA, partial SHA), `resolveRef` returns a `RepoRef` whose `owner`, `name`, and `defaultBranch` are non-empty, whose `sha` matches `^[0-9a-f]{40}$`, and whose `defaultBranch` equals the repo payload's `default_branch` regardless of the ref requested; *for any* full 40-hex ref, resolution succeeds only if the commit payload's `sha` equals it.
 
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 10.3**
 
-### Property 14: Invalid payloads are rejected without partial results
+### Property 19: Invalid payloads are rejected without partial results
 
-*For any* repo or commit payload that violates its zod schema (missing field, wrong type, `sha` not 40 lowercase hex, empty `default_branch`), `resolveRef` throws `VALIDATION_FAILED`, returns no `RepoRef`, and issues no further request that depends on the invalid field.
+*For any* repo or commit payload that violates its zod schema (missing field, wrong type, `sha` not 40 lowercase hex, empty `default_branch`, `full_name` that disagrees with `owner.login/name`), `resolveRef` throws `VALIDATION_FAILED`, returns no `RepoRef`, and issues no further request that depends on the invalid field.
 
 **Validates: Requirements 2.5, 2.6**
 
-### Property 15: REST call budget
-
-*For any* scripted scenario (success, `404` on releases, failing pulls call, cache hit, cache miss, explicit or default ref), the number of requests sent to `api.github.com` during one `summon` is at most 5 including the tarball's first hop, and at most 4 excluding it; during one `build` it is at most 4 including the tarball hop; `hasWorkflowsDir` is derived with no additional request.
-
-**Validates: Requirements 2.7, 4.6, 4.8**
-
-### Property 16: Archive entry paths are safe and repository-relative
+### Property 20: Archive entry paths are safe and repository-relative
 
 *For any* generated sequence of tar entries (clean files, `..` traversal, absolute paths, backslash traversal, symlinks, hard links, devices, vendored segments at any depth, random top-level prefixes, duplicate paths), every key of the extracted file map: has the top-level `<owner>-<repo>-<sha>/` prefix removed, contains no `..` or empty segment, is not absolute, contains no segment in `VENDORED_SEGMENTS`, and originates from a regular-file entry. Every clean regular file is present with its content. `hasWorkflowsDir` is true if and only if some non-traversal, non-vendored entry lies under `.github/workflows/`. A file named `__proto__` is an ordinary key and does not change any prototype.
 
 **Validates: Requirements 3.3, 3.4, 3.5, 3.13, 4.6**
 
-### Property 17: Binary classification
+### Property 21: Binary classification
 
 *For any* entry content and any NUL position `p`, the entry is excluded as binary if and only if a NUL byte occurs within the first 8000 bytes; content with a NUL only at an offset of 8000 or later is treated as text.
 
 **Validates: Requirements 3.6**
 
-### Property 18: Metadata mapping
+### Property 22: Metadata mapping
 
 *For any* repo payload, pull-request result, release result (each possibly absent), and `nowMs`: the output passes `RepoMetaSchema`; `licenseKey` is `null` for no license, `"NOASSERTION"` for a null or `NOASSERTION` SPDX id, and the SPDX id otherwise; `pushedAt` and `latestReleaseAt` are ISO 8601 UTC strings ending in `Z` or `null`; `openPRCount` equals the supplied count and `openIssueCount = max(0, open_issues_count − openPRCount)`; `oldestOpenPRAgeDays` is `null` when there is no open PR and otherwise `max(0, floor((nowMs − createdAtMs) / 86,400,000))`; every field whose source is absent equals its neutral default.
 
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 4.7**
 
-### Property 19: Registry data is keyed, deduplicated, and well-formed
+### Property 23: Registry data is keyed, deduplicated, and well-formed
 
 *For any* dependency list (mixed ecosystems, mixed name case, duplicates) and any successful fixture responses: each distinct lowercased name is requested at most once per ecosystem; every key of `registryData` equals `dep.name.toLowerCase()` for some input dependency, with no ecosystem prefix; every entry passes the `RegistryEntry` shape check; every recorded registry/OSV request has `timeoutMs ≤ 10,000`, whatever timeout option is supplied; no request carries an `Authorization` header; and a lowercased name present in both ecosystems yields exactly one entry (npm after PyPI).
 
 **Validates: Requirements 5.1, 5.2, 5.4, 5.9, 5.11, 6.3**
 
-### Property 20: OSV data is honest and well-formed
+### Property 24: OSV data is honest and well-formed
 
 *For any* dependency list and fixture OSV responses: only exactly-pinned dependencies are queried; every `OsvVulnerability` passes the oracle shape check, has `affectedPackage` equal to a queried dependency name, and `severity` in the allowed set (`UNKNOWN` when the source gives none); aliases of the same flaw for the same package collapse to one record; unpinned dependencies appear in `skipped` with reason `version-not-pinned` and nowhere in `osvData`.
 
 **Validates: Requirements 5.3, 5.9**
 
-### Property 21: Per-dependency failures are isolated
+### Property 25: Per-dependency failures are isolated
 
 *For any* dependency list and any assignment of outcomes per dependency (success, `404`, timeout, network error, HTTP 5xx, malformed JSON, oversize body), `fetchExternalData` resolves without throwing; `registryData` contains exactly the dependencies whose outcome was success; `404` dependencies are absent from both `registryData` and `skipped`; every timeout, network, HTTP-error, or invalid-response dependency appears in `skipped` exactly once with the matching reason; and a failure of one endpoint never removes data gathered from another.
 
-**Validates: Requirements 5.5, 5.6, 5.7, 5.8, 7.6**
+**Validates: Requirements 5.5, 5.6, 5.7, 5.8, 7.6, 7.9**
 
-### Property 22: Authorization header policy
+### Property 26: Authorization header policy
 
 *For any* URL and any token (or none): `headersFor` includes `Authorization` if and only if a token exists, the scheme is `https`, the port is the default, and the host is exactly `github.com` or `api.github.com`; hosts such as `codeload.github.com`, `pypi.org`, `registry.npmjs.org`, `api.osv.dev`, and look-alikes (`api.github.com.evil.test`, `evilgithub.com`, `api.github.com:444`) never receive it; with no token no request sent through the client carries `Authorization`.
 
 **Validates: Requirements 6.2, 6.3, 6.4**
 
-### Property 23: Every error is a typed, in-voice NecroError
+### Property 27: Every error is a typed, in-voice NecroError
 
-*For any* error code in the seven introduced codes and any generated context, the factory produces an instance of `NecroError` (and `SummonerError`) with the requested `code`; `userMessage` is non-empty, ASCII, contains exactly one line break separating a mystical line of at most 16 words from a non-empty technical line; the message contains no input echo beyond declared fields; and when an originating error is supplied, `error.cause` is present, retains its name, and carries its message with secrets redacted.
+*For any* error code in the ten introduced codes and any generated context, the factory produces an instance of `NecroError` (and `SummonerError`) with the requested `code`; `userMessage` is non-empty, ASCII, contains exactly one line break separating a mystical line of at most 16 words from a non-empty technical line; the message contains no input echo beyond declared fields (for `REF_NOT_FOUND`, the grammar-validated, redacted ref); and when an originating error is supplied, `error.cause` is present, retains its name, and carries its message with secrets redacted.
 
-**Validates: Requirements 7.1, 7.7, 7.8**
+**Validates: Requirements 7.1, 7.7, 7.8, 7.10, 7.11**
 
-### Property 24: HTTP and transport failure classification
+### Property 28: HTTP and transport failure classification
 
-*For any* `(status, headers, authenticated, repoProven, endpoint)`: `404` on the repo endpoint maps to `REPO_NOT_FOUND` when authenticated and `REPO_PRIVATE` when not; a repo payload with `private: true` maps to `REPO_PRIVATE`; `404`/`422` on the commit endpoint after the repo is proven maps to `INVALID_REPO_URL`; `5xx` and `FetchTransportError` of either kind map to `NETWORK_TIMEOUT`; 403 without rate-limit signals maps to `REPO_PRIVATE`; any other unexpected status maps to `VALIDATION_FAILED`; the mapping never throws a non-`NecroError`.
+*For any* `(status, headers, authenticated, repoProven, endpoint)`: `404` on the repo endpoint maps to `REPO_NOT_FOUND` when authenticated and `REPO_PRIVATE` when not; a repo payload with `private: true` maps to `REPO_PRIVATE`; `FetchTransportError` of either kind maps to `NETWORK_TIMEOUT`; `403` without rate-limit signals maps to `REPO_PRIVATE`; a `3xx` on any REST endpoint outside the permitted rename redirect maps to `VALIDATION_FAILED`; any other unexpected status maps to `VALIDATION_FAILED`; the mapping never throws a non-`NecroError`. (The ref, `401`, and `5xx` rows are P16.)
 
-**Validates: Requirements 7.3, 7.6, 9.6**
+**Validates: Requirements 2.9, 7.3, 7.6, 9.6**
 
-### Property 25: Rate-limit wait is computed from the clock
+### Property 29: Rate-limit wait is computed from the clock
 
 *For any* `x-ratelimit-reset` epoch second, `ClockPort` instant, and optional `Retry-After` (integer seconds, HTTP-date, absent, or malformed): a `403`/`429` response with `Retry-After` yields `RATE_LIMITED` whose `retryAfterMinutes = max(1, ceil(retryAfterSeconds / 60))`; without a usable `Retry-After`, a response with `x-ratelimit-remaining: 0` yields `max(1, ceil((resetMs − nowMs) / 60,000))`; with neither, the wait is 1 minute; the `userMessage` states the same number.
 
 **Validates: Requirements 7.4, 7.5**
 
-### Property 26: Snapshot cache behaves like a TTL + LRU model
+### Property 30: Snapshot cache behaves like a TTL + LRU model
 
 *For any* sequence of `get` and `set` operations on arbitrary keys with a monotonic fixed clock, any `ttlMs ≥ 1` and any `maxEntries ≥ 1`, `SnapshotCache` agrees with a reference model at every step: a `get` hits if and only if the key was set and `now − setTime < ttlMs` (an age equal to the TTL is a miss); a hit makes the key most-recently-used; `set` on an existing key replaces it (at most one entry per key); inserting beyond capacity evicts the least-recently-used key; `size ≤ maxEntries` always. *For any* build request whose key is fresh in the cache, the `FetchPort` call count is unchanged.
 
 **Validates: Requirements 8.1, 8.2, 8.3, 8.6, 8.8, 8.9**
+
+### Property 31: Hard REST budget guard
+
+*For any* sequence of REST requests issued through one `GitHubClient` (any mix of endpoints, any number of attempts, with or without a followed rename redirect), `restCallCount` never exceeds 5, the `FetchPort` never receives a 6th request to `api.github.com` that is not the tarball download, and the attempt that would be the 6th throws `VALIDATION_FAILED` (reason `rest-budget-exceeded`) before any request is sent.
+
+**Validates: Requirements 2.7, 2.10, 4.8**
+
+### Property 32: Tarball path is selected by token presence
+
+*For any* `RepoRef` and any `GITHUB_TOKEN` (present or absent): with a token, the first request targets `https://api.github.com/repos/{owner}/{repo}/tarball/{sha}` with `Authorization: Bearer <token>`, exactly one redirect to `https://codeload.github.com` is followed without `Authorization`, and a second redirect is refused; with no token, the first and only request targets `codeload.github.com` directly. In both cases the extracted archive and the resulting snapshot are identical for identical archive bytes.
+
+**Validates: Requirements 3.1, 3.12, 3.15, 3.16**
 
 ---
 
@@ -1042,6 +1164,11 @@ The factory is the only place a `SummonerError` is constructed. It builds the `u
 | `NETWORK_TIMEOUT` | `The ether does not answer.` | `<service> did not respond in time or was unreachable. Retry shortly.` |
 | `DOWNLOAD_TOO_LARGE` | `This crypt is too vast to enter.` | `The archive exceeded the <compressed 50 MB / uncompressed 200 MB / 100000 entries> limit. Try a smaller repository.` |
 | `VALIDATION_FAILED` | `The spirits spoke in a tongue the oracle does not know.` | `<what> failed validation (<where>). Retry; report it if it persists.` |
+| `REF_NOT_FOUND` | `The name you speak is not written in this grave.` | `Ref "<ref>" does not exist in <owner>/<name>. Check the branch, tag, or commit SHA, or omit the ref to read the default branch.` |
+| `AUTH_INVALID` | `The key is refused. The gate stays shut.` | `GitHub rejected the credentials in GITHUB_TOKEN. Replace the token or unset it to read public repositories without one.` |
+| `UPSTREAM_UNAVAILABLE` | `The halls of GitHub are dark tonight.` | `<service> answered with a server error (HTTP <status>). This is not your repository; retry in a few minutes.` |
+
+Notes on the three new entries (oracle-voice rules 1, 2, 7, 8): each is a mystical line of at most 16 words, a line break, then a technical line saying what happened and what to do next; ASCII only, no emoji, no tarot-card names used as decoration. `REF_NOT_FOUND` echoes the ref because R7.7 requires naming it; the ref has already passed the `parseRepoRef` grammar (length, character set) and goes through `redactSecrets`, so a pasted token-shaped string is masked. `AUTH_INVALID` never interpolates the token or any part of it; it names only the variable `GITHUB_TOKEN`. `UPSTREAM_UNAVAILABLE` carries `<service>` (`GitHub API` or `GitHub archive`) and the numeric status as declared fields.
 
 ### Redaction (`redactSecrets`)
 
@@ -1061,24 +1188,30 @@ Rate-limit detection comes first. A response is rate limited when the status is 
 | `403`/`429`, no usable `Retry-After`, `x-ratelimit-remaining: 0` | `RATE_LIMITED` | primary limit; `minutes = max(1, ceil((reset×1000 − nowMs)/60000))` (R7.4) |
 | `403`/`429`, rate-limit signal but neither header usable | `RATE_LIMITED` | `minutes = 1` |
 | `404` on **repo**, request unauthenticated | `REPO_PRIVATE` | cannot be proven absent (R7.3) |
-| `404` on **repo**, request authenticated | `REPO_NOT_FOUND` | wording hedged: "visible to this token" (see Q2) |
+| `404` on **repo**, request authenticated | `REPO_NOT_FOUND` | wording hedged: "visible to this token" (Q2, accepted) |
 | repo payload `private: true` | `REPO_PRIVATE` | raised before any content download |
 | `403` without rate-limit signals, `451` | `REPO_PRIVATE` | access blocked or withheld |
-| `404`/`422` on **commit**, repo already proven | `INVALID_REPO_URL` | reason `ref-not-found` (see Q7) |
-| `409` on **commit** | `INVALID_REPO_URL` | reason `empty-repository` |
-| `404` on **tarball**, repo already proven | `REPO_NOT_FOUND` | archive vanished mid-summon |
+| `404`/`422` on **commit**, repo already proven | `REF_NOT_FOUND` | `details.ref` set; message names the ref (R2.11, R7.7); never `INVALID_REPO_URL` |
+| `409` on **commit** (empty repository) | `REF_NOT_FOUND` | reason `empty-repository`; no commit exists, so no ref can |
+| full 40-hex ref whose response `sha` differs | `VALIDATION_FAILED` | reason `sha-mismatch` |
+| `404` on **tarball**, repo already proven | `REPO_NOT_FOUND` | archive vanished mid-summon (either download path) |
 | `404` on **release** | not an error | no releases: `latestReleaseAt = null` |
-| `404`, other failure, or non-rate-limit error on **pulls**/**release** | degrade | neutral defaults, recorded in `degraded` |
-| `301`/`302`/`307`/`308` on a REST endpoint | `REPO_NOT_FOUND` | repository moved or renamed; not followed (D2) |
-| `401` | `VALIDATION_FAILED` | token rejected; message names `GITHUB_TOKEN` and not its value (see Q7) |
-| `500`/`502`/`503`/`504` | `NETWORK_TIMEOUT` | upstream unavailable; no retry, to protect the call budget |
+| `404` or other non-listed failure on **pulls**/**release** | degrade | neutral defaults, recorded in `degraded` |
+| `301`/`307`/`308` on the **first repo call**, `Location` on `https://api.github.com`, first redirect | followed | counts as a REST_Call (R2.10); canonical identity from the final body (D2) |
+| any other 3xx on a REST endpoint, redirect on a non-first call, other host/scheme, or a second redirect | `VALIDATION_FAILED` | reason `redirect-refused`; request not sent (R2.9) |
+| any 3xx from the direct codeload request (no-token path), or a second redirect on the token path | `VALIDATION_FAILED` | reason `redirect-refused` |
+| `401` on any GitHub request, or a malformed token (`GithubTokenSchema` fails) | `AUTH_INVALID` | message names `GITHUB_TOKEN`, never its value (R7.8, P17) |
+| any `5xx` on a GitHub REST request or on the tarball download (either path) | `UPSTREAM_UNAVAILABLE` | `details.httpStatus` set; no retry, to protect the call budget (R7.9) |
 | `FetchTransportError` (`timeout` or `network`) | `NETWORK_TIMEOUT` | registry/OSV transport errors become `skipped`, never this code |
 | `2xx` whose body fails its zod schema, or body larger than its cap | `VALIDATION_FAILED` | no field read from the unvalidated value |
-| unexpected redirect target, second redirect, or non-allow-listed host | `VALIDATION_FAILED` | request not sent |
+| non-allow-listed host, `http:` URL, or non-default port | `VALIDATION_FAILED` | request not sent |
+| REST budget guard trips (6th request) | `VALIDATION_FAILED` | reason `rest-budget-exceeded`; request not sent (D2) |
 | corrupt gzip or tar stream | `VALIDATION_FAILED` | archive could not be read |
 | any other unexpected status | `VALIDATION_FAILED` | |
 
-For *optional* endpoints (`pulls`, `release`), only a rate limit or a transport error is fatal. A rate limit on call 3 means call 4 and the tarball will fail too, so failing fast is the honest result. Every other failure degrades quietly to the neutral defaults.
+Registry and OSV `5xx` responses are not in this table: they are per-dependency failures and become `skipped` entries with reason `http-error` (see below). No situation above maps to `INVALID_REPO_URL` except a malformed reference string rejected by `parseRepoRef`.
+
+For *optional* endpoints (`pulls`, `release`), the fatal conditions are a rate limit, `401`, a `5xx`, and a transport error (R7.6, R7.8, R7.9 apply to every GitHub REST request). A rate limit on call 3 means call 4 and the tarball will fail too, so failing fast is the honest result. Every other failure (for example `404` on pulls, or a payload that fails zod) degrades quietly to the neutral defaults.
 
 ### Registry and OSV failures
 
@@ -1095,7 +1228,7 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 ### Principles
 
 - **No network, LLM, or sandbox calls in any test.** Every test uses `testing/fixture-fetch.ts`, a `FetchPort` that answers from recorded JSON under `fixtures/` and records every request (URL, method, headers, `timeoutMs`). `vitest.setup.ts` replaces `globalThis.fetch` with a function that throws, so a stray real call fails loudly. The fixed clock and a fixture `EnvPort` complete the three ports.
-- **Archives are built in memory.** `testing/make-tar-gz.ts` produces gzip tarballs from entry lists without committing binaries. Hostile entries (`..`, absolute, symlink, hard link, device, backslash) are written by a small hand-rolled ustar header writer in `testing/raw-tar.ts`, independent of `modern-tar`, because a well-behaved packer may refuse to produce them and the extractor must be tested against what an attacker can produce.
+- **Archives are built in memory.** `testing/make-tar-gz.ts` produces gzip tarballs from entry lists without committing binaries. Hostile entries (`..`, absolute, symlink, hard link, device, backslash) are written by a small hand-rolled ustar header writer in `testing/raw-tar.ts`, independent of `tar-stream`'s own `pack()` (which may refuse to produce them), because the extractor must be tested against what an attacker can produce. `make-tar-gz.ts` may use `tar-stream` `pack()` for well-formed archives; `tar-stream` is a runtime dependency, so no extra test dependency is needed.
 - **Limits are parametric.** Cap properties (P6, P11) inject small limits (for example 1–64 KB, 3–50 entries) so 100 runs finish in milliseconds. One smoke test pins the default literals (`52_428_800`, `209_715_200`, `100_000`, `604_800_000`, `20`). One slow example test (tagged and skipped from the default run) streams a lazily generated 200 MB zero-filled archive at the real default to confirm the guard fires at that scale.
 - **Pure first.** Parser, path normalizer, binary sniff, metadata mapper, failure mapper, header policy, cache, and dependency collection are plain functions and are tested directly.
 
@@ -1114,22 +1247,28 @@ On the first fatal failure in `buildDetailed`, the shared `AbortController` fire
 | P8, P26 | `snapshot-cache.ts` | `snapshot-cache.pbt.test.ts` |
 | P9 | `errors.ts`, `github-client.ts`, `snapshot.ts` | `secrets.pbt.test.ts` |
 | P10 | `snapshot.ts` + `external-data.ts` | `determinism.pbt.test.ts` |
-| P12, P22 | `github-client.ts` (`headersFor`, redirect policy) | `github-client.pbt.test.ts` |
-| P13, P14 | `intake.ts` (`resolveRef`) | `resolve-ref.pbt.test.ts` |
-| P15 | `snapshot.ts` + `github-client.ts` | `call-budget.pbt.test.ts` |
-| P16, P17 | `entry-path.ts`, `tar-extract.ts` | `entry-path.pbt.test.ts`, `tar-extract.pbt.test.ts` |
-| P18 | `repo-meta.ts` | `repo-meta.pbt.test.ts` |
-| P19, P20, P21 | `external-data.ts`, `registries.ts`, `osv.ts` | `external-data.pbt.test.ts` |
-| P23, P24, P25 | `errors.ts`, `http-failure.ts` | `http-failure.pbt.test.ts` |
+| P12, P15, P26, P31, P32 | `github-client.ts` (`headersFor`, tarball path selection, redirect policy, budget guard) | `github-client.pbt.test.ts` |
+| P13 | `snapshot.ts` + `github-client.ts` (whole-scenario REST count, canonical identity) | `call-budget.pbt.test.ts` |
+| P14 | `github-client.ts` (rename redirect policy) | `rename-redirect.pbt.test.ts` |
+| P16, P17 | `http-failure.ts`, `errors.ts`, `github-client.ts` | `error-mapping.pbt.test.ts` |
+| P18, P19 | `intake.ts` (`resolveRef`) | `resolve-ref.pbt.test.ts` |
+| P20, P21 | `entry-path.ts`, `tar-extract.ts` | `entry-path.pbt.test.ts`, `tar-extract.pbt.test.ts` |
+| P22 | `repo-meta.ts` | `repo-meta.pbt.test.ts` |
+| P23, P24, P25 | `external-data.ts`, `registries.ts`, `osv.ts` | `external-data.pbt.test.ts` |
+| P27, P28, P29 | `errors.ts`, `http-failure.ts` | `http-failure.pbt.test.ts` |
 
-Generators worth naming: valid owner/name/ref strings (with noise decorators), hostile tar entry sequences, repo/commit/pulls/release payload builders with schema-violating mutators, dependency lists with case and duplicate variants, per-dependency outcome assignments, and `(reset, now, retry-after)` triples. For P26 the model is a ten-line list-based LRU with timestamps.
+P8 and P30 are both in `snapshot-cache.pbt.test.ts`. The tests for P6 and P11 exercise `extractTarball` through the real `Readable.fromWeb` + `tar-stream` bridge, not a stub, so backpressure and cancellation behaviour is what ships.
+
+Generators worth naming: valid owner/name/ref strings (with noise decorators), hostile tar entry sequences, repo/commit/pulls/release payload builders with schema-violating mutators and rename-redirect responses (status, `Location` host/scheme/port, first or later call, one or two hops), token strings (valid and malformed, to check `AUTH_INVALID` non-leak), dependency lists with case and duplicate variants, per-dependency outcome assignments, and `(reset, now, retry-after)` triples. For P30 the model is a ten-line list-based LRU with timestamps. For P13, P15, P31, and P32 the fixture `FetchPort` records every request (URL, headers) and the test asserts over the recording.
 
 ### Unit and example tests
 
 - **Parser examples:** `octocat/Hello-World`, `https://github.com/octocat/Hello-World/tree/feature/x`, `https://www.github.com/o/r.git/`, `o/r@<40 hex>`, rejected `git@github.com:o/r.git`, `https://user:pw@github.com/o/r`, `https://gitlab.com/o/r`, `https://github.com/o/r/issues`.
-- **Resolution:** default branch path, explicit branch, full SHA verified, partial SHA expanded, SHA mismatch.
+- **Resolution:** default branch path, explicit branch, full SHA verified, partial SHA expanded, SHA mismatch, missing ref in an existing repo (`REF_NOT_FOUND`), rename redirect on call 1 (canonical owner/name from the body, 5 REST calls total), case-variant spelling normalized to canonical.
+- **Download path:** no token → one request to `codeload.github.com/{o}/{r}/tar.gz/{sha}`, no Authorization header, zero REST calls; token → `api.github.com` tarball endpoint with Bearer, one redirect to codeload without Authorization; 3xx from the direct path refused.
+- **Errors:** `401` → `AUTH_INVALID` with the token absent from every field; GitHub `5xx` on REST and on the tarball → `UPSTREAM_UNAVAILABLE`; registry `5xx` → `skipped`, no throw.
 - **Metadata:** archived repo, no license, `NOASSERTION`, no releases (`404`), zero open PRs, `Link: rel="last"` count parsing, a single PR without a `Link` header.
-- **Tarball:** realistic GitHub archive layout (pax global header, root directory entry, nested paths), `.github/workflows/ci.yml` detection, binary and vendored exclusions, a 1 MiB file kept and a 1 MiB + 1 file recorded in `oversizeFiles`.
+- **Tarball:** realistic GitHub archive layout (pax global header handled internally by `tar-stream`, root directory entry, nested paths), an entry that is skipped must still be drained so the next entry is reached, `.github/workflows/ci.yml` detection, binary and vendored exclusions, a 1 MiB file kept and a 1 MiB + 1 file recorded in `oversizeFiles`.
 - **External data:** PyPI normalized-name URL for `Flask_Cors`, scoped npm name encoding, Python 2-only classifier mapping, deprecated npm version, OSV batch + detail round trip, cross-ecosystem collision (R5.11), result shape (R5.10).
 - **Cache:** default TTL and capacity constants, in-flight deduplication, failure not cached, shallow-copy return (mutating `manifests` on a returned snapshot does not change the next hit).
 - **Interface conformance:** `const _: GitHubSnapshotBuilder = new GitHubSummoner(...)` compile-time check; import-surface test that every name in R10 is reachable from `src/index.ts` only.
@@ -1140,7 +1279,7 @@ A golden test builds a snapshot from a recorded repo + tarball fixture, calls `f
 
 ### Static checks (smoke)
 
-- `eslint.config.js` block for `packages/github/src/**` (excluding `adapters/**`, `testing/**`, tests): `no-restricted-globals` (`fetch`), `no-restricted-syntax` for `Date.now`, zero-argument `new Date()`, `process.env`, `eval`, `new Function`, and `no-restricted-imports` for `node:fs`, `node:child_process`, `node:vm`. This is how R1.10, R6.1, R9.1–R9.3, and R3.2 are enforced.
+- `eslint.config.js` block for `packages/github/src/**` (excluding `adapters/**`, `testing/**`, tests): `no-restricted-globals` (`fetch`), `no-restricted-syntax` for `Date.now()`, zero-argument `new Date()` (selector `NewExpression[callee.name='Date'][arguments.length=0]`) and bare `Date()` calls, `process.env`, `eval`, `new Function`, and `no-restricted-imports` for `node:fs`, `node:child_process`, `node:vm` (`node:stream` is allowed, for the `Readable.fromWeb` bridge only). `new Date(ms)` with an argument is deliberately **not** banned, because R9.2 permits formatting a `ClockPort` instant (`new Date(ms).toISOString()` in `time.ts`); `Date.now()` and zero-argument `new Date()` remain forbidden everywhere in package logic. `adapters/system-clock.ts` is the lint-exempt place that reads `Date.now()`. This is how R1.10, R6.1, R9.1–R9.3, and R3.2 are enforced.
 - A dependency-direction check (script in CI) that `packages/oracle` contains no `@necro/github` import and `packages/github` imports `@necro/oracle` only via its package entry.
 - `pnpm typecheck` with `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` inherited from `tsconfig.base.json`.
 
@@ -1154,7 +1293,7 @@ Live calls against `api.github.com`, `pypi.org`, `registry.npmjs.org`, and `api.
 
 ### `@necro/oracle` (additive)
 
-- `src/util/errors.ts`: add the seven codes to `NecroErrorCodeSchema` (D1). No other change. `errors.test.ts` already iterates `.options`.
+- `src/util/errors.ts`: add the ten codes to `NecroErrorCodeSchema` (D1): `INVALID_REPO_URL`, `REPO_NOT_FOUND`, `REPO_PRIVATE`, `RATE_LIMITED`, `NETWORK_TIMEOUT`, `DOWNLOAD_TOO_LARGE`, `VALIDATION_FAILED`, `REF_NOT_FOUND`, `AUTH_INVALID`, `UPSTREAM_UNAVAILABLE`. No other change. `errors.test.ts` already iterates `.options`.
 - Optionally refresh the code list in `.kiro/specs/01-oracle-deck-engine/design.md` so the historical spec does not contradict the code.
 
 ### `@necro/config`
@@ -1183,27 +1322,27 @@ export function loadEnv(source: Readonly<Record<string, string | undefined>>): E
 |---|---|---|
 | `@necro/oracle` | `workspace:*` | types, `NecroError`, `buildSnapshotFromFileMap`, `parseAllManifests` |
 | `zod` | `^3.25.76` | same version as `@necro/oracle`, so one copy resolves |
-| `modern-tar` | `0.8.6` (exact) | streaming tar decode |
+| `tar-stream` | `3.2.2` (exact; latest 3.x per `pnpm view tar-stream versions --json`) | streaming tar decode (and `pack()` for well-formed test archives) |
+| `@types/tar-stream` (dev) | `3.1.5` (exact; latest per `pnpm view @types/tar-stream version`) | types for `tar-stream` |
 | `fast-check` (dev) | `^3.23.1` | same as the workspace |
-| `@types/node` (dev) | `^22.20.5` | same as `@necro/oracle`; supplies web-stream and `DecompressionStream` globals |
+| `@types/node` (dev) | `^22.20.5` | same as `@necro/oracle`; supplies web-stream, `DecompressionStream`, and `node:stream` types |
 
 Also: `tsconfig.json` gets `"references": [{ "path": "../oracle" }]`; add `vitest.setup.ts` (throwing `fetch` stub) and reference it from `vitest.config.ts`; add the `test`, `test:pbt` entries consistent with other packages. In Task 1, confirm that `@necro/oracle` resolves from this package under Vitest (the oracle `exports` map uses `development`/`import` conditions). If it does not, add `resolve.conditions: ["development"]` to this package's Vitest config.
 
-**Tar library choice.**
+**Tar library choice (D3, final).**
 
-- **`modern-tar@0.8.6` (chosen).** Zero runtime dependencies, ships its own types, built on web streams, and its core `createTarDecoder()` yields entries as `{ header, body }` with a body stream that can be cancelled, which maps directly onto the per-entry rules. It is pre-1.0, so the version is pinned exactly and all use is confined to `tar-extract.ts` behind a small `TarEntrySource` interface.
-- **`tar-stream@3.2.2` (fallback).** Mature, but it is Node-streams based and pulls in `b4a`, `bare-fs`, `streamx`, and `fast-fifo`, which enlarges the supply-chain surface for one function. Requires `@types/tar-stream@3.1.5`.
+- **`tar-stream@3.2.2` (chosen).** Pure JavaScript, mature, USTAR plus pax extended headers, and sequential entry delivery with a per-entry stream, which maps directly onto the per-entry rules. Its runtime dependencies are `b4a`, `streamx`, `fast-fifo`, and `bare-fs` (declared by `tar-stream@3.2.2`; the package does not use any `fs` code path). Pinned exactly, with all use confined to `tar-extract.ts`. Requires `@types/tar-stream@3.1.5`. It is Node-streams based, hence the `Readable.fromWeb` bridge described under "Tarball extraction".
 - **`tar` (node-tar), rejected:** oriented to extracting onto the filesystem, which this package never does.
 - **`nanotar@0.3.0`, rejected:** parses a whole buffer, so it cannot stop at the cap before buffering the data.
-- **Gzip:** the global `DecompressionStream("gzip")`, not `node:zlib`, so the package has no `node:` imports and the byte-counting guards compose as web `TransformStream`s.
+- **Gzip:** the global `DecompressionStream("gzip")`, not `node:zlib`, so the byte-counting guards compose as web `TransformStream`s before the Node-stream bridge. The only `node:` import is `node:stream` for `Readable.fromWeb`.
 
-Task 1 should spike three facts about `modern-tar` 0.8.6 before the extractor is built: the exact `header.type` strings for regular files, directories, symlinks, and hard links; that pax global and extended headers and GNU long names are resolved into `header.name` and the pax global header is not surfaced as an entry; and its behavior when a body is cancelled early. If any differ, adapt the wrapper or switch to the fallback. The public design does not change.
+Task 1 should confirm two facts about `tar-stream@3.2.2` against the real package (not only its README): that pax global and extended headers and GNU long names are resolved into `header.name` and the pax global header is not surfaced as an entry, and that destroying the `extract` stream mid-archive releases the upstream reader promptly. Neither affects the public design.
 
 ### Root and docs
 
 - `eslint.config.js`: add the restricted-syntax block described under Static checks.
 - `docs/ARCHITECTURE.md`: this file does not exist yet. Create it with a section for the GitHub adapter: dependency direction, the three ports, the call plan, the cap layers, and the host/auth policy table. It should be organized so later specs (sandbox, llm, ledger) append their own sections.
-- `docs/KIRO_USAGE.md`: append a dated entry under the daily log and the Specs heading: the requirements-first workflow produced this spec; the prework step turned 87 acceptance criteria into 14 new properties; npm registry queries and the `modern-tar` README were used to choose and verify the tar library. Per the docs discipline, this lands in the same change as the implementation.
+- `docs/KIRO_USAGE.md`: append a dated entry under the daily log and the Specs heading: the requirements-first workflow produced this spec; the prework step turned the acceptance criteria into 15 new properties (P18-P32) beside the 17 named in the requirements; npm registry queries (`pnpm view tar-stream versions --json`) and the `tar-stream` README were used to choose and verify the tar library. Also record the requirements revision that added rename redirects, the token-aware tarball path, and three more error codes. Per the docs discipline, this lands in the same change as the implementation.
 - `docs/DECK.md` is unaffected: no card, grimoire, agent, or gate changes.
 - `pnpm-lock.yaml` updates with the dependency additions.
 
@@ -1211,25 +1350,25 @@ Task 1 should spike three facts about `modern-tar` 0.8.6 before the extractor is
 
 ## Open Questions and Risks
 
-**Q1. REST redirects are not followed (D2).** A renamed or transferred repository answers `301`. Following it would double calls 1 to 4 and breach the budget, so the design maps it to `REPO_NOT_FOUND` with a "moved or renamed" message. If product wants renamed repositories to work, the alternative is one followed redirect plus using the payload's `full_name` for later calls, at the cost of a 5-call worst case.
+**Q1. Renamed or transferred repositories. RESOLVED by D2.** The client follows at most one `301`/`307`/`308` on the first `GET /repos/{owner}/{repo}` only, and only to `https://api.github.com`. The followed hop counts toward the 5-call budget (4 normal calls plus 1 headroom), and the canonical owner/name from the validated body drive everything after. All other redirects are `VALIDATION_FAILED`.
 
-**Q2. An authenticated `404` cannot prove absence.** GitHub also answers `404` for a private repository the token cannot see. R7.3 maps an authenticated `404` to `REPO_NOT_FOUND`, and the design follows it, but the message is worded "not visible to this token" so it stays true. A repository the token *can* see and that is private is caught by `private: true` and gets `REPO_PRIVATE`.
+**Q2. An authenticated `404` cannot prove absence. RESOLVED (accepted).** GitHub also answers `404` for a private repository the token cannot see. R7.3 maps an authenticated `404` to `REPO_NOT_FOUND`, and the design follows it with a message worded "not visible to this token" so it stays true. A repository the token can see and that is private is caught by `private: true` and gets `REPO_PRIVATE`.
 
-**Q3. npm `publishedAt` is an approximation.** The abbreviated npm document has no per-version publish time, so `publishedAt` is its `modified` time. The Tower does not read `publishedAt`, so no card is affected today. The honest fix is either the full packument (often several MB) or an optional `publishedAtPrecision` field on `RegistryEntry` in `@necro/oracle`. Decide before another detector consumes this field.
+**Q3. npm `publishedAt` is an approximation. RESOLVED (accepted).** The abbreviated npm document has no per-version publish time, so `publishedAt` is its `modified` time. The Tower does not read `publishedAt`, so no card is affected today. Revisit (full packument, or a `publishedAtPrecision` field in `@necro/oracle`) before another detector consumes it.
 
-**Q4. Uncompressed-size measure.** R3.10 speaks of the "cumulative uncompressed size of extracted entries". The design counts decompressed tar stream bytes, which add at most about 1 KB of framing per entry, so the cap is slightly stricter and cannot be bypassed by a lying header. Boundary tests are expressed against stream length. Confirm this reading is acceptable.
+**Q4. Uncompressed-size measure. RESOLVED (accepted).** The 200 MB cap counts decompressed tar-stream bytes (R3.10), including tar framing and the drained bytes of skipped entries. Boundary tests are expressed against stream length.
 
-**Q5. Wording of R9.2.** The requirement forbids `new Date()`. The design uses `new Date(ms).toISOString()` in `time.ts` to format an instant that came from `ClockPort`, which does not read the clock. The lint rule bans `Date.now()` and *zero-argument* `new Date()`. If the requirement is meant literally, `isoFromMs` needs a hand-written formatter instead.
+**Q5. Wording of R9.2. RESOLVED (accepted).** Formatting a `ClockPort` instant with `new Date(ms).toISOString()` is allowed. `Date.now()` and zero-argument `new Date()` are forbidden and linted; `new Date(ms)` is not banned by the lint block, and `time.ts` is the only place that uses it. `adapters/system-clock.ts` is the lint-exempt reader of `Date.now()`.
 
-**Q6. The tarball's first hop spends API quota.** `GET /repos/{o}/{r}/tarball/{sha}` is served by `api.github.com`, so a cache miss consumes 5 of the 60 unauthenticated hourly requests (about 12 summons per hour per IP). Fetching `https://codeload.github.com/{o}/{r}/tar.gz/{sha}` directly would use no API quota for public repositories, but it conflicts with the redirect wording in R3.1 and R3.12. Recommendation: set a server-side `GITHUB_TOKEN` in every deployment (5,000/hour), and consider a follow-up requirement to try codeload directly first.
+**Q6. Tarball quota and path. RESOLVED (R3.15, R3.16).** `GitHubClient.openTarball` picks the path by token presence. Without a token it fetches `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}` directly, with no Authorization header, no REST call, and no expected redirect (a redirect is `VALIDATION_FAILED`). With a token it uses the `api.github.com` tarball endpoint with Bearer and follows one redirect, only to `codeload.github.com`, without Authorization. The tarball is not a REST_Call on either path. A token is still recommended for deployments, only because it raises the rate limit of the four REST metadata calls (60/hour unauthenticated, 5,000/hour authenticated).
 
-**Q7. The closed error-code set forces approximations.** Four situations have no dedicated code: an unresolvable ref and an empty repository (mapped to `INVALID_REPO_URL`), a rejected token (mapped to `VALIDATION_FAILED`), and upstream `5xx` (mapped to `NETWORK_TIMEOUT`). Messages are specific, and `details.reason` carries a machine reason, so the UI can still distinguish them. Suggest `REF_NOT_FOUND` and `AUTH_FAILED` in a later change to the oracle enum.
+**Q7. Error codes. RESOLVED.** Ten codes are added to `NecroErrorCodeSchema`, including `REF_NOT_FOUND`, `AUTH_INVALID`, and `UPSTREAM_UNAVAILABLE`, so no failure is approximated with `INVALID_REPO_URL`, `VALIDATION_FAILED`, or `NETWORK_TIMEOUT`. Message catalog entries for the three new codes are in "Error Handling".
 
-**Q8. Vendored-folder list.** R3.5 names `node_modules` and `.git` and says "recognized vendored directories". The design adds `vendor`, `third_party`, `bower_components`, and `site-packages`. A repository with a first-party `vendor/` directory would lose those files from readings. Confirm the list.
+**Q8. Vendored-folder list. RESOLVED (final).** `node_modules`, `.git`, `vendor`, `third_party`, `bower_components`, `site-packages`. A repository with a first-party `vendor/` directory loses those files from readings; that is accepted.
 
-**Q9. `modern-tar` is pre-1.0 (0.8.6).** Pinned exactly and isolated behind one interface, with `tar-stream@3.2.2` as the fallback. The three facts to verify in Task 1 are listed above.
+**Q9. Tar library. RESOLVED (D3).** `tar-stream@3.2.2`, pinned exactly. No alternative library is planned. Residual note: `tar-stream@3.2.2` declares `bare-fs` among its dependencies; the package never exercises it, but it enlarges the install footprint. Task 1 confirms the two behaviours listed under "Tar library choice".
 
-**Q10. Memory on serverless.** Retained text can approach the 200 MB uncompressed cap, and JavaScript strings holding non-Latin-1 text use two bytes per character. A Vercel function could run out of memory before any cap fires. `ExtractionLimits` is injectable so the web app can set tighter limits (for example 64 MB) than the defaults without a code change; whether to do so is a deployment decision.
+**Q10. Memory on serverless. RESOLVED (accepted as a deployment decision).** Retained text can approach the 200 MB uncompressed cap, and JavaScript strings holding non-Latin-1 text use two bytes per character. `ExtractionLimits` is injectable so the web app can set tighter limits (for example 64 MB) without a code change.
 
 **Q11. The cache is per process.** On Vercel most invocations meet a cold instance, so the 7-day in-memory cache helps mainly the CLI, the MCP server, and warm instances. A shared cache (Upstash Redis, 7-day TTL per the tech steering) is the obvious next step. `SnapshotCache` is a small class so a Redis-backed variant can implement the same `get`/`set` shape in a later spec.
 
