@@ -218,11 +218,11 @@ Conventions that apply to every task:
     - Implement `advancePhase`, `initialPhaseState`, `createPhaseReporter`, `EXTERNAL_SUB_BUDGET_MS`, and `decideExternalSkip`.
     - _Requirements: R6.14, R6.15, R6.16, R6.20, R6.21, R6.22_
 
-- [ ] 24. Composition root and route dependencies
-  - [~] 24.1 Write composition/deps examples first
+- [x] 24. Composition root and route dependencies
+  - [x] 24.1 Write composition/deps examples first
     - Add examples: `createRouteDeps(overrides)` pure assembly; `getRouteDeps` memoises one `GitHubSummoner` so its cache survives warm requests (R12.10, R12.12); `composition.ts` starts with `import "server-only"` and is the only reader of `process.env`; Upstash limiter built only when both `UPSTASH_*` keys exist else `primary: null`; `GithubGateway` wraps `summon` and `fetchExternalData` over the injected `FetchPort`. Confirm they fail first.
     - _Requirements: R12.12, R16.4, R16.6_
-  - [~] 24.2 Implement `server/deps.ts` and `server/composition.ts`
+  - [x] 24.2 Implement `server/deps.ts` and `server/composition.ts`
     - _Requirements: R12.12, R16.4, R16.6_
 
 - [ ] 25. Summon handler

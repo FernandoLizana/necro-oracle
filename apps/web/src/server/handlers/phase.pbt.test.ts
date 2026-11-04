@@ -75,9 +75,6 @@ function isPrefixOfOrder(xs: readonly ReadingPhase[]): boolean {
 
 // --- Arbitraries ----------------------------------------------------------
 
-/** Any one of the four phases, uniformly. */
-const arbPhase: fc.Arbitrary<ReadingPhase> = fc.constantFrom(...ORDER);
-
 /**
  * A strictly in-order prefix of PHASE_ORDER, optionally with some already-seen
  * phases re-requested (which must emit nothing / change nothing). The sequence

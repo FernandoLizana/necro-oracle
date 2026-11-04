@@ -97,7 +97,6 @@ describe("P16 (R13.2, R13.5): per-IP limit arithmetic", () => {
           let lastDecision: RateLimitDecision | undefined;
           for (let i = 0; i < 11; i += 1) {
             clock.set(windowStart + offsets[i]!);
-            // eslint-disable-next-line no-await-in-loop
             lastDecision = await limiter.check(req);
             spy.callForAllowed(lastDecision);
           }
@@ -132,7 +131,6 @@ describe("P16 (R13.2, R13.5): per-IP limit arithmetic", () => {
         const req: RateLimitRequest = { route: "readings", ipId, dailyCeiling: DAILY_CEILING };
 
         for (let i = 0; i < 10; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
           const d = await limiter.check(req);
           expect(d.allowed, `request #${i + 1} should be allowed`).toBe(true);
         }
@@ -149,7 +147,6 @@ describe("P16 (R13.2, R13.5): per-IP limit arithmetic", () => {
 
     // Exhaust the first window.
     for (let i = 0; i < 10; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
       await limiter.check(req);
     }
     const denied = await limiter.check(req);

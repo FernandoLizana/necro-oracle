@@ -125,8 +125,8 @@ function gitHubSpy() {
 }
 
 describe("P21 (R13.2, R13.3, R13.5, R13.6, R13.7, R13.8): fallback enforces the same limits", () => {
-  it("against an always-failing primary, the chain admits exactly the limit and denies the rest, never UPSTREAM_UNAVAILABLE, no GitHub call when limited", () => {
-    fc.assert(
+  it("against an always-failing primary, the chain admits exactly the limit and denies the rest, never UPSTREAM_UNAVAILABLE, no GitHub call when limited", async () => {
+    await fc.assert(
       fc.asyncProperty(arbSequence, fc.boolean(), async (ops, usePlainThrow) => {
         const clock = fakeClock(ops[0]!.atMs);
         const fallback = new FallbackLimiter(clock);
@@ -146,7 +146,6 @@ describe("P21 (R13.2, R13.3, R13.5, R13.6, R13.7, R13.8): fallback enforces the 
           const req: RateLimitRequest = { route: op.route, ipId: op.ipId, dailyCeiling: 1_000_000 };
 
           // The chain NEVER rejects — a limiter outage does not propagate.
-          // eslint-disable-next-line no-await-in-loop
           const decision = await chain.check(req);
 
           expect(decision.allowed).toBe(expected[i]);
@@ -179,7 +178,6 @@ describe("P21 (R13.2, R13.3, R13.5, R13.6, R13.7, R13.8): fallback enforces the 
 
     const decisions: RateLimitDecision[] = [];
     for (let i = 0; i < ceiling + 3; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
       const d = await chain.check({ route: "readings", ipId: `ip-${i}`, dailyCeiling: ceiling });
       decisions.push(d);
     }
@@ -198,7 +196,6 @@ describe("P21 (R13.2, R13.3, R13.5, R13.6, R13.7, R13.8): fallback enforces the 
     const chain = createRateLimitChain({ primary: null, fallback, clock });
 
     for (let i = 0; i < LIMITS.summon; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
       const d = await chain.check({ route: "summon", ipId: "solo", dailyCeiling: 1_000_000 });
       expect(d.allowed).toBe(true);
     }
