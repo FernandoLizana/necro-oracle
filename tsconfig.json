@@ -1,0 +1,20 @@
+{
+  // Root tsconfig: build references for all non-Next.js packages.
+  // apps/web uses Next.js (noEmit + allowImportingTsExtensions) which is
+  // incompatible with composite mode — it is typechecked via its own tsc call.
+  "files": [],
+  "references": [
+    { "path": "packages/oracle" },
+    { "path": "packages/ui-crt" },
+    { "path": "packages/coven" },
+    { "path": "packages/sandbox" },
+    { "path": "packages/github" },
+    { "path": "packages/llm" },
+    { "path": "packages/voice" },
+    { "path": "packages/mcp-server" },
+    { "path": "packages/cli" },
+    { "path": "packages/action" },
+    { "path": "packages/config" },
+    { "path": "packages/grimoires/_template" }
+  ]
+}

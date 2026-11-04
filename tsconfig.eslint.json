@@ -1,0 +1,24 @@
+{
+  // Covers every TypeScript file that ESLint touches but that isn't part of
+  // a package tsconfig (e.g. root vitest.config.ts, per-package vitest.config.ts).
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "."
+  },
+  "include": [
+    "vitest.config.ts",
+    "eslint.config.js",
+    "packages/*/vitest.config.ts",
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.tsx",
+    "packages/grimoires/**/*.ts",
+    "apps/*/vitest.config.ts",
+    "apps/*/src/**/*.ts",
+    "apps/*/src/**/*.tsx"
+  ],
+  "exclude": ["node_modules", "**/dist/**", "**/.next/**"]
+}
