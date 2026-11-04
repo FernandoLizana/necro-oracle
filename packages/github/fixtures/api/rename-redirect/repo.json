@@ -1,0 +1,16 @@
+{
+  "name": "relic-renamed",
+  "full_name": "graveyard/relic-renamed",
+  "owner": {
+    "login": "graveyard"
+  },
+  "default_branch": "main",
+  "private": false,
+  "archived": false,
+  "pushed_at": "2019-03-14T09:26:53Z",
+  "stargazers_count": 42,
+  "open_issues_count": 3,
+  "license": {
+    "spdx_id": "MIT"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "relic",
+  "full_name": "graveyard/relic",
+  "owner": {
+    "login": "graveyard"
+  },
+  "default_branch": "main",
+  "private": false,
+  "archived": false,
+  "pushed_at": null,
+  "stargazers_count": 0,
+  "open_issues_count": 0,
+  "license": {
+    "spdx_id": "MIT"
+  }
+}

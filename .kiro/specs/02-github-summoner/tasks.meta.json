@@ -1,5 +1,78 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "11.2 Write property test P28 in `src/http-failure.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793800024869
+    },
+    "13.3 Write property test P2 in `src/intake.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected (test-first): suite cannot load because src/intake.ts (parseRepoRef) does not exist yet; implemented in task 13.6.",
+      "lastRunTimestamp": 1793800078124
+    },
+    "13.5 Write property test P4 in `src/intake.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected failure (test-first): Cannot find module './intake.js'; parseRepoRef is implemented in task 13.6.",
+      "lastRunTimestamp": 1793800218265
+    },
+    "22.2 Write property test P8 in `src/snapshot-cache.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected test-first failure: Cannot find module './snapshot-cache.js' (created by task 22.4)",
+      "lastRunTimestamp": 1793802334567
+    },
+    "17.4 Write property test P14 in `src/rename-redirect.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected test-first failure: Cannot find module './github-client.js' (src/github-client.ts is implemented in task 17.5; allowRepoRedirect wiring in 19.4)",
+      "lastRunTimestamp": 1793802485442
+    },
+    "27.4 Write property test P18 in `src/optional-degradation.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected red (test-first): Cannot find module './snapshot.js'. Implemented by task 27.6.",
+      "lastRunTimestamp": 1793802743704
+    },
+    "27.2 Write property test P5 in `src/snapshot.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected test-first failure: Cannot find module './snapshot.js' (src/snapshot.ts lands in task 27.6; tar-extract.ts in 21.5)",
+      "lastRunTimestamp": 1793802848883
+    },
+    "19.2 Write property test P19 in `src/resolve-ref.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "Expected test-first failure: suite cannot load. './github-client.js' does not exist yet (GitHubClient lands in tasks 17/18) and './intake.js' has no export 'resolveRef' (task 19.4). No counterexample; properties not yet reachable.",
+      "lastRunTimestamp": 1793803374408
+    },
+    "21.2 Write property test P21 in `src/tar-extract.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793804446187
+    },
+    "21.3 Write property test P6 in `src/tar-extract.pbt.test.ts`": {
+      "status": "failed",
+      "failingExample": "\"a streamed body crossing the cap rejects DOWNLOAD_TOO_LARGE (compressed)\": seed -917984420, counterexample [cap=16384, extra=1, sizes=[1], contentLength=null]. Got VALIDATION_FAILED instead of DOWNLOAD_TOO_LARGE: the body (0x07 bytes) is not gzip, and with paced upstream reads the decompressor's header error surfaces once its 16 KiB write buffer applies backpressure, before byte 16385 is read.",
+      "lastRunTimestamp": 1793804448783
+    },
+    "21.4 Write property test P11 in `src/tar-extract.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793804449789
+    },
+    "28.2 Write property test P9 in `src/secrets.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793805121251
+    },
+    "28.3 Write property test P10 in `src/determinism.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793805122440
+    },
+    "28.4 Write property test P13 in `src/call-budget.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793805123657
+    },
+    "28.5 Write property test P16 in `src/error-mapping.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793805124849
+    },
+    "28.6 Write property test P17 in `src/error-mapping.pbt.test.ts`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793805125511
+    }
+  },
   "executionHistory": {
     "1.1 Pin the tar dependencies exactly": [
       {
@@ -193,6 +266,21 @@
         "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793773926189
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657054
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805472227
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806104373
       }
     ],
     "7.1 Write the helper self-tests": [
@@ -200,6 +288,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877677
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657106
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799669386
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799775076
       }
     ],
     "7.2 Implement the helpers in `src/testing/`": [
@@ -207,6 +310,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877711
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657162
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800096870
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800178142
       }
     ],
     "8.1 Write the failing tests": [
@@ -214,6 +332,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877742
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657205
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799669495
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799775201
       }
     ],
     "8.2 Implement `src/constants.ts` and `src/ports.ts`": [
@@ -221,6 +354,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877807
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657239
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799879187
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799980863
       }
     ],
     "9.1 Write the failing tests in `src/time.test.ts`": [
@@ -228,6 +376,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877835
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657277
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799669454
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799775971
       }
     ],
     "9.2 Implement `src/time.ts`": [
@@ -235,6 +398,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877858
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657315
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799879257
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799980956
       }
     ],
     "10.1 Write the failing schema tests": [
@@ -242,6 +420,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877887
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657355
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799669559
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799776522
       }
     ],
     "10.2 Implement `src/schemas/github.ts`, `pypi.ts`, `npm.ts`, `osv.ts`": [
@@ -249,6 +442,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877919
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657391
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799879719
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799980904
       }
     ],
     "10.3 Write the fixture validation test": [
@@ -256,6 +464,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877942
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657430
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800096960
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800178428
       }
     ],
     "10.4 Author the recorded fixtures": [
@@ -263,6 +486,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877968
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657492
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800182358
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800247647
       }
     ],
     "11.1 Write the failing unit tests in `src/errors.test.ts`": [
@@ -270,6 +508,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771877993
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657529
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799669632
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799777067
       }
     ],
     "11.2 Write property test P28 in `src/http-failure.pbt.test.ts`": [
@@ -277,6 +530,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878046
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657570
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799796142
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799872783
       }
     ],
     "11.3 Implement `src/errors.ts`": [
@@ -284,6 +552,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878072
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657607
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799880520
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800033057
       }
     ],
     "12.1 Write the failing unit tests in `src/entry-path.test.ts`": [
@@ -291,6 +574,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878102
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657647
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799796253
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799872889
       }
     ],
     "12.2 Write property test P22 in `src/entry-path.pbt.test.ts`": [
@@ -298,6 +596,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878126
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657687
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799796968
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799873335
       }
     ],
     "12.3 Implement `src/entry-path.ts`": [
@@ -305,6 +618,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878154
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657723
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799880908
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799981390
       }
     ],
     "13.1 Write the failing example tests in `src/intake.test.ts`": [
@@ -312,6 +640,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878176
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657759
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799797522
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799874136
       }
     ],
     "13.2 Write property test P1 in `src/intake.pbt.test.ts`": [
@@ -319,6 +662,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878204
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657799
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799797973
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799874682
       }
     ],
     "13.3 Write property test P2 in `src/intake.pbt.test.ts`": [
@@ -326,6 +684,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878230
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657842
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800040022
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800088464
       }
     ],
     "13.4 Write property test P3 in `src/intake.pbt.test.ts`": [
@@ -333,6 +706,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878255
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657879
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800097081
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800178044
       }
     ],
     "13.5 Write property test P4 in `src/intake.pbt.test.ts`": [
@@ -340,6 +728,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878281
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657916
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800182830
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800248152
       }
     ],
     "13.6 Implement `parseRepoRef` and `ParsedRepoRefSchema` in `src/intake.ts`": [
@@ -347,6 +750,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878311
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657955
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800255329
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801016514
       }
     ],
     "14. Checkpoint - pure foundations": [
@@ -354,6 +772,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878359
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799657989
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806112496
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806118222
       }
     ],
     "15.1 Write the failing unit tests in `src/http-failure.test.ts`": [
@@ -361,6 +794,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878388
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658024
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800255414
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801016578
       }
     ],
     "15.2 Write property test P29 in `src/http-failure.pbt.test.ts`": [
@@ -368,6 +816,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878424
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658088
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801027230
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801241667
       }
     ],
     "15.3 Write property test P30 in `src/http-failure.pbt.test.ts`": [
@@ -375,6 +838,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878465
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658122
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802524891
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802603765
       }
     ],
     "15.4 Implement `src/http-failure.ts`": [
@@ -382,6 +860,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878495
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658164
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803026051
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803398102
       }
     ],
     "16.1 Write the failing unit tests in `src/repo-meta.test.ts`": [
@@ -389,6 +882,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878525
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658203
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800255466
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801016781
       }
     ],
     "16.2 Write property test P23 in `src/repo-meta.pbt.test.ts`": [
@@ -396,6 +904,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878558
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658237
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801027292
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801244312
       }
     ],
     "16.3 Implement `src/repo-meta.ts`": [
@@ -403,6 +926,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878592
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658271
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803551837
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803808739
       }
     ],
     "17.1 Write the failing unit tests in `src/github-client.test.ts`": [
@@ -410,6 +948,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878630
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658306
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801027758
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801243211
       }
     ],
     "17.2 Write property test P27 in `src/github-client.pbt.test.ts`": [
@@ -417,6 +970,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878663
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658343
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802287414
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802420955
       }
     ],
     "17.3 Write property test P32 in `src/github-client.pbt.test.ts`": [
@@ -424,6 +992,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878718
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658389
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802524828
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802604474
       }
     ],
     "17.4 Write property test P14 in `src/rename-redirect.pbt.test.ts`": [
@@ -431,6 +1014,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878743
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658437
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802430165
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802515873
       }
     ],
     "17.5 Implement `src/github-client.ts` part A": [
@@ -438,6 +1036,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878769
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658475
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803553519
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803809063
       }
     ],
     "18.1 Write the failing unit tests in `src/github-client.test.ts`": [
@@ -445,6 +1058,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878795
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658513
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802630528
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802767654
       }
     ],
     "18.2 Write property test P12 in `src/github-client.pbt.test.ts`": [
@@ -452,6 +1080,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878824
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658553
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803026136
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803398181
       }
     ],
     "18.3 Write property test P15 in `src/github-client.pbt.test.ts`": [
@@ -459,6 +1102,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878853
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658592
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803565393
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803808975
       }
     ],
     "18.4 Write property test P33 in `src/github-client.pbt.test.ts`": [
@@ -466,6 +1124,26 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878877
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658656
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803816325
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803934416
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803996504
       }
     ],
     "18.5 Implement `src/github-client.ts` part B": [
@@ -473,6 +1151,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878909
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658721
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804009262
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804114345
       }
     ],
     "19.1 Write the failing unit tests in `src/intake.test.ts`": [
@@ -480,6 +1173,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878937
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658756
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803026182
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803398784
       }
     ],
     "19.2 Write property test P19 in `src/resolve-ref.pbt.test.ts`": [
@@ -487,6 +1195,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771878989
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658797
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803026713
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803400045
       }
     ],
     "19.3 Write property test P20 in `src/resolve-ref.pbt.test.ts`": [
@@ -494,6 +1217,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879017
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658837
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803565519
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803808929
       }
     ],
     "19.4 Implement `resolveRef` and `resolveRefDetailed` in `src/intake.ts`": [
@@ -501,6 +1239,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879042
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658877
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803816362
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803985182
       }
     ],
     "20. Checkpoint - client and resolution": [
@@ -508,6 +1261,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879070
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658919
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806125307
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806131365
       }
     ],
     "21.1 Write the failing unit tests in `src/tar-extract.test.ts`": [
@@ -515,6 +1283,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879101
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658955
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800255587
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801017576
       }
     ],
     "21.2 Write property test P21 in `src/tar-extract.pbt.test.ts`": [
@@ -522,6 +1305,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879138
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799658999
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802287487
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802421927
       }
     ],
     "21.3 Write property test P6 in `src/tar-extract.pbt.test.ts`": [
@@ -529,6 +1327,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879166
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659039
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802524950
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802605515
       }
     ],
     "21.4 Write property test P11 in `src/tar-extract.pbt.test.ts`": [
@@ -536,6 +1349,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879191
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659076
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803027204
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803400579
       }
     ],
     "21.5 Implement `src/tar-extract.ts`": [
@@ -543,6 +1371,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879224
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659115
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804123896
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804723647
       }
     ],
     "22.1 Write the failing unit tests in `src/snapshot-cache.test.ts`": [
@@ -550,6 +1393,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879252
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659154
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800256247
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801018060
       }
     ],
     "22.2 Write property test P8 in `src/snapshot-cache.pbt.test.ts`": [
@@ -557,6 +1415,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879276
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659192
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802287556
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802422564
       }
     ],
     "22.3 Write property test P31 in `src/snapshot-cache.pbt.test.ts`": [
@@ -571,6 +1444,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879359
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659271
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803552957
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803808818
       }
     ],
     "23.1 Write the failing unit tests in `src/registries.test.ts`": [
@@ -578,6 +1466,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879385
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659311
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801028294
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801242506
       }
     ],
     "23.2 Implement `src/registries.ts`": [
@@ -585,6 +1488,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879410
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659347
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804124460
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804492057
       }
     ],
     "24.1 Write the failing unit tests in `src/osv.test.ts`": [
@@ -592,6 +1510,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879442
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659386
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801028944
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801245056
       }
     ],
     "24.2 Implement `src/osv.ts`": [
@@ -599,6 +1532,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879475
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659426
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804125325
+      },
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804492946
       }
     ],
     "25.1 Write the failing unit tests in `src/external-data.test.ts`": [
@@ -606,6 +1554,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879510
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659464
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802287615
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802423230
       }
     ],
     "25.2 Write property test P24 in `src/external-data.pbt.test.ts`": [
@@ -613,6 +1576,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879548
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659549
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802430216
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802515012
       }
     ],
     "25.3 Write property test P25 in `src/external-data.pbt.test.ts`": [
@@ -620,6 +1598,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879581
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659587
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802630679
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802768370
       }
     ],
     "25.4 Write property test P26 in `src/external-data.pbt.test.ts`": [
@@ -627,6 +1620,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879610
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659625
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803408842
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803541276
       }
     ],
     "25.5 Implement `src/external-data.ts`": [
@@ -634,6 +1642,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879641
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659662
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804732050
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804902134
       }
     ],
     "26. Checkpoint - extraction, cache, external data": [
@@ -641,6 +1664,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879669
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659698
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806136875
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806142598
       }
     ],
     "27.1 Write the failing unit tests in `src/snapshot.test.ts`": [
@@ -648,6 +1686,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879696
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659738
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802630726
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802769942
       }
     ],
     "27.2 Write property test P5 in `src/snapshot.pbt.test.ts`": [
@@ -655,6 +1708,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879726
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659773
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802776586
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802909035
       }
     ],
     "27.3 Write property test P7 in `src/snapshot.pbt.test.ts`": [
@@ -662,6 +1730,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879755
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659812
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803409257
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803541375
       }
     ],
     "27.4 Write property test P18 in `src/optional-degradation.pbt.test.ts`": [
@@ -669,6 +1752,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879783
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659856
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802630763
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802769378
       }
     ],
     "27.5 Write the failing degraded-result cache TTL tests in `src/degraded-cache.test.ts`": [
@@ -676,6 +1774,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879807
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659896
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802776671
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802910021
       }
     ],
     "27.6 Implement `GitHubSummoner.buildDetailed` and `build` in `src/snapshot.ts`": [
@@ -683,6 +1796,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879835
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659932
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804732925
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804902193
       }
     ],
     "28.1 Write the failing unit tests in `src/summon.test.ts`": [
@@ -690,6 +1818,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879860
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659971
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802777095
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802910657
       }
     ],
     "28.2 Write property test P9 in `src/secrets.pbt.test.ts`": [
@@ -697,6 +1840,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879889
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660007
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802777846
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802911374
       }
     ],
     "28.3 Write property test P10 in `src/determinism.pbt.test.ts`": [
@@ -704,6 +1862,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879919
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660049
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802778358
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802912030
       }
     ],
     "28.4 Write property test P13 in `src/call-budget.pbt.test.ts`": [
@@ -711,6 +1884,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879948
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660086
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802917413
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803015545
       }
     ],
     "28.5 Write property test P16 in `src/error-mapping.pbt.test.ts`": [
@@ -718,6 +1906,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771879973
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660121
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802918089
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803014715
       }
     ],
     "28.6 Write property test P17 in `src/error-mapping.pbt.test.ts`": [
@@ -725,6 +1928,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880001
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660159
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803409907
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803541918
       }
     ],
     "28.7 Implement `summon` and `createSummoner` in `src/snapshot.ts`": [
@@ -732,6 +1950,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880027
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660203
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804908787
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805171883
       }
     ],
     "29.1 Write the failing tests in `src/adapters/adapters.test.ts`": [
@@ -739,6 +1972,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880054
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660238
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802288131
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802424038
       }
     ],
     "29.2 Implement `src/adapters/system-fetch.ts` and `src/adapters/system-clock.ts`": [
@@ -746,6 +1994,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880081
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660277
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802526155
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802606865
       }
     ],
     "30.1 Write the failing tests": [
@@ -753,6 +2016,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880115
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660321
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802631205
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802767526
       }
     ],
     "30.2 Implement `src/index.ts`": [
@@ -760,6 +2038,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880180
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660380
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805178751
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805292586
       }
     ],
     "31.1 Write the failing golden test in `src/golden.test.ts`": [
@@ -767,6 +2060,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880207
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660438
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803410795
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803543006
       }
     ],
     "31.2 Author the golden fixtures and make the test pass": [
@@ -774,6 +2082,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880238
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660475
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805300185
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805405195
       }
     ],
     "32. Checkpoint - package complete": [
@@ -781,6 +2104,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880266
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660514
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806148242
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806154927
       }
     ],
     "33.1 Create `docs/ARCHITECTURE.md`": [
@@ -788,6 +2126,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880292
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660558
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805299195
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805405256
       }
     ],
     "33.2 Append a dated entry to `docs/KIRO_USAGE.md`": [
@@ -795,6 +2148,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880323
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660596
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805301117
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805405593
       }
     ],
     "33.3 Add a \"Known risks\" subsection to `docs/ARCHITECTURE.md`": [
@@ -802,6 +2170,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880353
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660636
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805412607
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805456181
       }
     ],
     "34. Final checkpoint - full verification": [
@@ -809,6 +2192,21 @@
         "executionId": "7c80e8c6-8268-4493-be97-8bd51df71ccf",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793771880385
+      },
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799660673
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806160507
+      },
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793806270822
       }
     ],
     "1. Spike: characterize `tar-stream@3.2.2` before anything depends on it": [
@@ -844,6 +2242,184 @@
         "executionId": "2129f401-8187-42b8-ae48-b4502d99e3c0",
         "chatSessionId": "sess_77b1f8a7-1f64-40bf-aa65-e09f6ee536ef",
         "timestamp": 1793773907411
+      }
+    ],
+    "22.3 Write property tests P31 and P34 in `src/snapshot-cache.pbt.test.ts`": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799659232
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802525345
+      },
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802606163
+      }
+    ],
+    "8. Constants and ports": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799981020
+      }
+    ],
+    "9. Time helpers": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799981070
+      }
+    ],
+    "12. Entry path normalization and binary sniff": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793799981465
+      }
+    ],
+    "11. Typed errors, message catalog, and redaction": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800033131
+      }
+    ],
+    "7. Build the testing helpers": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800178182
+      }
+    ],
+    "10. Schemas and recorded fixtures": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793800247706
+      }
+    ],
+    "13. Repository reference parsing": [
+      {
+        "executionId": "167b49c7-71bf-4657-ac47-94522ab9718f",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793801016623
+      }
+    ],
+    "29. System adapters": [
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793802606905
+      }
+    ],
+    "15. HTTP and transport failure classifier": [
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803398241
+      }
+    ],
+    "16. Repository metadata mapper": [
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803808862
+      }
+    ],
+    "22. Snapshot cache": [
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803809016
+      }
+    ],
+    "17. GitHub client, part A: headers, JSON reads, rename redirect, REST budget": [
+      {
+        "executionId": "4af698e6-2ddf-465a-8164-ba5e0faea29c",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803809110
+      }
+    ],
+    "19. Ref resolution": [
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793803985230
+      }
+    ],
+    "18. GitHub client, part B: optional calls, tarball path, external requests": [
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804114406
+      }
+    ],
+    "23. PyPI and npm registries": [
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804492162
+      }
+    ],
+    "24. OSV": [
+      {
+        "executionId": "41c5c2be-ac2f-4936-97b6-0714ec42aee7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804493032
+      }
+    ],
+    "21. Capped tarball extraction": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804723726
+      }
+    ],
+    "25. External data orchestrator": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804902237
+      }
+    ],
+    "27. GitHubSummoner: build path": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793804902276
+      }
+    ],
+    "28. GitHubSummoner: summon pipeline and cross-cutting properties": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805171950
+      }
+    ],
+    "30. Public API and boundary": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805292685
+      }
+    ],
+    "31. Golden offline end-to-end test": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805405298
+      }
+    ],
+    "33. Documentation": [
+      {
+        "executionId": "e208a148-5547-4aa7-a1b1-c7f7a2d2a9e7",
+        "chatSessionId": "sess_b432424c-ea56-4eb0-907d-194cb9ff3495",
+        "timestamp": 1793805456279
       }
     ]
   }

@@ -24,7 +24,7 @@ import { z } from "zod";
 import type { RepoSnapshot } from "../snapshot/types.js";
 import { parsePython, type Tree } from "./tree-sitter.js";
 
-type Node = import("web-tree-sitter").Node;
+import type { Node } from "web-tree-sitter";
 
 // --- ParsedDependency ---
 export const ParsedDependencySchema = z.object({

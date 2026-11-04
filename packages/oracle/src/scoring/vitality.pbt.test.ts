@@ -17,7 +17,7 @@
 //
 // _Validates: Requirements R18.1, R18.2, R18.3, R18.4, R18.5 / Properties P7, P10_
 import fc from "fast-check";
-import { describe, expect, it } from "vitest";
+import { describe, it } from "vitest";
 
 import type { CardDraw, Severity } from "../registry/schema.js";
 import { computeVitality } from "./vitality.js";

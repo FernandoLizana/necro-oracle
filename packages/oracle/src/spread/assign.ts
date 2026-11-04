@@ -30,8 +30,8 @@ const VOID_DESCRIPTION = "This position holds no card — the void is a sign.";
 const NO_RITUAL_DESCRIPTION = "no ritual can be performed — here is why";
 
 /** Position labels per spread kind, in required order (R17.2–R17.4). */
-const FATES_LABELS = ["Past", "Present", "Future"] as const;
-const NECROPSY_LABELS = [
+const _FATES_LABELS = ["Past", "Present", "Future"] as const;
+const _NECROPSY_LABELS = [
   "The Corpse",
   "The Wound",
   "The Shadow",

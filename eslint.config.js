@@ -65,6 +65,9 @@ export default [
       "vitest.config.ts",
       "packages/*/vitest.config.ts",
       "apps/*/vitest.config.ts",
+      // Package-level test dirs sit outside the src-only tsconfig; parse them
+      // with the TS parser but without type information.
+      "packages/config/test/**/*.ts",
     ],
     ignores: ["**/node_modules/**", "**/dist/**"],
     languageOptions: {
@@ -147,6 +150,20 @@ export default [
           })),
         },
       ],
+    },
+  },
+
+  // ── @necro/oracle tests: excluded from its src tsconfig, parse without types ─
+  {
+    files: ["packages/oracle/src/**/*.test.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-misused-promises": "off",
     },
   },
 

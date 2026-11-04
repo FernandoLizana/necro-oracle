@@ -28,7 +28,7 @@ import type { Manifest } from "../parser/manifest.js";
 import type { RepoSnapshot } from "../snapshot/types.js";
 import type { Detector } from "./types.js";
 
-type Node = import("web-tree-sitter").Node;
+import type { Node } from "web-tree-sitter";
 
 // --- constants -----------------------------------------------------------
 

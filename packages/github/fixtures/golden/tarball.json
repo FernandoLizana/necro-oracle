@@ -1,0 +1,12 @@
+[
+  { "path": "requirements.txt", "body": "oldlib==1.2.0\n" },
+  { "path": "setup.py", "body": "from setuptools import setup\n\nsetup(name='relic', version='0.1.0', packages=['relic'])\n" },
+  { "path": "relic/", "dir": true },
+  { "path": "relic/__init__.py", "body": "" },
+  {
+    "path": "relic/core.py",
+    "body": "import os\nimport pickle\n\n\ndef load(blob):\n    return pickle.loads(blob)\n\n\ndef run(cmd):\n    print \"running\", cmd\n    os.system(cmd)\n\n\ndef keys(d):\n    if d.has_key('a'):\n        print d['a']\n    return d.keys()\n"
+  },
+  { "path": "tests/", "dir": true },
+  { "path": "tests/test_core.py", "body": "from relic import core\n\n\ndef test_keys():\n    print core.keys({'a': 1})\n" }
+]

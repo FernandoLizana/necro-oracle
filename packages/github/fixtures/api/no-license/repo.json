@@ -1,0 +1,14 @@
+{
+  "name": "relic",
+  "full_name": "graveyard/relic",
+  "owner": {
+    "login": "graveyard"
+  },
+  "default_branch": "main",
+  "private": false,
+  "archived": false,
+  "pushed_at": "2019-03-14T09:26:53Z",
+  "stargazers_count": 42,
+  "open_issues_count": 3,
+  "license": null
+}

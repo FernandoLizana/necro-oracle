@@ -11,7 +11,7 @@ export const CONFIG_VERSION = "0.0.0";
 export const EnvSchema = z.object({
   GITHUB_TOKEN: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    // eslint-disable-next-line no-control-regex -- intentionally rejects control characters
+    // Intentionally rejects control characters.
     z.string().regex(/^[^\s\x00-\x1f\x7f]+$/).optional(),
   ),
 });

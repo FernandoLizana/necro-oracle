@@ -1,15 +1,15 @@
-{
-  "version": "v1",
-  "hooks": [
-    {
-      "name": "Auto-commit after task",
-      "trigger": "PostTaskExec",
-      "action": {
-        "type": "agent",
-        "prompt": "Run pnpm -r typecheck and pnpm -r test (checks every package). If both pass, git add the changed files (never .env or secrets) and commit with the message \"Spec 02 task <number>: <task title>\". Do not push. If anything fails, do not commit; fix it first."
-      },
-      "description": "Typecheck and test every package (pnpm -r), then commit after each spec task",
-      "enabled": true
-    }
-  ]
+﻿{
+    "version":  "v1",
+    "hooks":  [
+                  {
+                      "name":  "Auto-commit after task",
+                      "trigger":  "PostTaskExec",
+                      "action":  {
+                                     "type":  "agent",
+                                     "prompt":  "After a task, first run pnpm --filter @necro/oracle build, then pnpm -r typecheck and pnpm -r test (every package). If the full suite is green, git add all task changes since the last commit (never .env* or secrets; stage specific files, not git add -A) and commit with the message \"Spec 02 tasks \u003cfirst id\u003e-\u003clast id\u003e: \u003csummary\u003e\" covering every completed task since the last commit. Do not push. If the suite is red ONLY because of planned test-first failures (missing modules or assertions for code not yet implemented), do not commit and continue. If it is red for any other reason, do not commit; fix it first."
+                                 },
+                      "description":  "Commit when the full suite is green; skip on planned test-first red",
+                      "enabled":  true
+                  }
+              ]
 }

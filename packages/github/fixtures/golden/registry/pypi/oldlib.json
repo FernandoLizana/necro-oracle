@@ -1,0 +1,17 @@
+{
+  "info": {
+    "name": "oldlib",
+    "version": "1.2.0",
+    "classifiers": [
+      "Development Status :: 7 - Inactive",
+      "Programming Language :: Python :: 2",
+      "Programming Language :: Python :: 2.7"
+    ],
+    "yanked": false
+  },
+  "urls": [
+    {
+      "upload_time_iso_8601": "2016-05-04T10:00:00.000000Z"
+    }
+  ]
+}

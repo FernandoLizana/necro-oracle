@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "vulns": [
+        {
+          "id": "GHSA-xxxx-yyyy-zzzz"
+        },
+        {
+          "id": "PYSEC-2019-0001"
+        }
+      ]
+    },
+    {}
+  ]
+}

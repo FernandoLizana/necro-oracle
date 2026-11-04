@@ -1,0 +1,13 @@
+{
+  "name": "fresh-lib",
+  "dist-tags": {
+    "latest": "5.1.0"
+  },
+  "versions": {
+    "5.1.0": {
+      "name": "fresh-lib",
+      "version": "5.1.0"
+    }
+  },
+  "modified": "2025-01-02T03:04:05.000Z"
+}

@@ -1,0 +1,15 @@
+{
+  "info": {
+    "name": "newlib",
+    "version": "4.0.1",
+    "classifiers": [
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3.12"
+    ]
+  },
+  "urls": [
+    {
+      "upload_time_iso_8601": "2024-09-01T10:00:00.000000Z"
+    }
+  ]
+}

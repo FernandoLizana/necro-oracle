@@ -1,0 +1,336 @@
+{
+  "id": "<uuid>",
+  "repo": {
+    "owner": "graveyard",
+    "name": "relic",
+    "sha": "0123456789abcdef0123456789abcdef01234567",
+    "defaultBranch": "main"
+  },
+  "draws": [
+    {
+      "card": "judgement",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "print_statement",
+          "path": "relic/core.py",
+          "line": 10,
+          "detail": "Python 2 print statement in relic/core.py",
+          "source": "static"
+        },
+        {
+          "kind": "print_statement",
+          "path": "tests/test_core.py",
+          "line": 5,
+          "detail": "Python 2 print statement in tests/test_core.py",
+          "source": "static"
+        }
+      ],
+      "summary": "Python 2 syntax haunts the code; the runtime cannot rise on a modern interpreter without resurrection.",
+      "grimoires": [
+        "py2to3",
+        "pyproject"
+      ]
+    },
+    {
+      "card": "tower",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "stale-dependency",
+          "detail": "oldlib ==1.2.0 is deprecated",
+          "source": "registry"
+        }
+      ],
+      "summary": "1 broken or abandoned dependency",
+      "grimoires": [
+        "pyproject"
+      ]
+    },
+    {
+      "card": "devil",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "dangerous-pickle",
+          "path": "relic/core.py",
+          "line": 6,
+          "detail": "pickle.loads() deserializes untrusted data",
+          "source": "static"
+        },
+        {
+          "kind": "dangerous-os-system",
+          "path": "relic/core.py",
+          "line": 11,
+          "detail": "os.system() runs a shell command",
+          "source": "static"
+        },
+        {
+          "kind": "osv",
+          "detail": "GHSA-xxxx-yyyy-zzzz (HIGH) affects oldlib <1.3.0",
+          "source": "osv"
+        }
+      ],
+      "summary": "Security sins found in 3 place(s); The Devil binds this code.",
+      "grimoires": []
+    },
+    {
+      "card": "death",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "unreachable_module",
+          "path": "relic/core.py",
+          "detail": "Module relic/core.py is never imported by any other file and is not an entrypoint.",
+          "source": "static"
+        },
+        {
+          "kind": "unreachable_module",
+          "path": "setup.py",
+          "detail": "Module setup.py is never imported by any other file and is not an entrypoint.",
+          "source": "static"
+        },
+        {
+          "kind": "unreachable_module",
+          "path": "tests/test_core.py",
+          "detail": "Module tests/test_core.py is never imported by any other file and is not an entrypoint.",
+          "source": "static"
+        }
+      ],
+      "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses.",
+      "grimoires": []
+    },
+    {
+      "card": "wheel",
+      "severity": 1,
+      "orientation": "reversed",
+      "evidence": [
+        {
+          "kind": "test-coverage",
+          "detail": "1 test file found, but no test runner configuration is present.",
+          "source": "static"
+        },
+        {
+          "kind": "test-file",
+          "path": "tests/test_core.py",
+          "detail": "Test file tests/test_core.py has no runner to summon it.",
+          "source": "static"
+        }
+      ],
+      "summary": "1 test file without a configured runner.",
+      "grimoires": []
+    },
+    {
+      "card": "hermit",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "no-readme",
+          "detail": "No README lives at the repository root; the project keeps its silence.",
+          "source": "static"
+        }
+      ],
+      "summary": "The Hermit walks alone: this repository has no README at its root, leaving every traveller to guess at its purpose.",
+      "grimoires": []
+    },
+    {
+      "card": "temperance",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "no-ci-found",
+          "detail": "no CI configuration detected",
+          "source": "static"
+        }
+      ],
+      "summary": "No vessel tempers this code. No CI configuration was detected in the repository.",
+      "grimoires": []
+    },
+    {
+      "card": "justice",
+      "severity": 2,
+      "orientation": "upright",
+      "evidence": [
+        {
+          "kind": "spdx-key",
+          "detail": "observed SPDX key: MIT",
+          "source": "static"
+        }
+      ],
+      "summary": "No law governs this code. A license key ('MIT') is claimed, but no license file sits at the repository root.",
+      "grimoires": []
+    },
+    {
+      "card": "star",
+      "severity": 1,
+      "orientation": "reversed",
+      "evidence": [
+        {
+          "kind": "strength:license",
+          "detail": "license: contributed=false; observed licenseKey=MIT",
+          "source": "static"
+        },
+        {
+          "kind": "strength:tests",
+          "detail": "tests: contributed=true; observed test file count=1",
+          "source": "static"
+        },
+        {
+          "kind": "strength:ci",
+          "detail": "ci: contributed=false; observed CI config count=0",
+          "source": "static"
+        },
+        {
+          "kind": "strength:readme",
+          "detail": "readme: contributed=false; observed README byte length=0",
+          "source": "static"
+        },
+        {
+          "kind": "strength:push",
+          "detail": "recent push: contributed=false; observed pushedAt=2019-03-14T09:26:53.000Z",
+          "source": "static"
+        }
+      ],
+      "summary": "The Star flickers faintly: only 1 of five strengths remain.",
+      "grimoires": []
+    }
+  ],
+  "spread": [
+    {
+      "position": 1,
+      "label": "The Corpse",
+      "draw": {
+        "card": "judgement",
+        "severity": 2,
+        "orientation": "upright",
+        "evidence": [
+          {
+            "kind": "print_statement",
+            "path": "relic/core.py",
+            "line": 10,
+            "detail": "Python 2 print statement in relic/core.py",
+            "source": "static"
+          },
+          {
+            "kind": "print_statement",
+            "path": "tests/test_core.py",
+            "line": 5,
+            "detail": "Python 2 print statement in tests/test_core.py",
+            "source": "static"
+          }
+        ],
+        "summary": "Python 2 syntax haunts the code; the runtime cannot rise on a modern interpreter without resurrection.",
+        "grimoires": [
+          "py2to3",
+          "pyproject"
+        ]
+      }
+    },
+    {
+      "position": 2,
+      "label": "The Wound",
+      "draw": {
+        "card": "devil",
+        "severity": 2,
+        "orientation": "upright",
+        "evidence": [
+          {
+            "kind": "dangerous-pickle",
+            "path": "relic/core.py",
+            "line": 6,
+            "detail": "pickle.loads() deserializes untrusted data",
+            "source": "static"
+          },
+          {
+            "kind": "dangerous-os-system",
+            "path": "relic/core.py",
+            "line": 11,
+            "detail": "os.system() runs a shell command",
+            "source": "static"
+          },
+          {
+            "kind": "osv",
+            "detail": "GHSA-xxxx-yyyy-zzzz (HIGH) affects oldlib <1.3.0",
+            "source": "osv"
+          }
+        ],
+        "summary": "Security sins found in 3 place(s); The Devil binds this code.",
+        "grimoires": []
+      }
+    },
+    {
+      "position": 3,
+      "label": "The Shadow",
+      "draw": {
+        "card": "tower",
+        "severity": 2,
+        "orientation": "upright",
+        "evidence": [
+          {
+            "kind": "stale-dependency",
+            "detail": "oldlib ==1.2.0 is deprecated",
+            "source": "registry"
+          }
+        ],
+        "summary": "1 broken or abandoned dependency",
+        "grimoires": [
+          "pyproject"
+        ]
+      }
+    },
+    {
+      "position": 4,
+      "label": "The Hope",
+      "draw": {
+        "card": "star",
+        "severity": 1,
+        "orientation": "reversed",
+        "evidence": [
+          {
+            "kind": "strength:license",
+            "detail": "license: contributed=false; observed licenseKey=MIT",
+            "source": "static"
+          },
+          {
+            "kind": "strength:tests",
+            "detail": "tests: contributed=true; observed test file count=1",
+            "source": "static"
+          },
+          {
+            "kind": "strength:ci",
+            "detail": "ci: contributed=false; observed CI config count=0",
+            "source": "static"
+          },
+          {
+            "kind": "strength:readme",
+            "detail": "readme: contributed=false; observed README byte length=0",
+            "source": "static"
+          },
+          {
+            "kind": "strength:push",
+            "detail": "recent push: contributed=false; observed pushedAt=2019-03-14T09:26:53.000Z",
+            "source": "static"
+          }
+        ],
+        "summary": "The Star flickers faintly: only 1 of five strengths remain.",
+        "grimoires": []
+      }
+    },
+    {
+      "position": 5,
+      "label": "The Call",
+      "draw": null,
+      "description": "no ritual can be performed — here is why"
+    }
+  ],
+  "vitality": 0,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "engineVersion": "0.0.0",
+  "errors": []
+}

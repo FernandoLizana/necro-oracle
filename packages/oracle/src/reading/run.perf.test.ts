@@ -222,7 +222,6 @@ describe("R21.1, R21.2: runReading performance and zero-network", () => {
     const median = sorted[Math.floor(sorted.length / 2)] ?? Number.POSITIVE_INFINITY;
 
     // Surface the measured median for the task report.
-    // eslint-disable-next-line no-console
     console.log(
       `[perf] runReading over ${fileCount} files: median=${median.toFixed(1)}ms ` +
         `durations=[${sorted.map((d) => d.toFixed(1)).join(", ")}]ms`,

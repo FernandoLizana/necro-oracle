@@ -16,14 +16,21 @@
 //     invalid S-expression.
 //   - hasLegacyPythonNodes(tree): true on any of the 7 py2 legacy indicators.
 
-import { Language, Parser, Query } from "web-tree-sitter";
+import {
+  Language,
+  Parser,
+  Query,
+  type Node,
+  type QueryMatch,
+  type Tree as TsTree,
+} from "web-tree-sitter";
 
 import { NecroError } from "../util/errors.js";
 
 /** Re-exported tree-sitter types (per design Components section). */
-export type Tree = import("web-tree-sitter").Tree;
-export type QueryMatch = import("web-tree-sitter").QueryMatch;
-type Node = import("web-tree-sitter").Node;
+export type Tree = TsTree;
+export type { QueryMatch };
+
 
 /** Maximum source size the parser will accept, in bytes (1 MB). */
 const MAX_SOURCE_BYTES = 1_048_576;

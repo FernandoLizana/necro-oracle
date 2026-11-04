@@ -1,0 +1,34 @@
+{
+  "id": "GHSA-xxxx-yyyy-zzzz",
+  "aliases": [
+    "CVE-2019-00000"
+  ],
+  "database_specific": {
+    "severity": "HIGH"
+  },
+  "affected": [
+    {
+      "package": {
+        "name": "oldlib",
+        "ecosystem": "PyPI"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "fixed": "1.3.0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0",
+        "1.2.0"
+      ]
+    }
+  ]
+}

@@ -13,7 +13,7 @@
 // no network access (R3.1, R21.5, R21.6). fast-check prints the shrunk
 // counterexample and seed on failure by default.
 import fc from "fast-check";
-import { describe, expect, it } from "vitest";
+import { describe, it } from "vitest";
 
 import { arbPythonSource } from "../../test/arbitraries.js";
 

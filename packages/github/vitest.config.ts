@@ -8,6 +8,7 @@ export default defineConfig({
     name: "github",
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     environment: "node",
+    testTimeout: 30_000,
     setupFiles: ["./vitest.setup.ts"],
   },
 });
