@@ -38,7 +38,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - _Requirements: R21.5_
 
 - [ ] 5. Implement secret masking utility
-  - [~] 5.1 Write unit tests for `maskSecret` (test-first)
+  - [x] 5.1 Write unit tests for `maskSecret` (test-first)
     - Length ≥ 4 → first 4 chars + `"****"`; length < 4 → `"****"`; verify AWS/private-key inputs are reduced.
     - _Requirements: R20.1, R20.4_
   - [~] 5.2 Implement `src/util/mask.ts` `maskSecret(value: string): string`
@@ -62,7 +62,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - **Property 14: Registry weight consistency** — star/world-only draws score 100; any weighted severity reduces below 100.
     - **Validates: Requirements R1.2, R18.3, R5.2, R5.3** / **Properties: P4, P14**
 
-- [~] 7. Define snapshot types and schemas
+- [x] 7. Define snapshot types and schemas
   - Implement `src/snapshot/types.ts`: `RepoRefSchema`, `LangSchema`, `FileEntrySchema`, `RepoMetaSchema`, `OversizeFileItemSchema`, `RepoSnapshotSchema`, the runtime `RepoSnapshot` type (adds `contents: Map<string,string>`), and the `GitHubSnapshotBuilder` interface.
   - _Requirements: R2.1, R2.2, R2.8, R11.1_
 
@@ -97,7 +97,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
     - Depends on the Vitest WASM setup file (task 10) so the on-disk grammar is initialised in `beforeAll`.
     - `parsePython` returns a `module`-root `Tree` for valid py2/py3; invalid UTF-8 → best-effort non-null tree (no throw); byte length > 1 MB → `FILE_TOO_LARGE`; `queryPython` invalid S-expr → `INVALID_QUERY_PATTERN`; `hasLegacyPythonNodes` true for `print_statement`, `exec_statement`, `except E, e`, `<>`, `10L` (`/[Ll]$/`), `0777` (`/^0[0-7]+$/`), and backtick repr (including the `ERROR`-node fallback); false for clean py3.
     - _Requirements: R3.1, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8_
-  - [~] 11.2 Implement `src/parser/tree-sitter.ts`
+  - [x] 11.2 Implement `src/parser/tree-sitter.ts`
     - `initParser()` lazy singleton (idempotent; resets `initPromise` on failure → `PARSER_INIT_FAILED`); synchronous `parsePython` (throws `PARSER_INIT_FAILED` if called before init, `FILE_TOO_LARGE` over 1 MB); `queryPython` (`INVALID_QUERY_PATTERN`); `hasLegacyPythonNodes` with the 7 legacy indicators and the `ERROR`-node backtick fallback. No side effects at import time.
     - _Requirements: R3.1, R3.2, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8, R21.6_
   - [~] 11.3 [PBT] Write property tests for the parser — P15
