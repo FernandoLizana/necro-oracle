@@ -25,7 +25,8 @@ A daily log of how Kiro (specs, steering, hooks, MCP, agents, CLI) shaped this p
 - Hook: `auto-commit-after-task` now runs `pnpm -r typecheck` and `pnpm -r test`. Added `test` scripts to `@necro/oracle` and `@necro/github`.
 - Event-form hazard found while writing the skipped-bytes test: destroying `extract` with an error also errors the in-flight entry stream, and with no `error` listener that is an uncaught exception. Every entry handler in the real extractor must attach `stream.on("error", ...)`.
 
-### Nov 2026 - Spec 02-github-summoner, wrap-up
+### 2026-11-04 - Spec 02-github-summoner, wrap-up
+- Note: parts of Day 2 and of the spec 01 requirements and design were done on my other personal Kiro account (Free plan), so they are not fully reflected in this log.
 - Spec-driven tasks: the requirements-first workflow produced the spec (requirements, design, tasks). Each task ran as a scoped unit with its requirement links, so the work stayed traceable from R-numbers to code and tests.
 - Requirements revision: review added rename redirects, a token-aware tarball path, three more error codes, and the Q16 optional-call carve-out (optional calls degrade and are reported in `degradedFields`).
 - Property-based testing: the requirements named 19 properties (P1-P18 and P34). Prework added P19-P33 beside them. Properties were written test-first with fast-check, each tagged with its requirement numbers and run against recorded fixtures, with no network calls.

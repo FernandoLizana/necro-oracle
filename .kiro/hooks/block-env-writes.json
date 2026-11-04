@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Block .env writes",
+      "description": "Denies any tool call that writes to a .env* file (security.md rule 8). Fails closed.",
+      "trigger": "PreToolUse",
+      "matcher": "*",
+      "action": {
+        "type": "command",
+        "command": "node scripts/hooks/block-env-writes.mjs"
+      },
+      "enabled": true
+    }
+  ]
+}
