@@ -315,6 +315,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793819286141
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828976428
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793829423880
       }
     ],
     "9.2 Implement `render/{reading,summary,help,explain,demo-label,errors}.ts`": [
@@ -901,6 +911,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990387
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828095060
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828469083
       }
     ],
     "26.2 Implement `server/handlers/readings.ts`": [
@@ -908,6 +928,16 @@
         "executionId": "83d2bab3-01fa-4f18-b1a8-d49fb3fda6fc",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793814990427
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828473806
+      },
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828895005
       }
     ],
     "27.1 Write route and middleware examples first": [
@@ -1174,6 +1204,13 @@
         "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
         "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
         "timestamp": 1793828047265
+      }
+    ],
+    "26. Reading handler with streaming, budgets and external skip": [
+      {
+        "executionId": "2dd4e773-1c6f-4cd9-9103-b9a1d0d54738",
+        "chatSessionId": "sess_e39316ab-b37b-4dc3-a900-47c806a20560",
+        "timestamp": 1793828895056
       }
     ]
   }

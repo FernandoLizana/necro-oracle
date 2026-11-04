@@ -233,11 +233,11 @@ Conventions that apply to every task:
     - Implement the shared guard pipeline (client-ip, limiter, body read/size, zod) and `handleSummon` (parse, summon, `toSummonSummary`, redact, validate, JSON response).
     - _Requirements: R5.2, R5.3, R5.9, R5.10, R12.1, R12.2, R12.3, R12.6, R12.8, R12.11, R13.1, R14.7_
 
-- [ ] 26. Reading handler with streaming, budgets and external skip
-  - [~] 26.1 Write reading-handler streaming and budget examples first
+- [x] 26. Reading handler with streaming, budgets and external skip
+  - [x] 26.1 Write reading-handler streaming and budget examples first
     - Add examples (fake `RouteDeps`, fake `ClockPort`): `Content-Type: application/x-ndjson` + `no-store` on the stream (R6.14, D13); happy path emits phases then a validated `{ result }` final line (R6.6, R6.7, R6.14, R6.16); `celtic`/non-40-hex ref → `VALIDATION_FAILED` (R6.4, Q15); cache-hit path performs no tarball (R12.10) via integration with the real summoner over a tiny `FetchPort`; 40 s Overall_Budget abort → final `{ error: NETWORK_TIMEOUT }` with no `result` line, finishing before 40 s writes no error (R6.11, R6.19); 10 s External_Sub_Budget: slow `externalData` → skip-note line and `runReading` without registry/OSV data, `skipped: true` within 10 s → same skip, real data within 10 s → passed through and no skip-note (R6.20, R6.22); token redaction end-to-end (R14.7); the outgoing Reading_Response validated by `ReadingResponseSchema` before writing (R6.7); no snapshot file contents returned (R6.6). Confirm all fail first.
     - _Requirements: R6.4, R6.5, R6.6, R6.7, R6.11, R6.14, R6.16, R6.19, R6.20, R6.22, R12.8, R12.9, R12.10, R12.11, R14.7_
-  - [~] 26.2 Implement `server/handlers/readings.ts`
+  - [x] 26.2 Implement `server/handlers/readings.ts`
     - Implement the streamed pipeline: `SUMMON` → `github.summon` → `DOWNLOAD` → `EXTERNAL` → external race under the sub-budget → skip decision → `READING` → `runReading` → validate → `{ result }`, all under the 40 s `AbortController`; mid-stream failure/budget → final `{ error }` line.
     - _Requirements: R6.4, R6.5, R6.6, R6.7, R6.11, R6.14, R6.16, R6.19, R6.20, R6.22, R12.8, R12.9, R12.10, R12.11, R14.7_
 

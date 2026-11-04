@@ -20,6 +20,15 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 
+import type {
+  CardDraw,
+  Evidence,
+  Reading,
+  RepoRef,
+  SpreadPosition,
+} from "@necro/oracle/client";
+
+import type { ReadingResponse, SummonSummary } from "../protocol.js";
 import { arbCardDrawWithEvidence, arbReadingResponse } from "../testing/arbitraries.js";
 import { blockText } from "./blocks.js";
 // Not yet implemented — task 9.2 adds these modules.
@@ -27,6 +36,44 @@ import { renderExplain } from "./explain.js";
 import { renderReading } from "./reading.js";
 
 const NUM_RUNS = 500;
+
+// --- Regression fixture builders (shared by the regression example) ----------
+//
+// Minimal, schema-shaped builders mirroring renderers.test.ts, used to pin the
+// resolved behaviour of the sanitise/wrap counterexample below.
+
+const REGRESSION_REF: RepoRef = {
+  owner: "_",
+  name: "0",
+  sha: "0aaa00aa0aa0aaaaa00aa0aaaa0a0aa0a00aaa0a",
+  defaultBranch: "main",
+};
+
+function regressionResponse(spread: readonly SpreadPosition[]): ReadingResponse {
+  const draws = spread
+    .filter((p): p is SpreadPosition & { draw: CardDraw } => p.draw !== null)
+    .map((p) => p.draw);
+  const reading: Reading = {
+    id: "00000000-0000-4000-8000-000000000000",
+    repo: REGRESSION_REF,
+    draws,
+    spread: [...spread],
+    vitality: 0,
+    createdAt: "2025-01-01T00:00:00.000Z",
+    engineVersion: "1.0.0",
+    errors: [],
+  };
+  const summary: SummonSummary = {
+    ref: REGRESSION_REF,
+    stars: 0,
+    hasWorkflowsDir: false,
+    degradedFields: [],
+    cache: "hit",
+    fileCount: 0,
+    truncated: false,
+  };
+  return { summary, reading };
+}
 
 describe("P8 (R7.5, R8.1): evidence is always shown", () => {
   it("shows at least one evidence line per drawn card in the reading (R7.5)", () => {
@@ -58,6 +105,44 @@ describe("P8 (R7.5, R8.1): evidence is always shown", () => {
       ),
       { numRuns: NUM_RUNS },
     );
+  });
+
+  // Regression (seed -354022726): the P8 first property was seed-dependent
+  // flaky. On some seeds the generated evidence had `detail:""` and a path made
+  // only of characters the renderer legitimately drops — e.g. `path:" / "`
+  // (rendered as `"/"` after sanitise + 72-col wrap) or `path:" "` (rendered as
+  // `""`). The old assertion required a RAW substring (`" / "` / `" "`) to
+  // survive, which it never can: sanitising control/bidi/ANSI (R14.2/R14.3) and
+  // dropping whitespace at wrap breaks is a required renderer transformation,
+  // not a bug. The fix makes the P8 evidence generator emit printable,
+  // sanitiser-surviving detail/path; this example pins the resolved behaviour
+  // for the exact counterexample: a whitespace/separator-only path still yields
+  // a NON-EMPTY, sanitised evidence fragment in the card block.
+  it("shows a non-empty sanitised fragment for whitespace-only evidence (regression, seed -354022726)", () => {
+    const evidence: Evidence[] = [
+      { kind: "a", path: " / ", detail: "", source: "static" },
+    ];
+    const draw: CardDraw = {
+      card: "judgement",
+      severity: 0,
+      orientation: "upright",
+      evidence,
+      summary: "",
+      grimoires: [],
+    };
+    const spread: SpreadPosition[] = [
+      { position: 1, label: "POSITION 1", draw },
+    ];
+    const resp = regressionResponse(spread);
+
+    const blocks = renderReading(resp);
+    const text = blockText(blocks[0]!);
+
+    // The raw path (`" / "`) does NOT survive (whitespace dropped at the wrap
+    // break) — asserting it would reintroduce the flake. The renderer instead
+    // surfaces the sanitised, non-empty fragment `"/"` for this evidence item.
+    expect(text.includes(" / ")).toBe(false);
+    expect(text).toContain("/");
   });
 
   it("shows EVERY evidence item of a card in its explain block (R8.1)", () => {
