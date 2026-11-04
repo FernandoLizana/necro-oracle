@@ -35,6 +35,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761020767
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761224881
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761483634
       }
     ],
     "3. Define core primitive zod schemas": [
@@ -59,6 +69,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761020849
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761225798
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761484583
       }
     ],
     "5.1 Write unit tests for `maskSecret` (test-first)": [
@@ -167,6 +187,16 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761021468
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761226877
+      },
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761485609
       }
     ],
     "11.2 Implement `src/parser/tree-sitter.ts`": [
@@ -496,6 +526,13 @@
         "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
         "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
         "timestamp": 1793761023496
+      }
+    ],
+    "2. Create NecroError and error code constants": [
+      {
+        "executionId": "9714f8e8-c1fc-4b56-a1bb-59dfeba3a00f",
+        "chatSessionId": "sess_74c8a458-fa4e-45ea-b08e-fa79822b097a",
+        "timestamp": 1793761483709
       }
     ]
   }

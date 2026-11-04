@@ -17,12 +17,12 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Ensure `tsconfig.json` has `"strict": true`; confirm `pnpm --filter @necro/oracle typecheck` passes.
   - _Requirements: R2.3, R21.3, R21.4_
 
-- [ ] 2. Create NecroError and error code constants
+- [x] 2. Create NecroError and error code constants
   - [x] 2.1 Implement `src/util/errors.ts`
     - Define `NecroErrorCodeSchema` (zod enum) and `NecroError` class with `code`, `userMessage` (oracle voice), and optional `cause` per the design Data Models section.
     - Export all codes: `REGISTRY_INVALID`, `CARD_NOT_FOUND`, `PARSER_INIT_FAILED`, `FILE_TOO_LARGE`, `INVALID_QUERY_PATTERN`, `SNAPSHOT_DIR_NOT_FOUND`, `INVALID_REPO_META`, `DETECTOR_FAILED`.
     - _Requirements: R1.3, R1.5, R1.6, R3.2, R3.6, R3.8, R2.4, R11.1, R19.4_
-  - [~] 2.2 Write unit tests for `NecroError`
+  - [x] 2.2 Write unit tests for `NecroError`
     - Assert `code`, `userMessage`, `cause`, and `name === "NecroError"` are set; assert `message` equals `userMessage`.
     - _Requirements: R1.3_
 
@@ -30,7 +30,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Implement `src/registry/schema.ts`: `CardIdSchema` (12-member enum), `SeveritySchema`, `EvidenceSchema`, `CardDefinitionSchema`, `CardDrawSchema`, `SpreadPositionSchema`, `GateIdSchema`, `VerdictSchema`, with inferred types exported.
   - _Requirements: R1.2, R2.1, R5.4, R16.1_
 
-- [~] 4. Create shared property-test arbitraries
+- [x] 4. Create shared property-test arbitraries
   - Implement `packages/oracle/test/arbitraries.ts`: `arbRepoRef`, `arbFileEntry`, `arbRepoMeta`, `arbRepoSnapshot`, `arbCardDraw`, `arbCardDrawArray`, `arbSha`, `arbPythonSource`, `arbLargeFileMap` per the design.
   - The card/draw/sha/python-source arbitraries (`arbCardDraw`, `arbCardDrawArray`, `arbSha`, `arbPythonSource`) depend only on the core primitive schemas (task 3) and are available immediately for the earliest `[PBT]` tasks (masking, registry, file-map, parser).
   - The snapshot-oriented arbitraries (`arbRepoSnapshot`, `arbRepoMeta`, `arbFileEntry`, `arbRepoRef`, `arbLargeFileMap`) reference the snapshot types defined in task 7 and may be authored incrementally once those types exist; wire them up as the snapshot types land.
@@ -93,7 +93,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - _Requirements: R3.1, R21.5, R21.6_
 
 - [ ] 11. Implement the tree-sitter parser
-  - [~] 11.1 Write unit tests for the parser (test-first)
+  - [x] 11.1 Write unit tests for the parser (test-first)
     - Depends on the Vitest WASM setup file (task 10) so the on-disk grammar is initialised in `beforeAll`.
     - `parsePython` returns a `module`-root `Tree` for valid py2/py3; invalid UTF-8 → best-effort non-null tree (no throw); byte length > 1 MB → `FILE_TOO_LARGE`; `queryPython` invalid S-expr → `INVALID_QUERY_PATTERN`; `hasLegacyPythonNodes` true for `print_statement`, `exec_statement`, `except E, e`, `<>`, `10L` (`/[Ll]$/`), `0777` (`/^0[0-7]+$/`), and backtick repr (including the `ERROR`-node fallback); false for clean py3.
     - _Requirements: R3.1, R3.3, R3.4, R3.5, R3.6, R3.7, R3.8_
