@@ -279,7 +279,7 @@ This plan builds the pure-TypeScript Oracle Deck Engine incrementally and test-f
   - Add a test/script that builds a ≤ 500-file snapshot with pre-fetched (injected) `registryData`/`osvData` and asserts `runReading` completes within 5000 ms p50; assert zero outbound network calls occur (R21.2) and no secrets are required.
   - _Requirements: R21.1, R21.2_
 
-- [~] 37. Final checkpoint — full verification
+- [x] 37. Final checkpoint — full verification
   - Run `pnpm --filter @necro/oracle typecheck`, `pnpm --filter @necro/oracle test`, `pnpm size`, and the performance check; ensure 100% passing with zero network/LLM/sandbox calls; ask the user if questions arise.
   - _Requirements: R21.4, R21.5_
 
