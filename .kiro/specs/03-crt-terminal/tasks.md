@@ -271,20 +271,20 @@ Conventions that apply to every task:
 - [~] 30. Checkpoint - server, routes and demo are complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 31. Boundary lint rules and web budget script
-  - [~] 31.1 Write lint/grep boundary tests and budget-script checks first
+- [x] 31. Boundary lint rules and web budget script
+  - [x] 31.1 Write lint/grep boundary tests and budget-script checks first
     - Add grep-backed tests for the ESLint rules: `ui-crt` and client files never import `@necro/github`, `node:*`, or `@necro/oracle` (non-`/client`); client code has no `dangerouslySetInnerHTML`/`eval`/`new Function`/`postMessage`/non-literal dynamic `import` (R14.1, R14.8, R16.2, R16.3, R16.4, R16.7).
     - Add `scripts/check-web-budget.mjs` tests/assertions: initial-route JS ≤ 250 000 bytes gzipped from the Next manifests; forbidden-marker scan over `.next/static/**/*.js` (`api.github.com`, `codeload.github.com`, `GITHUB_TOKEN`, `tree-sitter-python.wasm`, `tar-stream`); demo bundle and sound engine each exist as separate chunks (R16.1, R16.2, R16.12). Confirm they fail first.
     - _Requirements: R14.1, R14.8, R16.1, R16.2, R16.3, R16.4, R16.7, R16.12_
-  - [~] 31.2 Implement the ESLint `no-restricted-syntax`/import rules and `scripts/check-web-budget.mjs`
+  - [x] 31.2 Implement the ESLint `no-restricted-syntax`/import rules and `scripts/check-web-budget.mjs`
     - _Requirements: R14.1, R14.8, R16.1, R16.2, R16.3, R16.4, R16.7, R16.12_
 
-- [ ] 32. Playwright e2e and axe accessibility checks
-  - [~] 32.1 Write the e2e and axe specs first
+- [x] 32. Playwright e2e and axe accessibility checks
+  - [x] 32.1 Write the e2e and axe specs first
     - Add `apps/web/e2e/*.e2e.ts` and `playwright.config.ts`: boot shows the phrase and focuses the input (R1.1, R1.2, R15.4); JS-disabled page shows the phrase and the "requires JavaScript" note (R1.5); mocked-route demo flow renders a labelled spread and `explain` opens evidence (R18.5, R8.1); keyboard history, `Ctrl+L`, `Escape`, `Ctrl+C` abort (R3.3-R3.6); reduced-motion shows the first block without reveal (R10.11); 200 % zoom and 320 px width with no horizontal scroll of the input/button row (R15.8).
     - Add `@axe-core/playwright` checks on the booted terminal and a rendered spread: roles, `role="log"` live region announce-once, `aria-busy` through the final block, label association, focus-visible, contrast, and no colour-only state (R15.1, R15.2, R15.3, R15.6, R15.7, R15.9). These specs are run by the maintainer (never auto-started by a unit test).
     - _Requirements: R1.1, R1.2, R1.5, R3.3, R3.4, R3.5, R3.6, R8.1, R10.11, R15.1, R15.2, R15.3, R15.4, R15.6, R15.7, R15.8, R15.9, R18.5_
-  - [~] 32.2 Implement any `data-*`/ARIA adjustments the e2e/axe specs require
+  - [x] 32.2 Implement any `data-*`/ARIA adjustments the e2e/axe specs require
     - Make minimal attribute/label/focus adjustments in `apps/web` and `@necro/ui-crt` components so the e2e and axe specs pass; no behavioural change to the reducer.
     - _Requirements: R15.1, R15.2, R15.3, R15.4, R15.6, R15.7, R15.8, R15.9_
 

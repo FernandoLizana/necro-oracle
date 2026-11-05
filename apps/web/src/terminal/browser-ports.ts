@@ -73,12 +73,29 @@ function createStoragePort(): StoragePort {
  * motion-preference change updates the mode without reload (R10.6).
  */
 function createMediaPort(): MediaPort {
-  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  // The query is resolved lazily rather than at construction: a client
+  // component's `useMemo` initializer runs during the server render too, where
+  // `window.matchMedia` does not exist. Deferring the lookup keeps the port
+  // constructable on the server (so the static shell still renders, R1.5) and
+  // live in the browser; a missing `matchMedia` resolves to "no preference".
+  const resolveQuery = (): MediaQueryList | null => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return null;
+    }
+    return window.matchMedia(REDUCED_MOTION_QUERY);
+  };
+
   return {
     prefersReducedMotion() {
-      return query.matches;
+      return resolveQuery()?.matches ?? false;
     },
     subscribe(cb) {
+      const query = resolveQuery();
+      if (query === null) {
+        return () => {
+          // No media query available (server / unsupported): nothing to detach.
+        };
+      }
       const listener = (event: MediaQueryListEvent): void => {
         cb(event.matches);
       };

@@ -153,6 +153,145 @@ export default [
     },
   },
 
+  // ── Client boundary: @necro/ui-crt source (R14.1, R14.8, R16.2–R16.4, R16.7) ─
+  // Everything under packages/ui-crt/src is client-safe code bundled into the
+  // browser. It must never import a server-only package (@necro/github,
+  // @necro/config), the oracle MAIN entry (only @necro/oracle/client is
+  // allowed), or a Node builtin (node:*), and it must never use a dangerous DOM
+  // sink (dangerouslySetInnerHTML / eval / new Function / postMessage) or a
+  // non-literal dynamic import. A string-literal import("./engine.js") is fine
+  // (deliberate lazy chunk) and is not a MemberExpression/Identifier argument,
+  // so the ImportExpression rule below only fires on non-literal arguments.
+  {
+    files: ["packages/ui-crt/src/**/*.ts", "packages/ui-crt/src/**/*.tsx"],
+    ignores: [
+      "packages/ui-crt/src/**/*.test.ts",
+      "packages/ui-crt/src/**/*.test.tsx",
+      "packages/ui-crt/src/**/*.pbt.test.ts",
+      "packages/ui-crt/src/**/*.conformance.test.ts",
+      "packages/ui-crt/src/testing/**",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "@necro/github", message: "Client code must not import @necro/github (server-only)." },
+            { name: "@necro/config", message: "Client code must not import @necro/config (server-only env)." },
+            {
+              name: "@necro/oracle",
+              message: "Client code must import from @necro/oracle/client, never the main entry.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["node:*"],
+              message: "Client code must not import Node builtins (node:*).",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.name='eval']",
+          message: "eval is banned in client code.",
+        },
+        {
+          selector: "NewExpression[callee.name='Function']",
+          message: "new Function is banned in client code.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='postMessage']",
+          message: "postMessage is banned in client code.",
+        },
+        {
+          selector: "CallExpression[callee.name='postMessage']",
+          message: "postMessage is banned in client code.",
+        },
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: "dangerouslySetInnerHTML is banned in client code.",
+        },
+        {
+          selector: "Property[key.name='dangerouslySetInnerHTML']",
+          message: "dangerouslySetInnerHTML is banned in client code.",
+        },
+        {
+          selector: "ImportExpression[source.type!='Literal']",
+          message: "Dynamic import() must use a string literal path (deliberate lazy chunk only).",
+        },
+      ],
+    },
+  },
+
+  // ── Client boundary: apps/web client-safe modules (R14.1, R14.8, R16.2–R16.4) ─
+  // Only the modules that are bundled into the browser are scoped here: the
+  // Terminal browser adapters, the client screen, and the demo-bundle loader.
+  // The server-only trees (server/**, app/api/**, demo/build-demo.ts) are NOT
+  // matched, so they keep their legitimate @necro/github / node:* imports.
+  {
+    files: [
+      "apps/web/src/terminal/api-client.ts",
+      "apps/web/src/terminal/browser-ports.ts",
+      "apps/web/src/terminal/ndjson.ts",
+      "apps/web/src/components/TerminalScreen.tsx",
+      "apps/web/src/demo/load-bundle.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "@necro/github", message: "Client code must not import @necro/github (server-only)." },
+            { name: "@necro/config", message: "Client code must not import @necro/config (server-only env)." },
+            {
+              name: "@necro/oracle",
+              message: "Client code must import from @necro/oracle/client, never the main entry.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["node:*"],
+              message: "Client code must not import Node builtins (node:*).",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.name='eval']",
+          message: "eval is banned in client code.",
+        },
+        {
+          selector: "NewExpression[callee.name='Function']",
+          message: "new Function is banned in client code.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='postMessage']",
+          message: "postMessage is banned in client code.",
+        },
+        {
+          selector: "CallExpression[callee.name='postMessage']",
+          message: "postMessage is banned in client code.",
+        },
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: "dangerouslySetInnerHTML is banned in client code.",
+        },
+        {
+          selector: "Property[key.name='dangerouslySetInnerHTML']",
+          message: "dangerouslySetInnerHTML is banned in client code.",
+        },
+        {
+          selector: "ImportExpression[source.type!='Literal']",
+          message: "Dynamic import() must use a string literal path (deliberate lazy chunk only).",
+        },
+      ],
+    },
+  },
+
   // ── @necro/oracle tests: excluded from its src tsconfig, parse without types ─
   {
     files: ["packages/oracle/src/**/*.test.ts"],
