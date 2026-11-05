@@ -143,3 +143,102 @@ Exported from `src/index.ts`:
 - **Per-process cache (Q11).** `SnapshotCache` lives in one process. Serverless instances do not share it, and a cold start loses it, so identical readings may re-download. A shared cache belongs to a later spec.
 - **OSV coverage is exact-pin only (Q12).** Advisories are looked up only for dependencies pinned to an exact version. Ranges, unpinned and unresolvable entries come back in `skipped`, so a clean advisory list is not proof of no vulnerabilities.
 - **`DecompressionStream` buffering.** It buffers roughly 16 KiB internally. A tiny corrupt gzip body is therefore fully read before the error appears, so cancelling the download on that error saves nothing. The compressed cap still bounds the cost.
+
+## @necro/ui-crt and the web terminal
+
+`@necro/ui-crt` is the browser-safe CRT design system and the pure terminal core; `apps/web` is the Next.js App Router application that mounts it, serves the two HTTP routes it talks to, and ships the demo bundle. The split is strict: all terminal logic (parsing, rendering, the session state machine, motion and sound) is pure and side-effect-free in `@necro/ui-crt`; every side effect (HTTP, storage, media, Web Audio, timers) lives behind a port that `apps/web` supplies.
+
+### Module map
+
+`packages/ui-crt/src` (barrelled through `src/index.ts`; nothing is imported across the package boundary except through that barrel):
+
+| Area | Files | Role |
+| --- | --- | --- |
+| Protocol and ports | `protocol.ts`, `ports.ts` | Types only. `protocol.ts` holds the wire shapes the browser shares with the API (`SummonSummary`, `ReadingResponse`, `ReadingPhase`, `ProgressEvent`, `ApiPort`, `DemoBundle`, `DemoPort`, `PlayableSpread`); `ports.ts` holds the injected side-effect seams (`StoragePort`, `MediaPort`, `VisibilityPort`, `FramePort`, `SoundLoaderPort`, `SoundEngine`, `TerminalPorts`). |
+| Command | `command/{types,parse,print}.ts` | Total `parseCommand` (returns `null` for empty/whitespace input), `printCommand`, and `MAX_ENTRY_LENGTH`. |
+| Text | `text/{sanitize,wrap}.ts` | `sanitizeText` (strips C0/C1 except `\n`, ANSI and bidi controls) and the 72-column wrapper (`LINE_WIDTH = 72`). |
+| Voice | `voice/{voice-table,phrases}.ts` | `VOICE_TABLE` (one mystical line per card and orientation), the fixed Oracle_Voice copy (`BOOT_PHRASE`, `PRE_READING_PHRASE`, `DEMO_LABEL`, `PHASE_VOICE`, `EXTERNAL_SKIP_NOTE`) and `vitalityVoice`. |
+| Render | `render/{blocks,evidence-link,reading,summary,help,explain,demo-label,errors}.ts` | The block/line/segment output model, the single `buildEvidenceLink` builder, the renderers, and the four terminal-raised error builders (`networkError`, `upstreamError`, `invalidResponseError`, `demoUnavailableError`). |
+| Motion and prefs | `motion/{reveal,motion-mode}.ts`, `prefs/prefs.ts` | Pure reveal schedule, effective-motion resolution, and the persisted-preference parsers plus their storage-key constants. |
+| Session | `session/{state,reducer,history,log,pinned-ref}.ts` | `initialState`, the pure `step(state, action) => { state, effects }` reducer, bounded command history (`HISTORY_MAX`) and output log (`LOG_MAX_LINES`), and `formatPinnedRef`. |
+| Sound | `sound/{sound-reducer,engine-types,load-engine,engine}.ts` | The pure sound state machine (`soundReducer`, `soundActivity`) and the lazy Web Audio engine. `load-engine.ts` is the production `SoundLoaderPort`; `engine.ts` is never barrelled — it is reached only through a literal-path dynamic import so it ships as a separate chunk. |
+| Components and hooks | `components/*.tsx`, `hooks/*.ts` | `Screen`, `Terminal`, `OutputLog`, `OutputBlockView`, `Card`, `Spread`, `EvidenceScroll`, `CommandLine`, `ButtonRow`, and the `use-terminal`/`use-reveal`/`use-motion`/`use-sound` hooks that wire the pure reducer to the browser. |
+| Tokens and CSS | `tokens.ts`, `crt.css` | The CRT design tokens are the single source of truth; the stylesheet mirrors them (a test parses both and asserts they match). |
+
+`apps/web/src`:
+
+| Area | Files | Role |
+| --- | --- | --- |
+| App shell | `app/layout.tsx`, `app/page.tsx`, `components/TerminalScreen.tsx` | `page.tsx` is a server component that server-renders the client `TerminalScreen`, which builds the browser ports and mounts `@necro/ui-crt`'s `Terminal`. The static document carries the full shell and a `<noscript>` block stating the boot phrase and that the terminal needs JavaScript. |
+| Browser adapters | `terminal/{api-client,browser-ports,ndjson}.ts` | `createApiPort` is the one seam to the HTTP routes (summon outcome table + streaming reader); `createBrowserPorts` builds the storage/media/visibility/frame/sound ports; `createNdjsonParser` is the incremental NDJSON line splitter. |
+| Wire schemas | `protocol/{schemas,stream}.ts` | The zod schemas for the request/response bodies and the NDJSON stream lines (see below). |
+| Server handlers | `server/handlers/{guard,summon,readings,phase,external-skip}.ts` | The shared request/response guard pipeline, the two route handlers, the monotonic phase reporter and the external-skip decision. |
+| Server support | `server/{composition,deps,client-ip,error-map,redact,pinned-ref}.ts`, `server/limiter/{port,upstash,fallback,chain}.ts` | The composition root (the only reader of `process.env`), the route-deps assembly, client-IP hashing, the error mapper, token redaction, the pinned-ref round-trip, and the rate-limiter chain. |
+| Routes and middleware | `app/api/summon/route.ts`, `app/api/readings/route.ts`, `middleware.ts` | Thin bindings pinning the Node runtime and delegating to the handlers; the CSP middleware. |
+| Demo | `demo/{build-demo,load-bundle}.ts`, `demo/bundle.generated.json`, `scripts/demo-bundle/generate.ts` | The demo bundle generator, the lazy validating loader, the generated bundle and the regeneration script. |
+| Budget gate | `scripts/check-web-budget.mjs` | The post-build bundle-size / leak / chunk-separation gate. |
+
+### The `@necro/oracle/client` rule
+
+Everything bundled into the browser imports oracle types and schemas only through the single `@necro/oracle/client` subpath — never the main `@necro/oracle` entry, never `@necro/github`, never `@necro/config`, and never a `node:*` builtin. `@necro/oracle/client` is a Client_Safe_Entry whose import closure is restricted to `zod` plus the pure registry/schema/snapshot-type/error modules, so pulling it in never drags tree-sitter, the tarball downloader, TOML/OSV code or any Node builtin into the client bundle. `@necro/ui-crt`'s `protocol.ts` imports `Reading` and `RepoRef` from `@necro/oracle/client`; `apps/web`'s `protocol/schemas.ts` imports `ReadingSchema`, `RepoRefSchema` and `NecroErrorCodeSchema` from the same subpath.
+
+This boundary is enforced two ways. The flat-config ESLint blocks in `eslint.config.js` scope a `no-restricted-imports` rule over all of `packages/ui-crt/src/**` and over the explicitly client-bundled `apps/web` modules (`terminal/api-client.ts`, `terminal/browser-ports.ts`, `terminal/ndjson.ts`, `components/TerminalScreen.tsx`, `demo/load-bundle.ts`), banning `@necro/github`, `@necro/config`, the bare `@necro/oracle` entry and `node:*`, plus a `no-restricted-syntax` block banning `eval`, `new Function`, `postMessage`, `dangerouslySetInnerHTML` and any non-literal dynamic `import`. The server-only trees (`server/**`, `app/api/**`, `demo/build-demo.ts`) are deliberately not matched, so they keep their legitimate `@necro/github` and `node:*` imports. The `boundary.guard.test.ts` files in both `packages/ui-crt/src` and `apps/web/src` back the lint rules with a grep-level test so a violation fails the suite even if lint is skipped.
+
+### API contracts
+
+Both routes are `POST`-only, run on the Node.js runtime (`runtime = "nodejs"`, `dynamic = "force-dynamic"`, `maxDuration = 50` — a serverless backstop above the 40 s overall budget), and share the guard pipeline in `server/handlers/guard.ts`: method check → rate limit (before any GitHub work) → body read → strict zod parse. Every response carries `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`; a JSON success adds `Content-Type: application/json`.
+
+**Request bodies** (strict zod objects in `protocol/schemas.ts`; body capped at 2048 bytes, `Content-Type` must be `application/json`):
+
+- `POST /api/summon` — `{ repo: string }` (1..200 chars).
+- `POST /api/readings` — `{ ref: string, spread: "fates" | "necropsy" }`. The ref must match `owner/name@<40-hex-lowercase-sha>`; `celtic` and any uppercase/short sha are rejected pre-stream (the server plays only `fates`/`necropsy`).
+
+**Responses:**
+
+- Summon returns a `SummonSummary`: `{ ref, stars, hasWorkflowsDir, degradedFields, cache, fileCount, truncated }` — public metadata only, never snapshot file contents, never a file list. `toSummonSummary` builds it field-by-field from the `SummonResult`; the body is run through `redactDeep` and re-validated against `SummonSummarySchema` before it leaves.
+- Readings streams NDJSON (see below); the final result line wraps a `ReadingResponse` (`{ summary, reading }`), validated by `ReadingResponseSchema` before writing.
+- Every failing route returns the error envelope `{ error: { code, userMessage } }` (`ErrorEnvelopeSchema`). The `code` is a `NecroErrorCode`; the `cause` is never serialised.
+
+**Status-code table** (`server/error-map.ts` `statusFor`):
+
+| Code | Status |
+| --- | --- |
+| `INVALID_REPO_URL`, `VALIDATION_FAILED` | 400 |
+| `REPO_PRIVATE` | 403 |
+| `REPO_NOT_FOUND`, `REF_NOT_FOUND` | 404 |
+| `DOWNLOAD_TOO_LARGE` | 413 |
+| `RATE_LIMITED` | 429 |
+| `AUTH_INVALID`, `UPSTREAM_UNAVAILABLE` | 502 |
+| `NETWORK_TIMEOUT` | 504 |
+| any other | 500 |
+| non-NecroError throwable | 500 + `UPSTREAM_UNAVAILABLE`, fixed message, no thrown text |
+
+**Headers:** every response carries `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. A non-POST method returns `405` with `Allow: POST` (HEAD carries no body). A `RATE_LIMITED` denial adds `Retry-After` (integer seconds). A JSON success adds `Content-Type: application/json`; the reading stream sets `Content-Type: application/x-ndjson`.
+
+**NDJSON stream** (`protocol/stream.ts`, one JSON object per `\n`-terminated line; `StreamLineSchema` validates every line both server-side before writing and client-side before rendering):
+
+- Phase lines `{ phase }` for each of `SUMMON`, `DOWNLOAD`, `EXTERNAL`, `READING`, emitted in order, each at most once (`DOWNLOAD` is emitted even on a cache hit).
+- An optional skip-note line `{ skip: true, note }` when external enrichment is skipped.
+- Exactly one final line: `{ result }` (a validated `ReadingResponse`) on success, or `{ error }` (the envelope's error object) on any mid-stream failure or budget expiry. Because the handler commits to a `200` stream once the request schema passes, a post-stream failure is carried as the final `{ error }` line rather than an HTTP error status.
+
+The reading handler schedules two budgets synchronously at entry: a 40 s overall budget (on expiry it writes a final `{ error: NETWORK_TIMEOUT }` line and closes) and a 10 s external sub-budget that races `github.externalData`. On a timeout — or when external data reports per-dependency skips — `decideExternalSkip` emits the skip-note and calls `runReading` with `registryData`/`osvData` omitted entirely, never fabricating data. The whole `ReadingResponse` is token-redacted (`redactDeep`) before validation so a token echoed inside `reading.errors[].userMessage` cannot reach the wire.
+
+### Rate limit and fallback behaviour
+
+The limiter is a primary/fallback chain (`server/limiter/chain.ts`) checked once per request, before any GitHub call. Per-IP-per-hour limits are 20 summon / 10 readings (`LIMITS`), plus a shared daily ceiling from `NECRO_DAILY_REQUEST_CEILING` (default 1000). The per-IP identity is a privacy-preserving hash: `client-ip.ts` reads the configured proxy header (`NECRO_CLIENT_IP_HEADER`, default `x-real-ip`), validates the value as an IPv4/IPv6 literal, and returns `sha256(ip).slice(0, 32)` — the raw IP is never stored or returned, and a missing/invalid header hashes the fixed string `"anonymous"`.
+
+The primary is an Upstash Redis limiter (`server/limiter/upstash.ts`), built only when both `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present; otherwise the chain's primary is `null` and every request is served by the fallback. The Upstash adapter wraps each call in its own timeout race and never uses the library's fail-open `timeout` option: a timeout or any thrown error becomes a `RateLimitUnavailableError`. On that error the chain answers the request from the in-memory `FallbackLimiter` (fixed windows aligned to the injected clock, bounded by `maxKeys` eviction) and opens a 30 s circuit — measured only with the clock port — during which it skips the primary entirely. A limiter outage is therefore never converted into an upstream error: the chain always resolves, the demo stays alive on the fallback, and a limited request makes no GitHub request.
+
+### CSP
+
+`src/middleware.ts` mints a fresh per-request nonce (base64 of 16 Web Crypto random bytes) and sets a Content-Security-Policy on both the forwarded request headers (so Next stamps its own bootstrap scripts) and the response. The policy disallows inline script entirely: `script-src` carries only `'self'`, `'nonce-<n>'` and `'strict-dynamic'` — never `'unsafe-inline'`; `'unsafe-eval'` is added only in development. The directive set is `default-src 'self'`, `script-src …`, `style-src 'self' 'nonce-<n>'`, `img-src 'self' data:`, `font-src 'self'`, `connect-src 'self'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'self'`, `frame-ancestors 'none'`. The nonce is forwarded as `x-nonce`. The matcher runs on HTML routes only, excluding `/_next/static`, `/_next/image`, `/favicon.ico` and `/api` (the API routes send their own `no-store` + `nosniff` and serve no HTML).
+
+### Demo bundle workflow
+
+`demo/build-demo.ts` drives the real oracle (`runReading` via `@necro/oracle/node`) over the on-disk `fixtures/graveyard/*` fixtures to produce a `DemoBundle`: a record keyed by demo name, each entry a `{ fates, necropsy }` pair of validated `ReadingResponse`s. The clock is fixed to `DEMO_NOW` and each reading's minted id is replaced with a deterministic UUID-shaped `demoId`, so the output is byte-stable. `scripts/demo-bundle/generate.ts` (the `demo:bundle` script) serialises it with sorted keys to `apps/web/src/demo/bundle.generated.json`; it requires the oracle to be built first.
+
+At runtime the browser loads the bundle through `demo/load-bundle.ts`: a literal-path dynamic `import("./bundle.generated.json")` keeps the (large) JSON out of the initial route and in its own lazily-loaded chunk, validated against `DemoBundleSchema` (every entry must be a demo-flagged pair over exactly the catalog names) and memoised, with the memo cleared on any failure so a later retry re-attempts. A chunk/import failure rejects with `demoUnavailableError()` (`NETWORK_TIMEOUT`); a schema failure rejects with `invalidResponseError()` (`VALIDATION_FAILED`). Every demo reading carries `summary.demo === true`, so the terminal prefixes the `DEMO_LABEL` banner — `DEMO REPLAY · a recorded reading, no live summon.` — and renders demo paths as `fixture:` references with no live link, keeping a replay clearly distinct from a fresh summon.
+
+### Bundle budget
+
+`scripts/check-web-budget.mjs` runs after the web build and enforces three things on `apps/web/.next`. First, the gzipped size of the terminal's initial-route JavaScript — the deduped union of the app-build-manifest `pages["/page"]` + `pages["/layout"]`, the build-manifest `rootMainFiles` and `polyfillFiles`, `.js` only — must be at most `BUDGET_BYTES = 250_000` (the strict decimal-KB reading of the ≤ 250 KB budget); the last measured value was about 174 KB gzipped, so there is roughly 76 KB of headroom. Second, a forbidden-marker scan over every `.next/static/**/*.js` chunk fails on `api.github.com`, `codeload.github.com`, `GITHUB_TOKEN`, `tree-sitter-python.wasm` or `tar-stream`, catching any server-only leak into the client. Third, the demo bundle and the sound engine must each exist as a separate dynamic chunk, distinct from one another and from the initial route — Next lists neither in the initial-route manifests, and the gate confirms both are present (by chunk name, falling back to a content scan). The script's pure helpers are exported with no side effects so `apps/web/src/budget.test.ts` exercises them offline against synthetic manifests.

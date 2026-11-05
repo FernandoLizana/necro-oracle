@@ -288,11 +288,11 @@ Conventions that apply to every task:
     - Make minimal attribute/label/focus adjustments in `apps/web` and `@necro/ui-crt` components so the e2e and axe specs pass; no behavioural change to the reducer.
     - _Requirements: R15.1, R15.2, R15.3, R15.4, R15.6, R15.7, R15.8, R15.9_
 
-- [ ] 33. Documentation updates
-  - [~] 33.1 Update `docs/ARCHITECTURE.md`
+- [x] 33. Documentation updates
+  - [x] 33.1 Update `docs/ARCHITECTURE.md`
     - Append a `## @necro/ui-crt and the web terminal` section: module map, the `@necro/oracle/client` rule, the API contracts (request, response, status table, headers, NDJSON stream), rate-limit and fallback behaviour, CSP, the Demo_Bundle workflow, and the bundle budget. Append only; leave existing sections unchanged.
     - _Requirements: R16.13_
-  - [~] 33.2 Add a dated `docs/KIRO_USAGE.md` entry
+  - [x] 33.2 Add a dated `docs/KIRO_USAGE.md` entry
     - Append `### <date> - Spec 03-crt-terminal` listing the Kiro features that helped (spec workflow, `oracle-voice` steering for the voice table, PBT for the parser and reducers, any hooks used).
     - _Requirements: R16.13_
 
