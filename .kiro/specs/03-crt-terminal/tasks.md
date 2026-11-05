@@ -268,7 +268,7 @@ Conventions that apply to every task:
     - Implement `buildDemoBundle`, `demoId`, `DEMO_NOW`, the root `demo:bundle` script (regenerates the JSON via `@necro/oracle/node`), and the memoised validating `loadDemoBundle` with a literal-path dynamic import (separate chunk).
     - _Requirements: R18.3, R18.8, R18.9, R18.10, R18.12, R18.13, R16.12_
 
-- [~] 30. Checkpoint - server, routes and demo are complete
+- [x] 30. Checkpoint - server, routes and demo are complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 31. Boundary lint rules and web budget script
@@ -296,7 +296,7 @@ Conventions that apply to every task:
     - Append `### <date> - Spec 03-crt-terminal` listing the Kiro features that helped (spec workflow, `oracle-voice` steering for the voice table, PBT for the parser and reducers, any hooks used).
     - _Requirements: R16.13_
 
-- [~] 34. Final verification checkpoint
+- [x] 34. Final verification checkpoint
   - Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:pbt`, `pnpm e2e`, `pnpm build`, `node scripts/check-web-budget.mjs`, and `pnpm size-limit`; ensure all pass. Ask the user if questions arise.
   - _Requirements: R16.1, R16.2, R16.5, R16.11_
 
