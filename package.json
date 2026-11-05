@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:pbt": "vitest run --reporter=verbose",
     "e2e": "pnpm --filter @necro/web e2e",
-    "demo:bundle": "tsx --import ./scripts/demo-bundle/css-stub-register.mjs scripts/demo-bundle/generate.ts"
+    "demo:bundle": "tsx --import ./scripts/demo-bundle/css-stub-register.mjs scripts/demo-bundle/generate.ts",
+    "size-limit": "pnpm --filter @necro/oracle size"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.32.0",

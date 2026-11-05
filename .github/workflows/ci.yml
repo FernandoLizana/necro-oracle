@@ -69,3 +69,68 @@ jobs:
       # ── Unit + property tests ───────────────────────────────────────────────
       - name: Test
         run: pnpm test
+
+  e2e:
+    name: e2e · axe (Playwright, demo mode)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node ────────────────────────────────────────────────────────────────
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ── pnpm ────────────────────────────────────────────────────────────────
+      - name: Install pnpm
+        # No 'version' input: the action reads "packageManager" from package.json.
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store path
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Build (oracle first so types resolve, then the whole workspace) ──────
+      - name: Build @necro/oracle
+        run: pnpm --filter @necro/oracle build
+
+      - name: Build
+        run: pnpm build
+
+      # ── Playwright browser (Chromium only, with OS deps) ─────────────────────
+      - name: Install Playwright Chromium
+        run: pnpm --filter @necro/web exec playwright install --with-deps chromium
+
+      # ── e2e + axe (demo mode only; no secrets, no live summon) ───────────────
+      - name: Run e2e
+        # The specs drive the DEMO replay path and mock /api routes, so no
+        # Upstash/GitHub/LLM credentials are needed. None are provided here.
+        run: pnpm e2e
+
+      # ── Report (only when the suite failed) ──────────────────────────────────
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
