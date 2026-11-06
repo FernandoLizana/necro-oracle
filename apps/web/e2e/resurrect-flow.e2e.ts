@@ -30,12 +30,12 @@
 //   - the DOWNLOAD PATCH affordance (R7.3) — a clickable control that builds
 //     the patch artifact client-side with no server round-trip.
 //
-// Planned-red: the terminal session reducer's `resurrect` command case (the
-// api.resurrect effect, the diff/vitality result view and the DOWNLOAD PATCH
-// affordance) is the remaining wiring for this flow; until it lands this spec
-// is EXPECTED to fail / not-yet-run. Like the sibling e2e specs it is run by
-// the maintainer via `pnpm --filter @necro/web e2e` (the Node/Playwright
-// runtime and browser binaries may be absent on the authoring machine).
+// The terminal session reducer's `resurrect` command case is now fully wired:
+// the `api.resurrect` effect streams the six phases, the diff/vitality result
+// view renders in the log, and the DOWNLOAD PATCH affordance appears once a
+// Ritual resolves with a non-empty patch. Like the sibling e2e specs it is run
+// by the maintainer via `pnpm --filter @necro/web e2e` (the Node/Playwright
+// runtime and browser binaries may be absent on some machines).
 //
 // _Requirements: R1.1, R7.1, R7.3, R9.1_
 
