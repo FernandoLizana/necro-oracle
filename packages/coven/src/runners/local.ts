@@ -38,19 +38,21 @@
 import {
   computeVitality,
   initParser,
+  NecroError,
   parsePython,
   type Tree,
 } from "@necro/oracle";
 
 import { buildPatch, lineDiff } from "../diff.js";
-import {
-  covenError,
-  type FileResult,
-  type LedgerEvent,
-  type LlmConstructInput,
-  type ResidualEntry,
-  type RitualInput,
-  type RitualResult,
+import { maskContentItem, maskSecretsInText } from "../mask.js";
+import { covenError } from "../models.js";
+import type {
+  FileResult,
+  LedgerEvent,
+  LlmConstructInput,
+  ResidualEntry,
+  RitualInput,
+  RitualResult,
 } from "../models.js";
 import type {
   Grimoire,
@@ -59,7 +61,7 @@ import type {
   SandboxPort,
 } from "../ports.js";
 import { rediagnose } from "../rediagnose.js";
-import { LanguagePairRegistry } from "../registry.js";
+import type { LanguagePairRegistry } from "../registry.js";
 import { selectCandidates } from "../select.js";
 
 // ---------------------------------------------------------------------------
@@ -141,7 +143,7 @@ const DEFAULT_SANDBOX_TIMEOUT_MS = 15_000;
  */
 export interface RitualOutcome {
   readonly result: RitualResult;
-  readonly error: ReturnType<typeof covenError> | null;
+  readonly error: NecroError | null;
 }
 
 /**
@@ -221,12 +223,23 @@ export class LocalCovenRunner implements CovenRunner {
     const append = async (type: string): Promise<void> => {
       const event: LedgerEvent = {
         seq: seq++,
-        type,
+        // Every ledger entry routes through masking (R12.3). Event types are
+        // fixed constants with no secrets, but masking here keeps the "every
+        // sink is masked" guarantee holding for the whole ledger surface.
+        type: maskSecretsInText(type),
         at: new Date(ports.clock.nowMs()).toISOString(),
       };
       await ports.ledger.append(event);
     };
     const overBudget = (): boolean => ports.clock.nowMs() >= deadline;
+
+    // Wrap the route's reporter so EVERY Stream_Line (phase + skip-note) that
+    // leaves the runner is masked before it reaches the sink (R12.3). Phase
+    // names are a fixed enum, but masking them too keeps the guarantee total.
+    const maskedEmit: PhaseEmit = {
+      phase: (phase) => emit.phase(phase),
+      skipNote: (note) => emit.skipNote(maskSecretsInText(note)),
+    };
 
     await append("ritual.start");
 
@@ -244,29 +257,53 @@ export class LocalCovenRunner implements CovenRunner {
     const degraded = ports.llm === undefined;
 
     // Hoisted so the catch below can still return the partial files when the
-    // overall budget is reached mid-phase (R10.4).
-    let files: WorkingFile[] = [];
+    // overall budget is reached mid-phase (R10.4). Mutated in place (push only)
+    // as SELECT masks and admits each candidate.
+    const files: WorkingFile[] = [];
 
     try {
       // ---- SELECT ---------------------------------------------------------
-      await emit.phase("SELECT");
+      await maskedEmit.phase("SELECT");
       await append("phase.select");
       const selection = selectCandidates(input.snapshot, input.reading, input.target);
       for (const note of selection.skipNotes) {
-        await emit.skipNote(note);
+        await maskedEmit.skipNote(note);
       }
-      files = selection.candidates.map((c) => ({
-        path: c.path,
-        before: c.before,
-        after: c.before,
-        residuals: [],
-        validated: false,
-      }));
+      // Mask each candidate's content AS IT ENTERS the runner, before it can
+      // reach any sink (diff, Patch, Stream_Line, ledger, LLM prompt). A file
+      // whose content cannot be masked is WITHHELD from every sink and recorded
+      // so the Ritual ends with a typed NecroError rather than leaking it
+      // unmasked (R12.3, R12.4).
+      let maskFailure: NecroError | null = null;
+      for (const c of selection.candidates) {
+        let before: string;
+        try {
+          before = maskContentItem(c.before);
+        } catch (err) {
+          // Withhold this file from all sinks; it never becomes a WorkingFile.
+          // `maskContentItem` raises a typed NecroError; `asCovenError` keeps
+          // the typed-error guarantee even if that ever changes.
+          maskFailure = asCovenError(err);
+          continue;
+        }
+        files.push({
+          path: c.path,
+          before,
+          after: before,
+          residuals: [],
+          validated: false,
+        });
+      }
+      if (maskFailure !== null) {
+        // At least one content item was withheld (R12.4). Dispose and raise the
+        // typed error; the catch below routes it to the route's mapError.
+        throw maskFailure;
+      }
 
       if (overBudget()) throw new BudgetReached();
 
       // ---- PRE_PASS -------------------------------------------------------
-      await emit.phase("PRE_PASS");
+      await maskedEmit.phase("PRE_PASS");
       await append("phase.pre_pass");
       for (const file of files) {
         if (overBudget()) throw new BudgetReached();
@@ -274,12 +311,12 @@ export class LocalCovenRunner implements CovenRunner {
       }
 
       // ---- LLM_PASS -------------------------------------------------------
-      await emit.phase("LLM_PASS");
+      await maskedEmit.phase("LLM_PASS");
       await append("phase.llm_pass");
       if (ports.llm === undefined) {
         // Degraded_Mode: skip the whole pass, retain every residual, and emit
         // EXACTLY ONE oracle-voice skip-note (R4.6, R13.3, R13.4).
-        await emit.skipNote(DEGRADED_SKIP_NOTE);
+        await maskedEmit.skipNote(DEGRADED_SKIP_NOTE);
       } else {
         for (const file of files) {
           if (overBudget()) throw new BudgetReached();
@@ -288,14 +325,14 @@ export class LocalCovenRunner implements CovenRunner {
       }
 
       // ---- VALIDATE -------------------------------------------------------
-      await emit.phase("VALIDATE");
+      await maskedEmit.phase("VALIDATE");
       await append("phase.validate");
-      await this.#validate(grimoire, ports, emit, files);
+      await this.#validate(grimoire, ports, maskedEmit, files);
 
       if (overBudget()) throw new BudgetReached();
 
       // ---- REDIAGNOSE -----------------------------------------------------
-      await emit.phase("REDIAGNOSE");
+      await maskedEmit.phase("REDIAGNOSE");
       await append("phase.rediagnose");
       const fileResults = files.map(toFileResult);
       const redx = await rediagnose(input, fileResults);
@@ -303,12 +340,12 @@ export class LocalCovenRunner implements CovenRunner {
         // R6.5: surface the re-diagnosis failure for this step WITHOUT
         // discarding the File_Results — stream it as a skip-note and null out
         // after/delta via the RediagnoseResult the runner already holds.
-        await emit.skipNote(redx.error.userMessage);
+        await maskedEmit.skipNote(redx.error.userMessage);
         await append("phase.rediagnose.error");
       }
 
       // ---- DIFF -----------------------------------------------------------
-      await emit.phase("DIFF");
+      await maskedEmit.phase("DIFF");
       await append("phase.diff");
       const withDiffs = fileResults.map((f) => ({
         ...f,
@@ -346,10 +383,13 @@ export class LocalCovenRunner implements CovenRunner {
         );
       }
       // Any other thrown value is a terminal error: dispose the sandbox in this
-      // terminal state too (security rule 3) and rethrow for the route's
-      // mapError to turn into an Error_Line.
+      // terminal state too (security rule 3) and rethrow a TYPED NecroError for
+      // the route's mapError to turn into an Error_Line. `asCovenError`
+      // guarantees the raised value is a NecroError with a non-empty code and an
+      // oracle-voice userMessage carrying no path, secret, or stack (R12.5,
+      // R13.2) — a bare JS error never escapes the runner.
       await this.#disposeSandbox(ports.sandbox);
-      throw err;
+      throw asCovenError(err);
     }
   }
 
@@ -658,12 +698,61 @@ function clampVitality(v: number): number {
 // ---------------------------------------------------------------------------
 
 /** The canonical BUDGET_EXHAUSTED error for a budget-ended Ritual (R10.4). */
-export function budgetExhaustedError(): ReturnType<typeof covenError> {
+export function budgetExhaustedError(): NecroError {
   return covenError(
     "BUDGET_EXHAUSTED",
     "The rite ran out of night; the circle closes unfinished.\n" +
       "The time budget was reached; returning the partial resurrection.",
   );
+}
+
+// ---------------------------------------------------------------------------
+// Typed-error guarantee (R12.5, R13.2).
+//
+// Every failure the runner raises must be a `NecroError` with a non-empty
+// `code` and an oracle-voice `userMessage` that carries NO path, NO secret, and
+// NO stack. `asCovenError` is the single choke point that enforces this: a
+// value that is already a well-formed NecroError is passed through unchanged
+// (its own code/userMessage are already in the oracle voice and leak nothing);
+// anything else — a bare JS `Error`, a string, a thrown object — is collapsed
+// into one fixed `UPSTREAM_UNAVAILABLE` error whose message interpolates none of
+// the thrown value's text, so no file path, secret substring, or stack trace
+// can ride out on it.
+// ---------------------------------------------------------------------------
+
+/** The fixed oracle-voice message for an unexpected, untyped fault (R12.5). */
+const UNEXPECTED_FAULT_MESSAGE =
+  "The veil tore where no rite was spoken.\n" +
+  "An unexpected fault ended the ritual; try the summoning again.";
+
+/**
+ * True when `err` is a well-formed `NecroError`: an `instanceof` match, or a
+ * value that crossed a module boundary but still carries a non-empty string
+ * `code` and `userMessage`. Mirrors the route's duck-typed guard so a
+ * NecroError that lost its prototype identity is still treated as typed.
+ */
+function isWellFormedNecroError(err: unknown): err is NecroError {
+  if (err instanceof NecroError) {
+    return typeof err.code === "string" && err.code.length > 0;
+  }
+  if (err === null || typeof err !== "object") return false;
+  const c = err as { code?: unknown; userMessage?: unknown };
+  return (
+    typeof c.code === "string" &&
+    c.code.length > 0 &&
+    typeof c.userMessage === "string"
+  );
+}
+
+/**
+ * Coerce any thrown value into a typed `NecroError` (R12.5). A well-formed
+ * NecroError is returned as-is; anything else becomes the fixed
+ * `UPSTREAM_UNAVAILABLE` fault above, which leaks none of the original value's
+ * text. Exported so the runner and its tests share one coercion.
+ */
+export function asCovenError(err: unknown): NecroError {
+  if (isWellFormedNecroError(err)) return err;
+  return covenError("UPSTREAM_UNAVAILABLE", UNEXPECTED_FAULT_MESSAGE);
 }
 
 // ---------------------------------------------------------------------------

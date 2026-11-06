@@ -205,13 +205,13 @@ columns).
     - fast-check `numRuns: 200` over simulated progressions
     - **Validates: Requirements 9.2**
 
-  - [~] 11.4 Add the optional Inngest runner
+  - [x] 11.4 Add the optional Inngest runner
     - Create `packages/coven/src/runners/inngest.ts` that, where the Inngest env is configured, runs long sandbox work as background steps polled with `step.sleep`, each step idempotent on `(ritualId, phase)`, ending the Ritual and disposing the sandbox on a failed/stalled poll; selected only when Inngest env is present
     - _Requirements: 10.2, 10.5_
     - _Design: Default vs optional runtime_
 
 - [ ] 12. Implement secret masking and typed-error guarantees
-  - [~] 12.1 Implement cross-sink secret masking and error typing in the runner path
+  - [x] 12.1 Implement cross-sink secret masking and error typing in the runner path
     - Ensure every diff, Patch, Stream_Line, ledger entry, and LLM prompt routes through `maskSecret`/`redactDeep` so no raw secret value (including the LLM key) survives; if masking cannot complete for a content item, withhold it from all sinks and raise a typed NecroError; ensure every failure is a `NecroError` with non-empty `code` and oracle-voice `userMessage` containing no path, secret, or stack
     - _Requirements: 12.3, 12.4, 12.5, 13.2_
     - _Design: Error Handling_

@@ -101,6 +101,19 @@ export {
 // after/delta nulled, never discarding the produced File_Results (R6.1–R6.5).
 export { rediagnose, changedCards, type RediagnoseResult } from "./rediagnose.js";
 
+// --- Cross-sink secret masking (mask) --------------------------------------
+// Pure, adapter-free (imports @necro/oracle `maskSecret` only). The runner
+// routes every file's content, residual text, skip-note, and ledger entry
+// through `maskSecretsInText` before it reaches any sink so no raw secret
+// survives (R12.3, R13.2); `maskContentItem` masks one item and throws the
+// typed `maskFailedError` when masking cannot complete, so the runner can
+// WITHHOLD that item from every sink rather than leak it (R12.4).
+export {
+  maskSecretsInText,
+  maskContentItem,
+  maskFailedError,
+} from "./mask.js";
+
 // --- Local Coven_Runner (runners/local) ------------------------------------
 // The central orchestration module: drives one Ritual through
 // SELECT -> PRE_PASS -> LLM_PASS -> VALIDATE -> REDIAGNOSE -> DIFF via a
@@ -115,6 +128,7 @@ export { rediagnose, changedCards, type RediagnoseResult } from "./rediagnose.js
 export {
   LocalCovenRunner,
   budgetExhaustedError,
+  asCovenError,
   RESURRECTION_PHASES,
   type ResurrectionPhase,
   type PhaseEmit,
@@ -122,3 +136,23 @@ export {
   type CovenRunnerOptions,
   type RitualOutcome,
 } from "./runners/local.js";
+
+// --- Optional Inngest Coven_Runner (runners/inngest) -----------------------
+// The OPTIONAL enhancement selected ONLY WHERE the Inngest env is configured
+// (R10.2). It wraps the LocalCovenRunner and drives the identical phase
+// pipeline, but moves the long-running sandbox parse-check onto Inngest as a
+// background step kicked off and then POLLED with `step.sleep`, each step
+// idempotent on `(ritualId, phase)`. On a failed/stalled background poll it
+// ends the Ritual, disposes the sandbox, and returns the partial File_Results
+// through `RitualOutcome.error` (R10.5), never discarding them. The `inngest`
+// SDK is an optional peer loaded via a dynamic import only WHERE configured;
+// `createInngestCovenRunner` returns `undefined` otherwise, keeping the
+// default/local path free of any Inngest dependency.
+export {
+  InngestCovenRunner,
+  createInngestCovenRunner,
+  isInngestConfigured,
+  type InngestConfig,
+  type InngestClientLike,
+  type InngestStepTools,
+} from "./runners/inngest.js";
