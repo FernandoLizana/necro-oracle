@@ -177,7 +177,18 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/sandbox: {}
+  packages/sandbox:
+    dependencies:
+      '@necro/coven':
+        specifier: workspace:*
+        version: link:../coven
+      '@necro/oracle':
+        specifier: workspace:*
+        version: link:../oracle
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
 
   packages/ui-crt:
     dependencies:

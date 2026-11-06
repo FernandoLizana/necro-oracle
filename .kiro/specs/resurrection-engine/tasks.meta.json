@@ -23,6 +23,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931357966
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931594169
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931819544
       }
     ],
     "1.3 Write unit tests for the coven data-model schemas": [
@@ -51,6 +61,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931358145
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931595581
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931817596
       }
     ],
     "2.4 Add the server-only LLM API key to `@necro/config`": [
@@ -58,6 +78,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931358179
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931596800
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931818489
       }
     ],
     "2.5 Write unit tests for the env key parsing": [

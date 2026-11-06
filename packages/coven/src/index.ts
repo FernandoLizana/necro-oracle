@@ -18,13 +18,48 @@ export {
   type FixerContext,
   type LlmStep,
   type Grimoire,
-  // Supporting types (placeholders finalized in models.ts, task 1.2)
-  type LanguagePairId,
-  type ResidualEntry,
-  type ValidationResult,
-  type GrimoireInput,
-  type FileResult,
-  type LlmConstructInput,
-  type DivergenceEntry,
-  type LedgerEvent,
 } from "./ports.js";
+
+// --- Canonical zod data models and ritual types (models) -------------------
+// The single source of truth for the shared data-model contracts. The port
+// interfaces above import these same types from ./models.js, so there is no
+// duplicate declaration or name collision.
+export {
+  // Error codes (reuses @necro/oracle's NecroError)
+  CovenErrorCodeSchema,
+  type CovenErrorCode,
+  EngineErrorCodeSchema,
+  type EngineErrorCode,
+  covenError,
+  // Language pair / resurrect target
+  LanguagePairIdSchema,
+  type LanguagePairId,
+  ResurrectTargetSchema,
+  type ResurrectTarget,
+  // Candidate / residual / diff / file result
+  CandidateFileSchema,
+  type CandidateFile,
+  ResidualEntrySchema,
+  type ResidualEntry,
+  DiffLineSchema,
+  type DiffLine,
+  FileResultSchema,
+  type FileResult,
+  // Supporting grimoire/port models
+  ValidationResultSchema,
+  type ValidationResult,
+  GrimoireInputSchema,
+  type GrimoireInput,
+  LlmConstructInputSchema,
+  type LlmConstructInput,
+  DivergenceEntrySchema,
+  type DivergenceEntry,
+  LedgerEventSchema,
+  type LedgerEvent,
+  // Ritual result / input
+  ChangedCardSchema,
+  type ChangedCard,
+  RitualResultSchema,
+  type RitualResult,
+  type RitualInput,
+} from "./models.js";

@@ -34,6 +34,10 @@ const blankToUndefined = (v: unknown): unknown =>
  *
  * - `GITHUB_TOKEN` is optional: blank or whitespace-only values are treated as
  *   unset; a present value must contain no whitespace or control characters.
+ * - `NECRO_LLM_API_KEY` is the server-only LLM credential: optional, with blank
+ *   or whitespace-only values treated as unset (absent/empty keeps startup in
+ *   Degraded_Mode rather than failing); a present value must contain no
+ *   whitespace or control characters. Never sent to the client.
  * - `NECRO_DAILY_REQUEST_CEILING` is a positive safe integer in canonical
  *   decimal (no leading zero, sign, decimal point or exponent); defaults to
  *   1000 and is emitted as a number.
@@ -46,6 +50,11 @@ export const EnvSchema = z.object({
   GITHUB_TOKEN: z.preprocess(
     blankToUndefined,
     // Intentionally rejects control characters.
+    z.string().regex(/^[^\s\x00-\x1f\x7f]+$/).optional(),
+  ),
+  // Server-only LLM credential; absent/blank keeps startup in Degraded_Mode.
+  NECRO_LLM_API_KEY: z.preprocess(
+    blankToUndefined,
     z.string().regex(/^[^\s\x00-\x1f\x7f]+$/).optional(),
   ),
   NECRO_DAILY_REQUEST_CEILING: z.preprocess(

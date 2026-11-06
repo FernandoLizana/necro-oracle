@@ -6,74 +6,25 @@
 // are injected through these ports). This file defines the contracts; the
 // concrete providers live in @necro/llm, @necro/sandbox, the ledger, etc.
 //
-// NOTE (task 1.1 scope): several supporting types referenced by the design's
-// ports.ts snippet — `LedgerEvent`, `ResidualEntry`, `LanguagePairId`,
-// `GrimoireInput`, `FileResult`, `ValidationResult`, `DivergenceEntry`,
-// `LlmConstructInput` — are owned by the data-model task (1.2, `models.ts`).
-// They are forward-declared here as minimal placeholders so the port contracts
-// typecheck in isolation; task 1.2 replaces them with the zod-inferred types
-// and re-exports the canonical versions through `src/index.ts`.
+// NOTE: the supporting data-model types these port contracts reference
+// (`LedgerEvent`, `ResidualEntry`, `LanguagePairId`, `GrimoireInput`,
+// `FileResult`, `ValidationResult`, `DivergenceEntry`, `LlmConstructInput`) are
+// the canonical zod-inferred types owned by `models.ts` (task 1.2). They are
+// imported below rather than redeclared, so there is a single definition and no
+// type collision through `src/index.ts`.
 
 import type { Tree } from "@necro/oracle";
 import type { ZodType } from "zod";
-
-// ---------------------------------------------------------------------------
-// Forward-declared supporting types (owned by task 1.2 / models.ts).
-// Kept intentionally minimal; replaced by zod-inferred types in models.ts.
-// ---------------------------------------------------------------------------
-
-/** Language pair identifier, e.g. "python2->python3". Finalized in models.ts. */
-export type LanguagePairId = `${string}->${string}`;
-
-/** A construct a fixer/LLM step could not convert. Finalized in models.ts. */
-export interface ResidualEntry {
-  readonly path: string;
-  readonly line: number;
-  readonly construct: string;
-  readonly reason: string;
-}
-
-/** Result of the Target_Parser validity check. Finalized in models.ts. */
-export interface ValidationResult {
-  readonly valid: boolean;
-  readonly errorNodeCount: number;
-}
-
-/** Input a grimoire accepts for one file. Finalized in models.ts. */
-export interface GrimoireInput {
-  readonly path: string;
-  readonly before: string;
-}
-
-/** Per-file resurrection result. Finalized in models.ts. */
-export interface FileResult {
-  readonly path: string;
-  readonly before: string;
-  readonly after: string;
-  readonly residuals: readonly ResidualEntry[];
-  readonly fullyConverted: boolean;
-  readonly validated: boolean;
-}
-
-/** One unconverted construct handed to the LLM step. Finalized in models.ts. */
-export interface LlmConstructInput {
-  readonly path: string;
-  readonly construct: string;
-  readonly source: string;
-}
-
-/** A sanctioned divergence from byte-for-byte equivalence. Finalized in models.ts. */
-export interface DivergenceEntry {
-  readonly construct: string;
-  readonly note: string;
-}
-
-/** Append-only ledger event. Finalized in models.ts / ledger. */
-export interface LedgerEvent {
-  readonly seq: number;
-  readonly type: string;
-  readonly at: string;
-}
+import type {
+  DivergenceEntry,
+  FileResult,
+  GrimoireInput,
+  LanguagePairId,
+  LedgerEvent,
+  LlmConstructInput,
+  ResidualEntry,
+  ValidationResult,
+} from "./models.js";
 
 // ---------------------------------------------------------------------------
 // Port interfaces (design: "Port interfaces")

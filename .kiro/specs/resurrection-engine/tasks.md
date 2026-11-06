@@ -36,7 +36,7 @@ columns).
     - _Requirements: 4.1, 4.7, 5.5, 10.1, 15.7_
     - _Design: Port interfaces, Grimoire interface_
 
-  - [~] 1.2 Define zod data models and ritual types in `@necro/coven`
+  - [x] 1.2 Define zod data models and ritual types in `@necro/coven`
     - Create `packages/coven/src/models.ts` with `CandidateFileSchema`, `ResidualEntrySchema`, `DiffLineSchema`, `FileResultSchema`, `RitualResultSchema`, `LanguagePairId`, `ResurrectTarget`, `RitualInput`, and `RitualResult` inferred types
     - Extend the reused `NecroError` code set with `PAIR_UNKNOWN`, `PAIR_DUPLICATE`, `REDIAGNOSIS_FAILED`, `BUDGET_EXHAUSTED`, `DEMO_FIXTURE_MISSING` (reusing existing `RATE_LIMITED`, `VALIDATION_FAILED`, `NETWORK_TIMEOUT`, `UPSTREAM_UNAVAILABLE`)
     - Export the schemas and types through `packages/coven/src/index.ts`
@@ -58,12 +58,12 @@ columns).
     - Assert determinism (same request ⇒ byte-identical result), `cached` flag behavior on repeat `cacheKey`, and that no network module is imported
     - _Requirements: 4.7, 4.8, 14.4_
 
-  - [~] 2.3 Implement the optional E2B SandboxPort (parse-only) in `@necro/sandbox`
+  - [x] 2.3 Implement the optional E2B SandboxPort (parse-only) in `@necro/sandbox`
     - Create `packages/sandbox/src/providers/e2b.ts` implementing `SandboxPort.parseCheckPython3` as a compile-only (`py_compile`-style) check that never executes repository code, plus `dispose()`; add `allowlist.ts`; export through `packages/sandbox/src/index.ts`. Guard behind config presence so the local path needs no E2B account
     - _Requirements: 5.4, 5.5, 10.5_
     - _Design: Default vs optional runtime, Validation_
 
-  - [~] 2.4 Add the server-only LLM API key to `@necro/config`
+  - [x] 2.4 Add the server-only LLM API key to `@necro/config`
     - Add `NECRO_LLM_API_KEY` to `EnvSchema` using the existing `blankToUndefined` preprocessor and the documented regex so blank/whitespace is treated as unset; keep it optional
     - _Requirements: 13.1, 13.5_
     - _Design: Config / env_
