@@ -61,6 +61,18 @@ export type {
   SoundState,
 } from "./sound/sound-reducer.js";
 
+// Sound cues — the four core Visual_Layer one-shots and the pure gate that
+// decides when they may play (reuses `soundActivity`; no audio side effect).
+export { SOUND_CUES, soundCueAllowed } from "./sound/sound-cue.js";
+export type { SoundCue } from "./sound/sound-cue.js";
+
+// Ambient Resurrection hum — the pure gate for the OPTIONAL low continuous
+// drone that plays only while the rot-then-rebirth animation is actively
+// playing, sound is on, and motion is full (visual-necromancy task 21.1). The
+// lazy engine's `ambient(on)` plays it; this gate makes the decision.
+export { ambientHumActive } from "./sound/ambient-hum.js";
+export type { AmbientHumInput } from "./sound/ambient-hum.js";
+
 // Motion — effective mode resolution and the reveal schedule (pure, no clock).
 // `MotionMode` and `MotionPreference` are canonically owned by motion-mode.ts;
 // `SoundPreference` stays canonically re-exported from sound-reducer.ts above.
@@ -73,6 +85,20 @@ export {
   revealRate,
   revealedChars,
 } from "./motion/reveal.js";
+
+// Boot schedule — the pure elapsed-time → step-index map for the Boot_Sequence
+// (no clock; `use-boot` supplies the elapsed time through FramePort).
+export {
+  BOOT_BUDGET_MS,
+  BOOT_STEP_MS,
+  BOOT_TOTAL_MS,
+  bootStepAt,
+} from "./motion/boot-schedule.js";
+export { CARD_FLIP_MS, cardRevealSchedule } from "./motion/card-reveal.js";
+export type { CardRevealStep } from "./motion/card-reveal.js";
+export { decaySequence } from "./motion/decay.js";
+export { GLITCH_MAX_DURATION_MS, glitchProfile } from "./motion/glitch.js";
+export type { GlitchParams } from "./motion/glitch.js";
 
 // Preferences — validate raw persisted strings into safe preference values.
 // Types (MotionPreference, SoundPreference) are re-exported from their
@@ -125,10 +151,42 @@ export {
   upstreamError,
 } from "./render/errors.js";
 export { withDemoLabel } from "./render/demo-label.js";
+export { rot } from "./render/rot.js";
 export {
   renderFileResult,
   renderFileResults,
 } from "./render/resurrect-diff.js";
+export {
+  BOOT_LOGO_TEXT_EQUIVALENT,
+  BOOT_STEP_COUNT,
+  bootFrame,
+  type BootFrame,
+} from "./render/boot.js";
+
+// ASCII tarot cards — the pure ASCII_Card_Renderer and the shared Card_Back.
+// The illustration table (`render/ascii-art.ts`) is passed in, never imported
+// here, so this barrel stays clear of the lazy art chunk.
+export {
+  ART_ROWS,
+  CARD_COLS,
+  CARD_ROWS,
+  asciiCard,
+  asciiCardBack,
+} from "./render/ascii-card.js";
+export type {
+  AsciiCard,
+  CardArt,
+  CardArtTable,
+} from "./render/ascii-card.js";
+
+// ASCII illustration table — bespoke per-CardId motifs. The heavy table
+// (`CARD_ART`, `GENERIC_ART`, `artFor`) is intentionally NOT re-exported from
+// this barrel: a static re-export would pull it into the first-render graph and
+// defeat the chunk split. Callers reach the table only through `loadCardArt`,
+// whose dynamic `import("./ascii-art.js")` lives in its own loader module so the
+// table ships in its own lazy chunk, outside the first terminal render (R11.4).
+export { loadCardArt } from "./render/load-card-art.js";
+export type { LoadedCardArt } from "./render/load-card-art.js";
 
 // Session — command history, the bounded output log, and the pinned reference.
 export {
@@ -141,9 +199,24 @@ export type { History } from "./session/history.js";
 export { LOG_MAX_LINES, appendBlocks } from "./session/log.js";
 export { formatPinnedRef } from "./session/pinned-ref.js";
 
-// Demo — the fixed Demo_Catalog and the Demo_Name validation pattern.
-export { DEMO_CATALOG, DEMO_NAME_PATTERN } from "./demo/catalog.js";
+// Demo — the fixed Demo_Catalog, the Demo_Name validation pattern, and the
+// fixed Demo_Seed used to make every Visual_Layer animation deterministic.
+export { DEMO_CATALOG, DEMO_NAME_PATTERN, DEMO_SEED } from "./demo/catalog.js";
 export type { DemoCatalogEntry } from "./demo/catalog.js";
+
+// Demo seeding — the pure seed-resolution the Visual_Layer feeds to the
+// Glitch_Effect corruption and the Rot_Transform (`DEMO_SEED` in Demo mode, a
+// deterministic per-reading/ritual seed otherwise).
+export { isDemoSession, resolveSeed } from "./session/demo-seed.js";
+
+// Visual reading selectors — the pure view of the current reading's drawn
+// cards the Visual_Layer card overlay draws (order-preserving, log stays
+// authoritative; visual-necromancy task 16.1).
+export {
+  currentVisualReading,
+  visualCards,
+  type VisualCard,
+} from "./session/visual-reading.js";
 
 // Session reducer — the pure state machine driving the Terminal. `step` and
 // `initialState` are the only runtime exports; the SessionState / Action /
@@ -151,6 +224,8 @@ export type { DemoCatalogEntry } from "./demo/catalog.js";
 export { initialState } from "./session/state.js";
 export type {
   Action,
+  BootState,
+  CardRevealState,
   Effect,
   InflightRequest,
   RevealState,
@@ -166,16 +241,22 @@ export { loadEngine } from "./sound/load-engine.js";
 export {
   CRT_AFTERGLOW_MS,
   CRT_BG,
+  CRT_BURNING_AMBER,
   CRT_ERROR,
   CRT_FG,
   CRT_FG_DIM,
   CRT_FLICKER_CYCLES_PER_S,
   CRT_FLICKER_DEPTH,
+  CRT_FLIP_MS,
   CRT_FOCUS,
+  CRT_GLITCH_MAX_MS,
   CRT_GLOW_ALPHA,
   CRT_GLOW_RADIUS_PX,
+  CRT_ROT_FRAME_MIN_MS,
   CRT_SCANLINE_ALPHA,
   CRT_SCANLINE_PERIOD_PX,
+  CRT_SHAKE_MS,
+  CRT_STILL_DEAD,
 } from "./tokens.js";
 
 // React components — the CRT design system. `Terminal` is the live terminal;
@@ -190,6 +271,27 @@ export {
   OutputBlockView,
   type OutputBlockViewProps,
 } from "./components/OutputBlockView.js";
+export {
+  BOOT_SKIP_HINT,
+  BootOverlay,
+  type BootOverlayProps,
+} from "./components/BootOverlay.js";
+export {
+  AsciiCardView,
+  type AsciiCardViewProps,
+} from "./components/AsciiCardView.js";
+export {
+  CardReveal,
+  type CardRevealProps,
+} from "./components/CardReveal.js";
+export {
+  RotOverlay,
+  type RotOverlayProps,
+} from "./components/RotOverlay.js";
+export {
+  VitalityCounter,
+  type VitalityCounterProps,
+} from "./components/VitalityCounter.js";
 export { Card, type CardProps } from "./components/Card.js";
 export { Spread, type SpreadProps } from "./components/Spread.js";
 export {
@@ -201,16 +303,43 @@ export {
   type CommandLineProps,
 } from "./components/CommandLine.js";
 export { ButtonRow, type ButtonRowProps } from "./components/ButtonRow.js";
+export {
+  ROT_FRAME_COUNT,
+  RotReveal,
+  type RotRevealProps,
+} from "./components/RotReveal.js";
 
 // Hooks — the browser-facing adapters that drive the pure reducer and motion.
 export {
   useTerminal,
   SOUND_UNAVAILABLE_MESSAGE,
   type TerminalController,
+  type UseTerminalOptions,
 } from "./hooks/use-terminal.js";
 export { useMotion, type MotionSignal } from "./hooks/use-motion.js";
+export {
+  useBoot,
+  type BootPhase,
+  type UseBootOptions,
+} from "./hooks/use-boot.js";
 export { useReveal, type UseRevealOptions } from "./hooks/use-reveal.js";
-export { useSound, type UseSoundOptions } from "./hooks/use-sound.js";
+export {
+  useSound,
+  type UseSoundOptions,
+  type SoundCueRequest,
+} from "./hooks/use-sound.js";
+export {
+  MIN_ROT_FRAME_MS,
+  useRot,
+  type UseRotOptions,
+  type UseRotResult,
+} from "./hooks/use-rot.js";
+export {
+  MIN_COUNT_FRAME_MS,
+  useCountUp,
+  type UseCountUpOptions,
+  type UseCountUpResult,
+} from "./hooks/use-count-up.js";
 
 // Resurrection vitality — render inputs (types only) and the Vitality_Delta /
 // changed-card renderer for the terminal resurrection result view (task 14.9).

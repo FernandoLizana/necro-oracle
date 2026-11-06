@@ -28,7 +28,7 @@
 //
 // _Requirements: R19.3, R19.5, R19.6, R19.8, R19.11, R19.14, R19.15_
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import type { SoundLoaderPort, SoundEngine, VisibilityPort } from "../ports.js";
 import {
@@ -36,6 +36,18 @@ import {
   type SoundEvent,
   type SoundState,
 } from "../sound/sound-reducer.js";
+import { soundCueAllowed, type SoundCue } from "../sound/sound-cue.js";
+
+/**
+ * A single Visual_Layer cue request (task 15.1). The Terminal bumps `seq` each
+ * time a boot completion, card reveal, glitch, or rebirth should play a cue;
+ * the hook plays `name` through the engine once per new `seq`, but only while
+ * `soundCueAllowed(state)` holds. `null` means no cue has been requested yet.
+ */
+export interface SoundCueRequest {
+  readonly seq: number;
+  readonly name: SoundCue;
+}
 
 /** Inputs to the sound bridge. */
 export interface UseSoundOptions {
@@ -55,6 +67,27 @@ export interface UseSoundOptions {
    * `off` preference and append the in-world failure message (R19.14).
    */
   readonly onEngineFailure?: (() => void) | undefined;
+  /**
+   * The latest Visual_Layer cue request (task 15.1). When its `seq` advances
+   * and `soundCueAllowed(state)` holds, the hook plays the cue through the
+   * engine as a one-shot — the same gesture-gated, default-off, off-while-off
+   * path the Click uses (R8.1-R8.5). `null` or an unchanged `seq` plays
+   * nothing. Sound and motion are independent here: the cue fires whenever
+   * sound resolves on, including in reduced motion (R8.5).
+   */
+  readonly cueRequest?: SoundCueRequest | null | undefined;
+  /**
+   * Whether the ambient Resurrection_Animation hum should be playing right now
+   * (visual-necromancy task 21.1, OPTIONAL polish). The Terminal computes this
+   * with `ambientHumActive(...)` — true only when sound resolves on, the
+   * Motion_Mode is `full`, and the rot-then-rebirth animation is actively
+   * playing. The hook follows the flag through the already-loaded engine's
+   * `ambient(on)`: it never loads the engine on its own (so the drone stays
+   * default-off and never fires before the gesture), and it fades the drone out
+   * when the flag drops — at rebirth, on `sound off`, when hidden, or in reduced
+   * motion. `undefined` is treated as `false` (no hum). (R13.1, R13.4)
+   */
+  readonly ambient?: boolean | undefined;
 }
 
 /** True for a single printable character keypress (not a modifier/navigation). */
@@ -68,14 +101,31 @@ function isPrintableKey(event: KeyboardEvent): boolean {
  * effect is a side effect on the injected ports. Safe to call unconditionally.
  */
 export function useSound(options: UseSoundOptions): void {
-  const { loader, visibility, state, dispatch, rootRef, onEngineFailure } =
-    options;
+  const {
+    loader,
+    visibility,
+    state,
+    dispatch,
+    rootRef,
+    onEngineFailure,
+    cueRequest,
+    ambient,
+  } = options;
 
   // The loaded engine, and whether a load/start has been kicked off, survive
   // across renders. `failed` latches the fallback so it fires at most once.
   const engineRef = useRef<SoundEngine | null>(null);
   const loadingRef = useRef<boolean>(false);
   const failedRef = useRef<boolean>(false);
+  // A render-visible flag that flips true once the lazy engine is live. The
+  // engine itself lives in a ref (no re-render on load), so the ambient-hum
+  // effect depends on this flag to re-check its gated intent the moment the
+  // engine becomes available — otherwise a drone requested during the same
+  // commit that first loads the engine would never start (task 21.1).
+  const [engineReady, setEngineReady] = useState<boolean>(false);
+  // The `seq` of the last cue request already played, so each request plays at
+  // most once (task 15.1). `null` until the first cue is honoured.
+  const lastCueSeqRef = useRef<number | null>(null);
 
   // Keep the newest callbacks reachable from the long-lived listeners without
   // re-subscribing on every render.
@@ -164,6 +214,9 @@ export function useSound(options: UseSoundOptions): void {
         if (cancelled) return;
         engineRef.current = engine;
         engine.apply(soundActivity(state));
+        // Signal the ambient-hum effect that the engine is now live so it can
+        // apply any already-requested, still-gated drone intent (task 21.1).
+        setEngineReady(true);
       } catch {
         if (cancelled) return;
         fail();
@@ -176,4 +229,57 @@ export function useSound(options: UseSoundOptions): void {
       cancelled = true;
     };
   }, [loader, state]);
+
+  // ----- Cues: play one one-shot per new request, only when sound is on. ----
+  //
+  // The gate is the pure `soundCueAllowed(state)` — identical to the Click
+  // condition — so a cue honours every Sound_State rule without this effect
+  // knowing them: off by default (R8.4), never before the gesture and never
+  // autoplay (R8.3), silent while off (R8.2). The gate reads no Motion_Mode, so
+  // a cue fires in reduced motion whenever sound is on (R8.5). The cue rides
+  // the engine the activity effect already loaded when sound turned on; if no
+  // engine is live (sound off, so the gate is false anyway) nothing plays.
+  useEffect(() => {
+    if (cueRequest === null || cueRequest === undefined) return;
+    // Already honoured this request: do not replay it on an unrelated rerender.
+    if (lastCueSeqRef.current === cueRequest.seq) return;
+    if (!soundCueAllowed(state)) {
+      // Sound is off / no gesture / hidden: swallow the request so a later
+      // `sound on` never retroactively fires this stale cue (R8.2, R8.3).
+      lastCueSeqRef.current = cueRequest.seq;
+      return;
+    }
+    lastCueSeqRef.current = cueRequest.seq;
+    engineRef.current?.cue(cueRequest.name);
+  }, [cueRequest, state]);
+
+  // ----- Ambient hum: follow the gated flag through the live engine. --------
+  //
+  // The ambient Resurrection_Animation drone (visual-necromancy task 21.1) is a
+  // default-off, gesture-gated, full-motion-only flourish. The Terminal has
+  // already resolved every rule in the pure `ambientHumActive(...)` gate, so
+  // this effect only forwards the resulting boolean to `engine.ambient(on)`.
+  //
+  // It never loads or starts the engine: it rides whatever engine the activity
+  // effect brought up when sound turned on. While sound is off no engine is
+  // live (and the gate would be false anyway), so `want` is false and nothing
+  // plays — the drone cannot fire before the gesture or autoplay (R13.1). When
+  // the flag drops (rebirth done, `sound off`, hidden, or reduced motion) the
+  // hook fades the drone out. The last-applied value guards against redundant
+  // calls on unrelated rerenders.
+  const lastAmbientRef = useRef<boolean>(false);
+  useEffect(() => {
+    const want = ambient === true;
+    const engine = engineRef.current;
+    if (engine === null) {
+      // No live engine (sound off / not yet loaded): there is nothing to drive,
+      // and the gate guarantees `want` is only true once sound is on. Remember
+      // the intent as "off" so a later engine does not inherit a stale on.
+      lastAmbientRef.current = false;
+      return;
+    }
+    if (lastAmbientRef.current === want) return;
+    lastAmbientRef.current = want;
+    engine.ambient(want);
+  }, [ambient, state, engineReady]);
 }

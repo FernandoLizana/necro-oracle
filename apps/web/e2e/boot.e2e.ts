@@ -16,11 +16,15 @@
 
 import { expect, test } from "@playwright/test";
 
-import { BOOT_PHRASE, NOSCRIPT_NOTE, sel } from "./support/terminal.js";
+import { BOOT_PHRASE, BOOT_SKIP_QUERY, NOSCRIPT_NOTE, sel } from "./support/terminal.js";
 
 test.describe("boot (R1.1, R1.2, R15.4)", () => {
   test("shows the boot phrase and focuses the command line", async ({ page }) => {
-    await page.goto("/");
+    // Navigate with `?boot=skip` so this spec lands on the ready prompt without
+    // waiting out the Boot_Sequence animation — the full-motion boot is
+    // exercised only by `visual-necromancy.e2e.ts`. The boot phrase is the
+    // first Output_Block regardless of the skip, so the R1.1 assertion holds.
+    await page.goto(`/${BOOT_SKIP_QUERY}`);
 
     // R1.1 — the boot phrase is present in the live log.
     const log = sel.log(page);

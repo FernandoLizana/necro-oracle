@@ -51,6 +51,7 @@ function bootAction(
     soundPreference: "off",
     prefersReduced,
     visible: true,
+    bootSignal: false,
   };
 }
 

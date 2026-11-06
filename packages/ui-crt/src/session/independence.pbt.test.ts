@@ -67,6 +67,7 @@ function boot(): SessionState {
     soundPreference: "off",
     prefersReduced: false,
     visible: true,
+    bootSignal: false,
   };
   // A gesture happens before any typed command (the UI dispatches it first),
   // so sound can actually change state when `sound on` is submitted.

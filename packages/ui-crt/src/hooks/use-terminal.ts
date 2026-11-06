@@ -41,11 +41,17 @@ import {
 } from "../prefs/prefs.js";
 import { useMotion } from "./use-motion.js";
 import { useReveal } from "./use-reveal.js";
-import { useSound } from "./use-sound.js";
+import { useBoot } from "./use-boot.js";
+import { useSound, type SoundCueRequest } from "./use-sound.js";
+import { ambientHumActive } from "../sound/ambient-hum.js";
 import type { SoundEvent } from "../sound/sound-reducer.js";
+import type { SoundCue } from "../sound/sound-cue.js";
 import type { NecroErrorCode } from "@necro/oracle/client";
 import { blockText } from "../render/blocks.js";
 import { revealedChars } from "../motion/reveal.js";
+import { bootFrame, type BootFrame } from "../render/boot.js";
+import { resolveSeed } from "../session/demo-seed.js";
+import { currentVisualReading } from "../session/visual-reading.js";
 
 /** The surface the Terminal view consumes. */
 export interface TerminalController {
@@ -84,6 +90,18 @@ export interface TerminalController {
    * renders the in-world "speakers are silent" notice exactly once (R19.14).
    */
   readonly engineFailed: boolean;
+  /**
+   * The Boot_Sequence frame the overlay should draw right now, derived purely
+   * from `state.boot.stepIndex` (visual-necromancy task 16.1). The overlay
+   * itself only renders while `state.boot.phase === "playing"`.
+   */
+  readonly bootFrameForRender: BootFrame;
+  /**
+   * The seed the Visual_Layer feeds to the Glitch_Effect corruption and the
+   * Rot_Transform — `DEMO_SEED` in demo mode, a deterministic per-reading /
+   * per-ritual seed otherwise (`resolveSeed`, visual-necromancy task 13.1).
+   */
+  readonly visualSeed: number;
 }
 
 /** The fixed in-world message shown when the sound engine is unavailable (R19.14). */
@@ -96,8 +114,40 @@ const PREFS_KEY: Readonly<Record<"motion" | "sound", string>> = {
   sound: SOUND_STORAGE_KEY,
 };
 
+/** Optional knobs for `useTerminal` (all default to the full-boot behaviour). */
+export interface UseTerminalOptions {
+  /**
+   * The external Boot_Skip signal the one-time `boot` action carries. When
+   * `true`, the reducer starts the Boot_Sequence already settled to
+   * `phase: "done"` (no overlay, no frames) while the BOOT_PHRASE still leads
+   * the Output_Log (R1.5, R12.5). The host app wires this from the `?boot=skip`
+   * query flag (visual-necromancy task 16.2). Omitted / `undefined` / `false`
+   * plays the full deterministic boot.
+   */
+  readonly bootSignal?: boolean | undefined;
+  /**
+   * Whether the decorative Resurrection_Animation (rot-then-rebirth) is
+   * actively playing right now (visual-necromancy task 21.1, OPTIONAL polish).
+   * The `RotOverlay` owns the rot playback (`useRot`) and reports its live
+   * playing state up through `Terminal.tsx`, which forwards it here so the
+   * ambient-hum gate can follow the single source of truth without a second
+   * frame loop. Combined with the pure `ambientHumActive(...)` gate (sound on +
+   * full motion + playing), this drives the low continuous drone through
+   * `useSound`. Omitted / `undefined` / `false` means no resurrection is
+   * animating, so the hum stays silent. (R13.1, R13.4)
+   */
+  readonly resurrectionPlaying?: boolean | undefined;
+}
+
 /** Drive the whole terminal from the injected ports. */
-export function useTerminal(ports: TerminalPorts): TerminalController {
+export function useTerminal(
+  ports: TerminalPorts,
+  options: UseTerminalOptions = {},
+): TerminalController {
+  // Capture the boot signal once per mount: the one-time `boot` action reads it
+  // in the mount effect below, so a later prop change must not re-seed the boot
+  // (the boot runs exactly once for a terminal instance).
+  const bootSignalRef = useRef(options.bootSignal ?? false);
   const [state, setState] = useState<SessionState>(initialState);
   const [ariaBusy, setAriaBusy] = useState(false);
   const [revealClock, setRevealClock] = useState<number | null>(null);
@@ -281,6 +331,10 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
       soundPreference,
       prefersReduced: ports.media.prefersReducedMotion(),
       visible: ports.visibility.visible(),
+      // The host app wires the real `?boot=skip` flag through the
+      // `bootSignal` option (visual-necromancy task 16.2); when it is omitted
+      // the signal is `false` and the full deterministic boot plays.
+      bootSignal: bootSignalRef.current,
     });
     // Boot runs exactly once for this terminal instance; the ports are stable
     // for the life of the component, so an empty dependency list is correct.
@@ -316,6 +370,45 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
   });
 
   // -------------------------------------------------------------------------
+  // Boot: drive the one-time Boot_Sequence overlay (visual-necromancy 16.1).
+  //
+  // `useBoot` mirrors `useReveal`: it requests FramePort frames ONLY while the
+  // Motion_Mode is `full` AND the boot is still `playing`; each tick becomes a
+  // `boot.tick` action so the pure reducer advances the step and settles the
+  // phase to `"done"` at the last step (R1.1). A non-modifier key skips the
+  // boot (`boot.skip`) and focuses the Command_Line (R1.3, R1.9). When no
+  // FramePort is available to animate, it forces the phase done so the terminal
+  // still reaches the ready state (R1.9). Reduced motion / `bootSignal` already
+  // start `phase: "done"`, so nothing is scheduled there.
+  // -------------------------------------------------------------------------
+  const onBootTick = useCallback((nowMs: number) => {
+    dispatchRef.current({ type: "boot.tick", nowMs });
+  }, []);
+  const onBootSkip = useCallback(() => {
+    dispatchRef.current({ type: "boot.skip" });
+    queueMicrotask(() => inputRef.current?.focus());
+  }, []);
+  const onBootUnavailable = useCallback(() => {
+    dispatchRef.current({ type: "boot.skip" });
+  }, []);
+  // The boot action runs in a mount effect after the first paint; until it has
+  // seeded the real Motion_Mode and phase (`boot.seen`), the initial state
+  // still carries the `initialState()` defaults (`motionMode: "full"`,
+  // `phase: "playing"`). Treat the boot as not-yet-playing during that first
+  // render so no stray frame is scheduled before reduced motion / `bootSignal`
+  // is known — mirrors how `useReveal` never animates an empty queue (R16.9).
+  const bootPhaseForHook = state.boot.seen ? state.boot.phase : "done";
+  useBoot({
+    frames: ports.frames,
+    motionMode: state.motionMode,
+    bootPhase: bootPhaseForHook,
+    onTick: onBootTick,
+    onSkip: onBootSkip,
+    onUnavailable: onBootUnavailable,
+    rootRef,
+  });
+
+  // -------------------------------------------------------------------------
   // Sound: wire the lazy engine to the pure sound state.
   // -------------------------------------------------------------------------
   const soundDispatch = useCallback((event: SoundEvent) => {
@@ -329,6 +422,95 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     ports.storage.set(SOUND_STORAGE_KEY, "off");
     setEngineFailed(true);
   }, [ports]);
+
+  // -------------------------------------------------------------------------
+  // Sound cues (visual-necromancy, task 15.1): the four core Visual_Layer
+  // one-shots — boot completion, card reveal, glitch, resurrection rebirth.
+  //
+  // Each cue is derived from an observable session-state transition so it fires
+  // exactly once per event, with no new Action or Effect (design §7). The
+  // playback gate lives wholly in `useSound` (`soundCueAllowed(state.sound)`):
+  // cues stay off by default, never autoplay, never fire before the gesture,
+  // and stay silent while sound is off, independent of the Motion_Mode. Here we
+  // only decide WHICH event occurred; the hook decides whether it may be heard.
+  // -------------------------------------------------------------------------
+  const cueSeqRef = useRef(0);
+  const [cueRequest, setCueRequest] = useState<SoundCueRequest | null>(null);
+  const requestCue = useCallback((name: SoundCue): void => {
+    cueSeqRef.current += 1;
+    setCueRequest({ seq: cueSeqRef.current, name });
+  }, []);
+  const prevBootPhaseRef = useRef(state.boot.phase);
+  const prevFlippedRef = useRef(state.cardReveal.flippedCount);
+  const prevGlitchFlippedRef = useRef(state.cardReveal.flippedCount);
+  const prevRitualRef = useRef(state.lastRitual);
+  const prevReadingRef = useRef(currentVisualReading(state));
+
+  useEffect(() => {
+    // Boot completion: the overlay's phase settles to "done" (R8.1).
+    if (prevBootPhaseRef.current !== "done" && state.boot.phase === "done") {
+      requestCue("boot");
+    }
+    prevBootPhaseRef.current = state.boot.phase;
+  }, [state.boot.phase, requestCue]);
+
+  useEffect(() => {
+    // Card reveal: one cue each time another card finishes flipping face-up.
+    // The glitch cue rides the same reveal (severity-driven glitch is applied
+    // as a card is revealed, design §5); card-level glitch intensity is a
+    // presentational concern the card view owns (task 16.1), so at this seam a
+    // reveal of a new card also plays the glitch cue once.
+    const flipped = state.cardReveal.flippedCount;
+    if (flipped > prevFlippedRef.current) {
+      requestCue("reveal");
+    }
+    prevFlippedRef.current = flipped;
+    if (flipped > prevGlitchFlippedRef.current) {
+      requestCue("glitch");
+    }
+    prevGlitchFlippedRef.current = flipped;
+  }, [state.cardReveal.flippedCount, requestCue]);
+
+  useEffect(() => {
+    // Resurrection rebirth: a freshly settled ritual result marks the rebirth
+    // (the rot-then-rebirth animation has reached the revived code, R8.1).
+    const ritual = state.lastRitual;
+    if (ritual !== null && ritual !== prevRitualRef.current) {
+      requestCue("rebirth");
+    }
+    prevRitualRef.current = ritual;
+  }, [state.lastRitual, requestCue]);
+
+  // Summon (visual-necromancy task 21.4, OPTIONAL extra cue): a single toll the
+  // instant a Reading resolves and its spread is laid out, before the one-by-one
+  // Card_Reveal plays. `currentVisualReading` is the same pure, Motion_Mode-
+  // independent selector the card overlay resolves from, so this fires once per
+  // new in-scope Reading identically in full and reduced motion (R8.5) and is
+  // never conflated with a per-card `reveal` flip. Gating is entirely
+  // `useSound`'s `soundCueAllowed` — off by default, gesture-gated, silent while
+  // off (R8.1-R8.4). The spread-drawn moment is the one dramatic beat the core
+  // four cues leave unscored.
+  const currentReading = currentVisualReading(state);
+  useEffect(() => {
+    if (currentReading !== null && currentReading !== prevReadingRef.current) {
+      requestCue("summon");
+    }
+    prevReadingRef.current = currentReading;
+  }, [currentReading, requestCue]);
+
+  // The ambient Resurrection_Animation hum gate (visual-necromancy task 21.1,
+  // OPTIONAL polish). A pure boolean over the sound state, the Motion_Mode and
+  // the rot-playing signal the Terminal forwards: the low drone hums only when
+  // sound resolves on, motion is `full`, and the rot-then-rebirth animation is
+  // actively playing. `useSound` follows this flag through the live engine and
+  // fades the drone out the instant it drops (rebirth, `sound off`, hidden, or
+  // reduced motion) (R13.1, R13.4).
+  const ambientHum = ambientHumActive({
+    sound: state.sound,
+    motionMode: state.motionMode,
+    resurrectionPlaying: options.resurrectionPlaying ?? false,
+  });
+
   useSound({
     loader: ports.sound,
     visibility: ports.visibility,
@@ -336,6 +518,8 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     dispatch: soundDispatch,
     rootRef,
     onEngineFailure,
+    cueRequest,
+    ambient: ambientHum,
   });
 
   // -------------------------------------------------------------------------
@@ -458,6 +642,11 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     [revealClock],
   );
 
+  // The boot frame for the current step (pure; the overlay renders it only
+  // while playing) and the resolved Visual_Layer seed (pure over the session).
+  const bootFrameForRender = bootFrame(state.boot.stepIndex);
+  const visualSeed = resolveSeed(state);
+
   return {
     state,
     ariaBusy,
@@ -471,6 +660,8 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     downloadPatch,
     revealedCountFor,
     engineFailed,
+    bootFrameForRender,
+    visualSeed,
   };
 }
 

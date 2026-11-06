@@ -30,6 +30,34 @@
   --crt-flicker-depth: 0.04;
   --crt-afterglow-ms: 600ms;
 
+  /*
+   * Visual_Layer accents (visual-necromancy task 14.1) — mirror tokens.ts
+   * exactly. NOT new palette values: both are tarot-ux colours (R7.2). Amber is
+   * decorative glow for tower/devil only (never body text); error-red is the
+   * STILL DEAD verdict word only. No other element may reference them.
+   */
+  --crt-burning-amber: #ffb000;
+  --crt-still-dead: #ff3355;
+
+  /*
+   * Visual_Layer motion tokens (visual-necromancy task 14.1) — mirror
+   * tokens.ts exactly. All one-shot windows are <= 300 ms; the rot cadence
+   * floor keeps luminance changes <= 2/s (Flash_Limit, see caps below).
+   */
+  --crt-glitch-max-ms: 300ms;
+  --crt-shake-ms: 300ms;
+  --crt-flip-ms: 320ms;
+  --crt-rot-frame-min-ms: 500ms;
+
+  /*
+   * OPTIONAL phosphor bloom window (visual-necromancy task 21.2) — mirrors
+   * tokens.ts exactly. A one-shot glow swell on a severity-3 card reveal in
+   * full motion; <= 300 ms, iteration-count 1, a single rise-then-settle
+   * (<= 2 luminance changes, no repeat), so it stays inside the Flash_Limit
+   * (see caps block below). CSS only — no JS, so Bundle_Budget is untouched.
+   */
+  --crt-bloom-ms: 300ms;
+
   position: relative;
   display: block;
   box-sizing: border-box;
@@ -235,6 +263,201 @@ html[data-js="ready"] .crt-no-js {
   }
 }
 
+/* ======================================================================== */
+/* Visual_Layer: ASCII cards, reveal flip, severity glitch, tower shake,    */
+/* reversed rotation, and resurrection rot (visual-necromancy task 14.1).   */
+/*                                                                          */
+/* FLASH_LIMIT CAPS (R5.11, R6.11, R7.6, R10.3) — the contract every effect */
+/* below honours so no rolling one-second window ever exceeds 3 flashes:    */
+/*   - A "flash" is one luminance change. Our ceiling is <= 2 changes per    */
+/*     window, a safety margin under the 3-flash accessibility limit.        */
+/*   - Every glitch / flip / shake animation uses                           */
+/*     `animation-iteration-count: 1` (never `infinite`): it runs ONCE per   */
+/*     reveal, so no window can accumulate repeats.                          */
+/*   - Each glitch keyframe set makes at most 2 luminance changes inside its */
+/*     `--crt-glitch-max-ms` (<= 300 ms) window.                            */
+/*   - The tower shake is a transform-only wobble (no luminance change) and  */
+/*     lasts <= `--crt-shake-ms` (300 ms).                                  */
+/*   - Rot frames are paced by the JS hook at >= `--crt-rot-frame-min-ms`    */
+/*     (500 ms) between visible luminance shifts => <= 2 changes/s.          */
+/*   - ALL of the above are gated behind `.crt[data-motion="full"]`; reduced */
+/*     motion removes them entirely (see the motion-gating block below).     */
+/* ======================================================================== */
+
+/* The framed ASCII card is selectable DOM text; the glyph art is a <pre>. */
+.crt-ascii-card {
+  position: relative;
+  display: inline-block;
+  color: var(--crt-fg);
+}
+
+.crt-ascii-card-art {
+  margin: 0;
+  white-space: pre;
+  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+}
+
+/*
+ * Reversed orientation (R3.4): the whole frame rotates 180deg, but a
+ * counter-rotated overlay keeps the numeral / name / subtitle upright and
+ * left-to-right. The glyph art carries the rotation; the sr-only equivalent is
+ * never rotated (it is clipped out of flow anyway).
+ */
+.crt-ascii-card[data-orientation="reversed"] .crt-ascii-card-art {
+  transform: rotate(180deg);
+}
+
+.crt-ascii-card[data-orientation="reversed"] .crt-card-upright {
+  display: inline-block;
+  transform: rotate(180deg); /* counter-rotate: cancels the 180deg frame flip */
+}
+
+/*
+ * Severity glitch (R5.1, R5.7). Chromatic offset is two duplicated phosphor
+ * text-shadow layers nudged +/- `--glitch-offset` (set per-card by
+ * AsciiCardView from GlitchParams.offsetPx). The duplicated layers are a
+ * shadow, so they never alter the selectable text. `--glitch-tears` /
+ * `--glitch-corrupt` are consumed by the tear + corruption layers; the
+ * corruption is a transient decorative overlay that never changes the glyphs
+ * in the DOM (R5.12 — severity is also shown as the integer header).
+ *
+ * The element carries the class only in full motion; the keyframes still
+ * declare `animation-iteration-count: 1` so the effect is one-shot.
+ */
+.crt-glitch {
+  --glitch-offset: 0px;
+  --glitch-tears: 0;
+  --glitch-corrupt: 0;
+  --glitch-duration: 0ms;
+}
+
+.crt-glitch .crt-ascii-card-art {
+  text-shadow:
+    calc(-1 * var(--glitch-offset)) 0 rgba(51, 255, 102, 0.6),
+    var(--glitch-offset) 0 rgba(41, 204, 82, 0.6);
+}
+
+/*
+ * Amber tint (R5.8): ONLY tower/devil, and ONLY on the decorative glow — the
+ * glyphs stay phosphor-green, so no body text is recoloured and contrast is
+ * untouched. Any card without `data-burning` keeps the green glitch shadow.
+ */
+.crt-glitch[data-burning="true"] .crt-ascii-card-art {
+  text-shadow:
+    calc(-1 * var(--glitch-offset)) 0 rgba(255, 176, 0, 0.6),
+    var(--glitch-offset) 0 var(--crt-burning-amber);
+}
+
+/*
+ * STILL DEAD verdict (R7.2): the ONLY use of error-red. Marked by the verdict
+ * word itself, so colour is never the sole signal.
+ */
+.crt-verdict[data-verdict="still-dead"] {
+  color: var(--crt-still-dead);
+}
+
+/* Chromatic-offset keyframes: 2 luminance changes max in the <= 300 ms window. */
+@keyframes crt-glitch-kf {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  45% {
+    transform: translateX(calc(-1 * var(--glitch-offset)));
+    opacity: 0.86; /* luminance change #1 */
+  }
+  55% {
+    transform: translateX(var(--glitch-offset));
+    opacity: 1; /* luminance change #2 */
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Scanline tear: a brief clip-path slice; transform-only, no luminance change. */
+@keyframes crt-tear-kf {
+  0% {
+    clip-path: inset(0 0 0 0);
+  }
+  50% {
+    clip-path: inset(40% 0 35% 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Tower shake (R5.9): transform-only wobble, <= 300 ms, no luminance change. */
+@keyframes crt-shake-kf {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, 2px);
+  }
+}
+
+/* Card-reveal flip (R4.1, R4.2): one half-turn from Card_Back to face, once. */
+@keyframes crt-flip-kf {
+  0% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+/*
+ * Resurrection rot (R6.1): a subtle corruption shimmer on the decaying code.
+ * The JS rot playback hook re-renders the rotted text per frame and paces
+ * frames at >= `--crt-rot-frame-min-ms`, so visible luminance shifts stay
+ * <= 2/s. This keyframe is a gentle in-frame settle, NOT a repeating flash.
+ */
+@keyframes crt-rot-kf {
+  0% {
+    opacity: 0.82;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/*
+ * OPTIONAL severity-3 phosphor bloom (R13.2): a brief one-shot glow swell on
+ * the card art when a severity-3 card is revealed in full motion. The glow is a
+ * text-shadow bump using the existing phosphor foreground (no new palette
+ * value, tarot-ux rule) — it rises once to a brighter/wider phosphor halo at
+ * the midpoint, then settles back to the steady state. That is a single
+ * rise-then-settle: at most 2 luminance changes inside the `--crt-bloom-ms`
+ * (<= 300 ms) window. With `animation-iteration-count: 1` (set in the gating
+ * block) it never repeats, so no rolling one-second window exceeds the
+ * Flash_Limit. It touches only the decorative `<pre>` text-shadow; the
+ * selectable glyphs and the sr-only equivalent are untouched.
+ */
+@keyframes crt-bloom-kf {
+  0% {
+    text-shadow:
+      0 0 var(--crt-glow-radius) rgba(51, 255, 102, var(--crt-glow-alpha));
+  }
+  50% {
+    text-shadow:
+      0 0 calc(var(--crt-glow-radius) * 3) rgba(51, 255, 102, 0.9); /* luminance change #1 */
+  }
+  100% {
+    text-shadow:
+      0 0 var(--crt-glow-radius) rgba(51, 255, 102, var(--crt-glow-alpha)); /* luminance change #2 (settle) */
+  }
+}
+
 /* ------------------------------------------------------------------------ */
 /* Motion gating (R9.6, R9.7, R10.3, R10.11).                               */
 /* ------------------------------------------------------------------------ */
@@ -253,12 +476,83 @@ html[data-js="ready"] .crt-no-js {
   transition: opacity var(--crt-afterglow-ms) ease-out;
 }
 
+/*
+ * Visual_Layer animations run ONLY in full motion, and each is one-shot
+ * (`animation-iteration-count: 1`) so no rolling one-second window can exceed
+ * the Flash_Limit (see the caps block above). `--glitch-duration` is bounded
+ * at <= 300 ms by GlitchParams; the shake / flip are bounded by their tokens.
+ */
+.crt[data-motion="full"] .crt-glitch .crt-ascii-card-art {
+  animation: crt-glitch-kf var(--glitch-duration, var(--crt-glitch-max-ms))
+    steps(3, jump-none) 1;
+}
+
+/*
+ * OPTIONAL phosphor bloom, FULL MOTION ONLY (R13.2). Fires one-shot only for a
+ * severity-3 card (`data-glitch-intensity="3"`, emitted by AsciiCardView in
+ * full motion). `animation-iteration-count: 1` guarantees it never repeats, so
+ * the single rise-then-settle stays inside the Flash_Limit. Reduced motion
+ * removes it via the `.crt[data-motion="reduced"] *` block below; this selector
+ * never matches outside full motion. A non-severe card (intensity 0/1/2) never
+ * carries this hook, so only severity-3 blooms.
+ */
+.crt[data-motion="full"] .crt-glitch[data-glitch-intensity="3"] .crt-ascii-card-art {
+  animation:
+    crt-glitch-kf var(--glitch-duration, var(--crt-glitch-max-ms))
+      steps(3, jump-none) 1,
+    crt-bloom-kf var(--crt-bloom-ms) ease-out 1;
+}
+
+.crt[data-motion="full"] .crt-shake {
+  animation: crt-shake-kf var(--crt-shake-ms) ease-in-out 1;
+}
+
+.crt[data-motion="full"] .crt-card-flip {
+  transform-origin: center;
+  animation: crt-flip-kf var(--crt-flip-ms) ease-out 1;
+}
+
+.crt[data-motion="full"] .crt-rot {
+  animation: crt-rot-kf var(--crt-rot-frame-min-ms) linear 1;
+}
+
 /* Reduced motion disables every animation and transition (R10.3, R10.11). */
 .crt[data-motion="reduced"] * {
   animation: none !important;
   transition: none !important;
 }
 
+/*
+ * Reduced motion also strips the decorative glitch glow so cards render in
+ * their final steady phosphor state — no chromatic offset, no amber, no tear
+ * (R5.10, R7.4). The selectable glyphs and sr-only text are unaffected.
+ */
+.crt[data-motion="reduced"] .crt-glitch .crt-ascii-card-art,
+.crt[data-motion="reduced"] .crt-glitch[data-burning="true"] .crt-ascii-card-art {
+  text-shadow: none;
+}
+
 .crt[data-motion="reduced"] .crt-flicker {
   opacity: 0;
+}
+
+/*
+ * Decorative Vitality_Delta count-up (visual-necromancy task 21.3). A purely
+ * visual embellishment over the rebirth; aria-hidden, so it is never announced
+ * (the authoritative delta lives in the role="log" block, design D1). The
+ * phosphor digits sit in the standard CRT foreground; no animation is attached
+ * here because the count itself is driven by the FramePort tick in useCountUp,
+ * not by a CSS keyframe, which keeps the paced text change inside the
+ * Flash_Limit in full motion and shows the final value instantly in reduced
+ * motion (R13.3, R13.4).
+ */
+.crt-vitality-counter {
+  color: var(--crt-fg);
+  font-family: var(--crt-display-font, inherit);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.crt-vitality-counter-max {
+  color: var(--crt-fg-dim);
 }

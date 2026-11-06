@@ -79,3 +79,73 @@ export const CRT_FLICKER_DEPTH = 0.04;
 
 /** Afterglow fade duration, in milliseconds; disabled in reduced motion (R9.5). */
 export const CRT_AFTERGLOW_MS = 600;
+
+// ---------------------------------------------------------------------------
+// Visual_Layer accent colours (visual-necromancy, task 14.1)
+// ---------------------------------------------------------------------------
+//
+// Two accent colours the tarot-ux palette rule already allows, added here as
+// the single source of truth so `crt.css` can mirror them. NEITHER is a new
+// palette value: both are named in the tarot-ux steering (`#ffb000` warning
+// amber, `#ff3355` error red) and in requirement R7.2, and both are used only
+// in the narrow, rule-bound places that requirement permits.
+//
+//   - `CRT_BURNING_AMBER` (`#ffb000`): the warning amber. Used ONLY for the
+//     burning cards `tower`/`devil` via `[data-burning="true"]`, and ONLY as a
+//     decorative glow (glitch `text-shadow` tint) — never as body text — so it
+//     carries no text-contrast obligation. The underlying card glyphs and the
+//     screen-reader equivalent stay in the phosphor `--crt-fg` (R5.7, R5.8).
+//   - `CRT_STILL_DEAD` (`#ff3355`): the error red. Used ONLY for a STILL DEAD
+//     verdict (R7.2). The existing `--crt-error` (`#ff7a7a`, the WCAG arbiter's
+//     value) remains the token for error *body text*; this accent is reserved
+//     for the single STILL DEAD verdict word, which is also marked by the
+//     verdict label text, so severity is never conveyed by colour alone.
+//
+// The `crt-tokens.test.ts` contrast checks cover `--crt-fg`, `--crt-fg-dim`,
+// and `--crt-error`; these two accents are decorative/verdict-only and are not
+// subject to those body-text ratios, matching how the design scopes them.
+
+/** Warning amber; decorative glow for `tower`/`devil` only (R5.7, R7.2). */
+export const CRT_BURNING_AMBER = "#ffb000";
+
+/** Error red; the STILL DEAD verdict word only (R7.2). */
+export const CRT_STILL_DEAD = "#ff3355";
+
+// ---------------------------------------------------------------------------
+// Visual_Layer motion tokens (visual-necromancy, task 14.1)
+// ---------------------------------------------------------------------------
+//
+// Bounded durations for the Visual_Layer animations, mirrored as custom
+// properties on `.crt`. Every value honours the Flash_Limit: the glitch and
+// shake windows are <= 300 ms (R5.9, R5.11) and the rot cadence is slow enough
+// that luminance changes stay <= 2 per second (R6.11). The CSS gates all of
+// these behind `.crt[data-motion="full"]` and uses
+// `animation-iteration-count: 1` for the one-shot effects, so no rolling
+// one-second window can ever accumulate more than 2 flashes (R7.6, R10.3).
+
+/** Glitch ceiling in ms; mirrors `GLITCH_MAX_DURATION_MS` (Flash_Limit, R5.9). */
+export const CRT_GLITCH_MAX_MS = 300;
+
+/** Tower shake duration in ms; <= 300 to honour the tarot-ux shake allowance (R5.9). */
+export const CRT_SHAKE_MS = 300;
+
+/** Card-flip half-turn duration in ms for the one-by-one reveal (R4.1, R4.2). */
+export const CRT_FLIP_MS = 320;
+
+/**
+ * Minimum interval in ms between visible rot luminance shifts. At >= 500 ms a
+ * rolling one-second window sees at most 2 changes, below the 3-flash ceiling
+ * (R6.11). The rot playback hook paces frames no faster than this.
+ */
+export const CRT_ROT_FRAME_MIN_MS = 500;
+
+/**
+ * OPTIONAL phosphor bloom duration in ms (visual-necromancy task 21.2,
+ * R13.2). A one-shot glow swell on a severity-3 card reveal in full motion:
+ * the glow radius / alpha rise once and settle inside this window. It is CSS
+ * only (keyed off `data-glitch-intensity="3"`), adds no JS, and is gated behind
+ * `.crt[data-motion="full"]`. At <= 300 ms with `animation-iteration-count: 1`
+ * and a single rise-then-settle (<= 2 luminance changes, no repeat), it holds
+ * the Flash_Limit exactly like the glitch window (R13.2, R13.4, R10.3).
+ */
+export const CRT_BLOOM_MS = 300;

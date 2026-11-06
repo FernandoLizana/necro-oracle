@@ -81,6 +81,7 @@ function boot(): SessionState {
     soundPreference: "off",
     prefersReduced: false,
     visible: true,
+    bootSignal: false,
   };
   return step(initialState(), action).state;
 }

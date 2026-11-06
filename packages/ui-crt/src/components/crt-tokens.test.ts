@@ -149,6 +149,31 @@ describe("R9.1 (tokens / CSS parity): crt.css mirrors tokens.ts", () => {
     expect(cssNumber("crt-flicker-depth")).toBe(tokens.CRT_FLICKER_DEPTH);
     expect(cssNumber("crt-afterglow-ms")).toBe(tokens.CRT_AFTERGLOW_MS);
   });
+
+  it("declares the Visual_Layer motion tokens equal to the exported numbers", () => {
+    expect(cssNumber("crt-glitch-max-ms")).toBe(tokens.CRT_GLITCH_MAX_MS);
+    expect(cssNumber("crt-shake-ms")).toBe(tokens.CRT_SHAKE_MS);
+    expect(cssNumber("crt-flip-ms")).toBe(tokens.CRT_FLIP_MS);
+    expect(cssNumber("crt-rot-frame-min-ms")).toBe(tokens.CRT_ROT_FRAME_MIN_MS);
+    // OPTIONAL severity-3 phosphor bloom window (task 21.2, R13.2).
+    expect(cssNumber("crt-bloom-ms")).toBe(tokens.CRT_BLOOM_MS);
+  });
+
+  it("keeps the phosphor bloom one-shot and inside the Flash_Limit window (R13.2)", () => {
+    // The bloom duration is <= the glitch ceiling (<= 300 ms), and the CSS
+    // fires it with iteration-count 1 (never `infinite`), so a single
+    // rise-then-settle cannot exceed the Flash_Limit in any one-second window.
+    expect(tokens.CRT_BLOOM_MS).toBeGreaterThan(0);
+    expect(tokens.CRT_BLOOM_MS).toBeLessThanOrEqual(tokens.CRT_GLITCH_MAX_MS);
+    const bloomRule =
+      /\.crt\[data-motion="full"\] \.crt-glitch\[data-glitch-intensity="3"\][^}]*crt-bloom-kf[^}]*}/s.exec(
+        css,
+      );
+    expect(bloomRule, "missing full-motion severity-3 bloom rule").not.toBeNull();
+    // One-shot: the bloom animation ends with iteration-count 1, never infinite.
+    expect((bloomRule as RegExpExecArray)[0]).toMatch(/crt-bloom-kf[^,}]*\b1\b/);
+    expect((bloomRule as RegExpExecArray)[0]).not.toContain("infinite");
+  });
 });
 
 // ---------------------------------------------------------------------------

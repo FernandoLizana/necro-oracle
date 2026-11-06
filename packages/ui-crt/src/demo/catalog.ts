@@ -13,6 +13,15 @@
 /** The Demo_Name rule: lowercase letters, digits and hyphens, 1–32 chars. */
 export const DEMO_NAME_PATTERN = /^[a-z0-9-]{1,32}$/;
 
+/**
+ * The fixed Demo_Seed (visual-necromancy, task 13.1, R9.1). In Demo mode the
+ * Visual_Layer drives every Glitch_Effect corruption and Rot_Transform from this
+ * single constant rather than from the wall clock or unseeded randomness, so a
+ * Demo reading renders identically across two renders (reproducibility, R9.2).
+ * The value spells `"nec"` (0x6e 0x65 0x63).
+ */
+export const DEMO_SEED = 0x6e6563;
+
 /** One entry in the Demo_Catalog. */
 export interface DemoCatalogEntry {
   readonly name: string;

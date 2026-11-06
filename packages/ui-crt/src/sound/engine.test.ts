@@ -71,6 +71,13 @@ class FakeAudioParam {
   setValueAtTime(value: number): void {
     this.value = value;
   }
+
+  // The one-shot cue envelope ramps linearly to its peak before decaying; the
+  // engine calls this real Web Audio method, so the fake mirrors it (recording
+  // only the scheduled value, like the other schedulers above).
+  linearRampToValueAtTime(value: number): void {
+    this.value = value;
+  }
 }
 
 /** Base fake node: records connect() targets so the graph can be walked. */
@@ -526,5 +533,141 @@ describe("start() (R19.14): rejects when Web Audio is missing or cannot start", 
   it("rejects when oscillator construction throws", async () => {
     const engine = createEngine(fakeCtor({ throwOnNode: "OscillatorNode" }));
     await expect(engine.start()).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ambient() — the OPTIONAL Resurrection_Animation drone (visual-necromancy 21.1)
+// ---------------------------------------------------------------------------
+
+describe("ambient (R13.1): the Resurrection hum rides its own low oscillator", () => {
+  it("builds a low ambient oscillator through its own gain into the master on ambient(true)", async () => {
+    const engine = createEngine(fakeCtor());
+    await engine.start();
+    const ctx = lastContext();
+
+    const oscBefore = ctx.nodesOfKind("OscillatorNode").length;
+    engine.ambient(true);
+    const oscAfter = ctx.nodesOfKind("OscillatorNode").length;
+
+    // Exactly one extra oscillator (the two base-hum oscillators plus the drone).
+    expect(oscAfter).toBe(oscBefore + 1);
+
+    const oscillators = ctx.nodesOfKind("OscillatorNode") as FakeOscillatorNode[];
+    const ambientOsc = oscillators.at(-1)!;
+    expect(ambientOsc.type).toBe("sine");
+    // The drone sits well below the base hum (50/100 Hz) — a low continuous bed.
+    expect(ambientOsc.frequency.value).toBeLessThan(50);
+    expect(ambientOsc.startedAt).not.toBeNull();
+  });
+
+  it("does not build a second oscillator when ambient(true) fires while already running", async () => {
+    const engine = createEngine(fakeCtor());
+    await engine.start();
+    const ctx = lastContext();
+
+    engine.ambient(true);
+    const afterFirst = ctx.nodesOfKind("OscillatorNode").length;
+    engine.ambient(true);
+    const afterSecond = ctx.nodesOfKind("OscillatorNode").length;
+    expect(afterSecond).toBe(afterFirst);
+  });
+
+  it("fades the drone to 0 and stops its oscillator on ambient(false)", async () => {
+    const engine = createEngine(fakeCtor());
+    await engine.start();
+    const ctx = lastContext();
+
+    engine.ambient(true);
+    const oscillators = ctx.nodesOfKind("OscillatorNode") as FakeOscillatorNode[];
+    const ambientOsc = oscillators.at(-1)!;
+
+    engine.ambient(false);
+
+    // The drone's gain is ramped toward 0.
+    const gains = ctx.nodesOfKind("GainNode") as FakeGainNode[];
+    const faded = gains.some((g) =>
+      g.gain.setTargetAtTimeCalls.some((c) => c.target === 0),
+    );
+    expect(faded).toBe(true);
+
+    // The oscillator is stopped shortly after (well inside a short delay).
+    expect(ambientOsc.stoppedAt).toBeNull();
+    vi.advanceTimersByTime(200);
+    expect(ambientOsc.stoppedAt).not.toBeNull();
+  });
+
+  it("is a no-op before start() (no live graph)", () => {
+    const engine = createEngine(fakeCtor());
+    // No start(): ambient must not throw and must build nothing.
+    expect(() => engine.ambient(true)).not.toThrow();
+    expect(() => engine.ambient(false)).not.toThrow();
+  });
+
+  it("ambient(false) before any ambient(true) is a harmless no-op", async () => {
+    const engine = createEngine(fakeCtor());
+    await engine.start();
+    const ctx = lastContext();
+    const oscBefore = ctx.nodesOfKind("OscillatorNode").length;
+    engine.ambient(false);
+    expect(ctx.nodesOfKind("OscillatorNode").length).toBe(oscBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// cue() — the one-shot Visual_Layer cues (visual-necromancy tasks 15.1, 21.4)
+//
+// Each cue is a short one-shot oscillator through its own envelope into the
+// shared clickGain, so it adds no graph node at rest and rides under the capped
+// master gain. Here we only check the one-shot is built with a distinct, finite
+// lead frequency and a valid waveform, that it self-stops, and that the extra
+// `summon` cue (task 21.4) is audibly distinct from the four core cues. The
+// gating (off-by-default, gesture, visibility) lives in `soundCueAllowed` and is
+// covered by `sound-cue.test.ts`; `cue()` itself always plays when the graph is
+// live, exactly like `click()`.
+// ---------------------------------------------------------------------------
+
+import { SOUND_CUES } from "./sound-cue.js";
+
+describe("cue (R8.1, task 21.4): every cue plays a distinct one-shot", () => {
+  it("builds a one-shot oscillator with a finite lead frequency for each cue", async () => {
+    for (const name of SOUND_CUES) {
+      const engine = createEngine(fakeCtor());
+      await engine.start();
+      const ctx = lastContext();
+      const before = ctx.nodesOfKind("OscillatorNode").length;
+      engine.cue(name);
+      const oscillators = ctx.nodesOfKind("OscillatorNode") as FakeOscillatorNode[];
+      // Exactly one extra oscillator (the two base-hum oscillators plus the cue).
+      expect(oscillators.length).toBe(before + 1);
+      const cueOsc = oscillators.at(-1)!;
+      expect(Number.isFinite(cueOsc.frequency.value)).toBe(true);
+      expect(cueOsc.frequency.value).toBeGreaterThan(0);
+      // The one-shot schedules its own stop, so nothing lingers after the blip.
+      expect(cueOsc.startedAt).not.toBeNull();
+      expect(cueOsc.stoppedAt).not.toBeNull();
+    }
+  });
+
+  it("gives every cue — including the extra summon — a distinct lead frequency", async () => {
+    const seen = new Map<number, string>();
+    for (const name of SOUND_CUES) {
+      const engine = createEngine(fakeCtor());
+      await engine.start();
+      const ctx = lastContext();
+      engine.cue(name);
+      const oscillators = ctx.nodesOfKind("OscillatorNode") as FakeOscillatorNode[];
+      const freq = oscillators.at(-1)!.frequency.value;
+      const clash = seen.get(freq);
+      expect(clash, `${name} shares its frequency with ${String(clash)}`).toBeUndefined();
+      seen.set(freq, name);
+    }
+    // All five cues carry their own note.
+    expect(seen.size).toBe(SOUND_CUES.length);
+  });
+
+  it("is a no-op before start() (no live graph)", () => {
+    const engine = createEngine(fakeCtor());
+    expect(() => engine.cue("summon")).not.toThrow();
   });
 });

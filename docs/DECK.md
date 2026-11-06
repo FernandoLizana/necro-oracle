@@ -36,6 +36,53 @@ The Star is always drawn so a reading is never purely bleak; The World and the
 vitality score summarise the whole. Orientation per card is defined in
 `docs/DESIGN.md` §3A.
 
+## ASCII card faces
+
+The Visual_Layer draws each card as a framed ASCII tarot face rendered as
+selectable DOM text (never canvas). The faces are produced by two pure modules
+in `@necro/ui-crt`:
+
+- `render/ascii-card.ts` — the ASCII_Card_Renderer. `asciiCard(cardId,
+  orientation, art)` returns a card of exactly `CARD_ROWS` (13) × `CARD_COLS`
+  (24) box-drawing glyphs for every card in both orientations, so all twelve
+  share one frame size. Top to bottom the frame is: top border, the roman
+  numeral row, the uppercase card-name row, a thin divider, `ART_ROWS` (6)
+  illustration rows, a thin divider, a footer spacer, and the bottom border.
+  Numerals, names and verdict words are uppercase; no emoji is ever emitted. The
+  numeral and name come from `getCard(cardId)` in `@necro/oracle/client`; an id
+  outside the Deck_Card_Set raises a typed `NecroError` (`code: "CARD_UNKNOWN"`,
+  Oracle_Voice message) rather than a partial or blank card. Each card carries an
+  `accessibleText` equivalent (e.g. `XVI THE TOWER, upright`). The renderer emits
+  the frame in normal reading order; the visual 180° flip for `reversed` cards is
+  applied in CSS by `AsciiCardView`, with the numeral/name text kept upright, so
+  orientation stays semantic (upright = active, reversed = latent/partial).
+- `render/ascii-art.ts` — the bespoke per-CardId illustration table (`CARD_ART`,
+  a total `Record<CardId, CardArt>` so a newly registered card without art is a
+  compile error). Each of the twelve registered cards (`tower`, `death`,
+  `devil`, `hermit`, `wheel`, `judgement`, `hanged_man`, `temperance`,
+  `justice`, `moon`, `star`, `world`) has a hand-authored phosphor motif sized to
+  the 6×22 inner block — e.g. The Tower is a lightning-struck tower, The Death a
+  reaper, The Devil a horned sigil. Cards whose reversal reads differently (the
+  Hanged Man, the Tower, the Wheel, the Star, the Moon) carry a distinct
+  `reversed` motif; the rest reuse the CSS 180° flip. Any CardId without a
+  bespoke entry falls back to `GENERIC_ART`. This table ships in its own lazy
+  chunk fetched by `loadCardArt()` (in `render/load-card-art.ts`) after mount, so
+  it stays outside the first terminal render and inside the bundle budget — the
+  loader owns the only dynamic `import("./ascii-art.js")`, which is what makes
+  the bundler split the table into a separate chunk.
+
+The faces are decorative overlays only. The authoritative card text — numeral,
+name, orientation, severity, evidence and diagnosis — stays in the terminal's
+single `role="log"` region exactly as `renderReading` produces it, so a screen
+reader hears each card once and the ASCII face adds nothing it must announce.
+
+### The card-back
+
+`asciiCardBack()` builds the single shared Card_Back frame: the same
+`CARD_COLS × CARD_ROWS` box with its inner block filled by one repeating sigil
+glyph, identical at every face-down position. Every spread position starts as
+this shared back and flips to its `AsciiCard` when its reveal step fires.
+
 ## Card ↔ grimoire links
 
 A grimoire is a migration plugin unlocked by the card whose diagnosis it heals. A

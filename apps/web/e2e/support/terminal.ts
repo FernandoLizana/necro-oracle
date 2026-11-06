@@ -83,11 +83,52 @@ export const sel = {
   blocks: (page: Page): Locator => page.locator("section.crt-block"),
 } as const;
 
-/** Load the terminal route and wait for the booted, focused command line. */
+/**
+ * The query flag `apps/web` (`TerminalScreen.tsx`) reads to skip the one-time
+ * deterministic Boot_Sequence and land straight on the ready terminal. Every
+ * spec except the full-motion visual spec navigates with it so no spec waits
+ * out the boot animation (visual-necromancy task 18.1). It is the external
+ * "Playwright env boot signal": the runner sets `?boot=skip`, `TerminalScreen`
+ * threads it into the Terminal's `bootSignal` prop, and the reducer downgrades
+ * the boot to `phase:"done"` while still making `BOOT_PHRASE` the first
+ * Output_Block (R12.5, R10.7).
+ */
+export const BOOT_SKIP_QUERY = "?boot=skip";
+
+/**
+ * Load the terminal route WITH `?boot=skip` and wait for the booted, focused
+ * command line. The skip flag lands the session on the ready terminal without
+ * playing the Boot_Sequence, so a spec that only needs a usable prompt never
+ * waits out the boot animation. The boot phrase is still the first Output_Block
+ * (the reducer appends it regardless of the skip), so the R1.1/R1.2/R15.4
+ * assertions below hold exactly as they did before the flag existed.
+ *
+ * The one spec that must exercise the full-motion Boot_Sequence
+ * (`visual-necromancy.e2e.ts`) navigates with {@link bootTerminalFull} instead,
+ * which omits the flag.
+ */
 export async function bootTerminal(page: Page): Promise<void> {
-  await page.goto("/");
+  await page.goto(`/${BOOT_SKIP_QUERY}`);
   // Boot phrase present and the command line focused (R1.1, R1.2, R15.4).
   await expect(sel.log(page)).toContainText(BOOT_PHRASE);
+  await expect(sel.input(page)).toBeFocused();
+}
+
+/**
+ * Load the terminal route WITHOUT `?boot=skip`, so the full deterministic
+ * Boot_Sequence plays. Used only by the visual spec to assert the boot overlay
+ * appears and resolves to the ready prompt. Resolves once the boot has settled:
+ * the `.crt-boot-overlay` is gone and the command line holds focus.
+ */
+export async function bootTerminalFull(page: Page): Promise<void> {
+  await page.goto("/");
+  // The boot phrase is the first Output_Block in every path (R1.1).
+  await expect(sel.log(page)).toContainText(BOOT_PHRASE);
+  // The full-motion boot overlay resolves within budget, leaving no overlay in
+  // the DOM, and focus lands on the Command_Line (R1.2, R1.7, R15.4).
+  await expect(page.locator(".crt-boot-overlay")).toHaveCount(0, {
+    timeout: 10_000,
+  });
   await expect(sel.input(page)).toBeFocused();
 }
 

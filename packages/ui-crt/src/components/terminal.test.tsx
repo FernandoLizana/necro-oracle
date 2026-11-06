@@ -254,7 +254,10 @@ describe("R3.1–R3.7 (keyboard): Enter, history, Ctrl+L, Escape, Ctrl+C, Tab", 
   });
 
   it("never intercepts Tab (R3.7)", async () => {
-    renderTerminal();
+    // Reduced motion starts the one-time Boot_Sequence already done, so the
+    // boot's "any key skips" listener is not installed and this exercises the
+    // steady-state Tab contract (the boot overlay is a full-motion flourish).
+    renderTerminal({ prefersReducedMotion: true });
     const input = cmdInput();
     input.focus();
     const user = userEvent.setup();

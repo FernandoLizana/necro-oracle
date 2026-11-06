@@ -24,6 +24,7 @@ import type {
 } from "../protocol.js";
 import type { ResurrectTarget } from "../command/types.js";
 import type { OutputBlock } from "../render/blocks.js";
+import type { CardRevealStep } from "../motion/card-reveal.js";
 import type { History } from "./history.js";
 import type { MotionMode, MotionPreference } from "../motion/motion-mode.js";
 import type { SoundEvent, SoundPreference, SoundState } from "../sound/sound-reducer.js";
@@ -38,6 +39,29 @@ export interface InflightRequest {
 export interface RevealState {
   readonly queue: readonly number[];
   readonly startedAtMs: number | null;
+}
+
+/**
+ * The Boot_Sequence slice (visual-necromancy, task 7.1). `phase` gates the boot
+ * overlay; `startedAtMs` anchors the elapsed-time schedule; `stepIndex` is the
+ * current boot frame; `seen` records the once-per-page-session guard (R1.5) and
+ * is session memory only — it is never written through `StoragePort`.
+ */
+export interface BootState {
+  readonly phase: "playing" | "done";
+  readonly startedAtMs: number | null;
+  readonly stepIndex: number;
+  readonly seen: boolean;
+}
+
+/**
+ * The Card_Reveal slice (visual-necromancy, task 7.1). `schedule` holds the
+ * per-position flip offsets (empty until a reading is seeded); `flippedCount`
+ * is how many positions have finished flipping.
+ */
+export interface CardRevealState {
+  readonly schedule: readonly CardRevealStep[];
+  readonly flippedCount: number;
 }
 
 /** The complete pure session model the reducer transitions. */
@@ -69,6 +93,8 @@ export interface SessionState {
   readonly motionMode: MotionMode;
   readonly sound: SoundState;
   readonly reveal: RevealState;
+  readonly boot: BootState;
+  readonly cardReveal: CardRevealState;
 }
 
 /** Every action the reducer understands. */
@@ -79,7 +105,16 @@ export type Action =
       readonly soundPreference: SoundPreference;
       readonly prefersReduced: boolean;
       readonly visible: boolean;
+      /**
+       * The single test/skip signal (visual-necromancy D4). When `true`
+       * (`apps/web` reads `?boot=skip`, and the Playwright runner sets it), the
+       * reducer starts `boot.phase: "done"` so no overlay renders and no frames
+       * are scheduled, while the boot phrase stays the first Output_Block.
+       */
+      readonly bootSignal: boolean;
     }
+  | { readonly type: "boot.tick"; readonly nowMs: number }
+  | { readonly type: "boot.skip" }
   | { readonly type: "submit"; readonly raw: string; readonly source: "enter" | "button" }
   | { readonly type: "history"; readonly direction: "prev" | "next"; readonly current: string }
   | { readonly type: "api.summoned"; readonly requestId: number; readonly summary: SummonSummary }
@@ -156,5 +191,7 @@ export function initialState(): SessionState {
     motionMode: "full",
     sound: { preference: "off", gesture: false, visible: true },
     reveal: { queue: [], startedAtMs: null },
+    boot: { phase: "playing", startedAtMs: null, stepIndex: 0, seen: false },
+    cardReveal: { schedule: [], flippedCount: 0 },
   };
 }

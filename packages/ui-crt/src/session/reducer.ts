@@ -37,11 +37,14 @@ import {
 } from "../command/types.js";
 
 import {
+  renderCardBlock,
   renderEcho,
   renderProgress,
   renderReading,
   renderSkipNote,
+  type RenderContext,
 } from "../render/reading.js";
+import { blockText } from "../render/blocks.js";
 import { renderExplain } from "../render/explain.js";
 import { renderHelp } from "../render/help.js";
 import { renderSummary } from "../render/summary.js";
@@ -57,6 +60,9 @@ import {
 } from "../voice/phrases.js";
 import { DEMO_CATALOG } from "../demo/catalog.js";
 import { resolveMotionMode } from "../motion/motion-mode.js";
+import { BOOT_STEP_COUNT } from "../render/boot.js";
+import { bootStepAt } from "../motion/boot-schedule.js";
+import { cardRevealSchedule } from "../motion/card-reveal.js";
 import { soundActivity, soundReducer, type SoundEvent } from "../sound/sound-reducer.js";
 
 import type { Action, Effect, InflightRequest, SessionState } from "./state.js";
@@ -116,6 +122,62 @@ function completeReveal(state: SessionState): SessionState {
   return { ...state, reveal: { queue: [], startedAtMs: null } };
 }
 
+// ---------------------------------------------------------------------------
+// Card-reveal slice (visual-necromancy task 7.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Seed the Card_Reveal slice for a freshly rendered reading. The schedule has
+ * one step per spread position in the Reading's order, so it never reorders,
+ * adds, or omits a position — `renderReading` still emits exactly one block per
+ * position (R4.1, R4.6). Each position's `diagnosisLength` is the length of its
+ * rendered diagnosis text, so the per-card typewriter duration matches what the
+ * view types out.
+ *
+ * In full motion the schedule drives a one-by-one flip, so `flippedCount`
+ * starts at 0. In reduced motion no queue is seeded — every card is face-up
+ * with full text in a single render (R4.4) — so the schedule is empty and every
+ * position counts as already flipped.
+ */
+function seedCardReveal(state: SessionState, resp: ReadingResponse): SessionState {
+  const ctx: RenderContext = {
+    live: resp.summary.demo !== true,
+    ref: resp.reading.repo,
+  };
+  const positions = resp.reading.spread.map((position) => ({
+    diagnosisLength: blockText(renderCardBlock(position, ctx)).length,
+  }));
+
+  if (state.motionMode !== "full") {
+    // Reduced motion: one render, all cards face-up, no flip queue (R4.4). The
+    // empty schedule means nothing animates; every position is already flipped.
+    return {
+      ...state,
+      cardReveal: { schedule: [], flippedCount: positions.length },
+    };
+  }
+
+  const schedule = cardRevealSchedule(positions);
+  return {
+    ...state,
+    cardReveal: { schedule, flippedCount: 0 },
+  };
+}
+
+/**
+ * Complete the Card_Reveal slice: every card flipped and every diagnosis fully
+ * revealed (R4.5). Reaches the same final state the reduced-motion / Escape
+ * path lands on — `flippedCount` is the full count and nothing remains queued.
+ */
+function completeCardReveal(state: SessionState): SessionState {
+  const total = state.cardReveal.schedule.length;
+  if (state.cardReveal.flippedCount >= total) return state;
+  return {
+    ...state,
+    cardReveal: { ...state.cardReveal, flippedCount: total },
+  };
+}
+
 /** Whether the current session is a demo replay (its blocks carry the label). */
 function isDemoSession(state: SessionState): boolean {
   return state.summary?.demo === true;
@@ -138,6 +200,23 @@ function stepBoot(
   action: Extract<Action, { type: "boot" }>,
 ): StepResult {
   const motionMode = resolveMotionMode(action.motionPreference, action.prefersReduced);
+
+  // Once per page session: a `boot` action after the sequence has been seen
+  // refreshes the live preferences but never replays the overlay or re-appends
+  // the boot phrase (R1.5). `seen` is session memory, never persisted.
+  const alreadySeen = state.boot.seen;
+
+  // The overlay only animates in full motion, when no skip signal is set, and
+  // only the first time (R1.1, R1.6, R1.5). Otherwise it starts already done:
+  // reduced motion, `bootSignal`, or a replay all land on `phase: "done"`.
+  const playing = motionMode === "full" && !action.bootSignal && !alreadySeen;
+  const boot: SessionState["boot"] = {
+    phase: playing ? "playing" : "done",
+    startedAtMs: null,
+    stepIndex: 0,
+    seen: true,
+  };
+
   const booted: SessionState = {
     ...state,
     motionPreference: action.motionPreference,
@@ -148,11 +227,55 @@ function stepBoot(
       gesture: false,
       visible: action.visible,
     },
+    boot,
   };
 
+  // A replay refreshes preferences only: the boot phrase was already the first
+  // Output_Block from the first boot, so it is not appended again.
+  if (alreadySeen) {
+    return { state: booted, effects: [{ type: "focus", target: "input" }] };
+  }
+
+  // The boot phrase is ALWAYS the first Output_Block, independent of the boot
+  // phase or motion mode (R1.2): in full motion it sits beneath the overlay; in
+  // reduced / skip it is simply the ready prompt.
   const withBoot = appendDrafts(booted, [bootBlock()]);
   // Boot focuses the Command_Line (R15.4).
   return { state: withBoot, effects: [{ type: "focus", target: "input" }] };
+}
+
+/**
+ * Advance the Boot_Sequence by one frame tick (R1.1). The first tick of a
+ * playing sequence records `startedAtMs`; later ticks map elapsed time to a
+ * step via `bootStepAt`. Reaching the final step transitions `phase` to
+ * `"done"`. Ticks while already done (or never playing) are no-ops.
+ */
+function stepBootTick(
+  state: SessionState,
+  action: Extract<Action, { type: "boot.tick" }>,
+): StepResult {
+  if (state.boot.phase !== "playing") return noop(state);
+
+  // Record the start clock on the first tick; the step is 0 at elapsed 0.
+  if (state.boot.startedAtMs === null) {
+    return {
+      state: { ...state, boot: { ...state.boot, startedAtMs: action.nowMs, stepIndex: 0 } },
+      effects: [],
+    };
+  }
+
+  const stepIndex = bootStepAt(action.nowMs - state.boot.startedAtMs);
+  const phase = stepIndex >= BOOT_STEP_COUNT - 1 ? "done" : "playing";
+  return {
+    state: { ...state, boot: { ...state.boot, stepIndex, phase } },
+    effects: [],
+  };
+}
+
+/** Skip the Boot_Sequence immediately, reaching the ready state (R1.3). */
+function stepBootSkip(state: SessionState): StepResult {
+  if (state.boot.phase === "done") return noop(state);
+  return { state: { ...state, boot: { ...state.boot, phase: "done" } }, effects: [] };
 }
 
 /** The boot banner block (kind `boot`). */
@@ -350,7 +473,7 @@ function doRead(acc: Accumulator, spread: "fates" | "necropsy" | "celtic"): void
   const held = acc.state.readings[playable];
   if (held !== undefined) {
     const blocks = renderReading(held);
-    acc.state = { ...acc.state, lastSpread: playable };
+    acc.state = seedCardReveal({ ...acc.state, lastSpread: playable }, held);
     pushBlocks(acc, blocks);
     return;
   }
@@ -381,7 +504,7 @@ function doReadDemo(acc: Accumulator, spread: PlayableSpread): void {
     ]);
     return;
   }
-  acc.state = { ...acc.state, lastSpread: spread };
+  acc.state = seedCardReveal({ ...acc.state, lastSpread: spread }, response);
   pushLabelled(acc, renderReading(response));
 }
 
@@ -658,7 +781,7 @@ function stepRead(
         ? state.readings
         : { ...state.readings, [spread]: action.response },
   };
-  const acc: Accumulator = { state: resolved, effects: [] };
+  const acc: Accumulator = { state: seedCardReveal(resolved, action.response), effects: [] };
   pushBlocks(acc, renderReading(action.response));
   return result(acc);
 }
@@ -769,7 +892,9 @@ function stepAbort(state: SessionState): StepResult {
 }
 
 function stepSkipReveal(state: SessionState): StepResult {
-  return { state: completeReveal(state), effects: [] };
+  // Escape completes both the typewriter reveal queue (R10.5) and the card
+  // reveal: every card flipped, every diagnosis fully revealed (R4.5).
+  return { state: completeCardReveal(completeReveal(state)), effects: [] };
 }
 
 function stepRevealTick(
@@ -789,7 +914,24 @@ function stepRevealTick(
       effects: [],
     };
   }
-  return noop(state);
+  // Advance the Card_Reveal one-by-one flip in position order (design D2,
+  // R4.1, R4.2): a card is face-up once the elapsed time has reached its
+  // `flipDoneMs`. The schedule's offsets are non-decreasing, so counting the
+  // steps whose flip has finished yields a monotonic `flippedCount` that never
+  // reorders, skips or omits a position.
+  const schedule = state.cardReveal.schedule;
+  if (schedule.length === 0) return noop(state);
+  const elapsed = action.nowMs - state.reveal.startedAtMs;
+  let flippedCount = 0;
+  for (const step of schedule) {
+    if (step.flipDoneMs <= elapsed) flippedCount++;
+    else break;
+  }
+  if (flippedCount === state.cardReveal.flippedCount) return noop(state);
+  return {
+    state: { ...state, cardReveal: { ...state.cardReveal, flippedCount } },
+    effects: [],
+  };
 }
 
 function stepMedia(
@@ -911,6 +1053,10 @@ export function step(state: SessionState, action: Action): StepResult {
   switch (action.type) {
     case "boot":
       return stepBoot(state, action);
+    case "boot.tick":
+      return stepBootTick(state, action);
+    case "boot.skip":
+      return stepBootSkip(state);
     case "submit":
       return stepSubmit(state, action);
     case "history":

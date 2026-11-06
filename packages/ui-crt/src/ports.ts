@@ -13,6 +13,7 @@
 // _Requirements: R16.3, R16.7_
 
 import type { ApiPort, DemoPort } from "./protocol.js";
+import type { SoundCue } from "./sound/sound-cue.js";
 
 /** Synchronous key/value storage. Never throws. */
 export interface StoragePort {
@@ -39,12 +40,27 @@ export interface FramePort {
   cancel(handle: number): void;
 }
 
-/** The lazily loaded Web Audio engine: hum and click, capped master gain. */
+/** The lazily loaded Web Audio engine: hum, click, cues, capped master gain. */
 export interface SoundEngine {
   /** Create the AudioContext and resume it. */
   start(): Promise<void>;
   apply(activity: { hum: boolean; click: boolean }): void;
   click(): void;
+  /**
+   * Play one short Visual_Layer cue (boot, reveal, glitch, rebirth) as a
+   * one-shot through the already-built graph, exactly like `click()`. The
+   * caller gates this on `soundCueAllowed(state)`; the engine plays whatever it
+   * is asked to and makes no Sound_State decision (R8.1).
+   */
+  cue(name: SoundCue): void;
+  /**
+   * Turn the ambient Resurrection_Animation hum on or off — a low continuous
+   * drone layered additively under the base hum while the rot-then-rebirth
+   * animation plays (visual-necromancy task 21.1). The caller gates this on
+   * `ambientHumActive(...)`; the engine makes no Sound_State or Motion_Mode
+   * decision and simply fades the drone to match (R13.1).
+   */
+  ambient(on: boolean): void;
   /** Stop the hum and close the context. */
   release(): void;
 }

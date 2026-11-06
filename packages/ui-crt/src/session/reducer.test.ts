@@ -63,6 +63,7 @@ const BOOT: Action = {
   soundPreference: "off",
   prefersReduced: false,
   visible: true,
+  bootSignal: false,
 };
 
 function boot(action: Partial<Action & typeof BOOT> = {}): {

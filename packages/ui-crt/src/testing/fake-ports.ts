@@ -39,6 +39,7 @@ import type {
   TerminalPorts,
   VisibilityPort,
 } from "../ports.js";
+import type { SoundCue } from "../sound/sound-cue.js";
 
 // ---------------------------------------------------------------------------
 // StoragePort
@@ -316,9 +317,14 @@ export function makeFakeDemo(
 export interface FakeSoundEngine extends SoundEngine {
   readonly calls: string[];
   readonly applied: { hum: boolean; click: boolean }[];
+  /** Every cue played, in order (the one-shot Visual_Layer cues, task 15.1). */
+  readonly cues: SoundCue[];
+  /** Every `ambient(on)` call, in order (the Resurrection_Animation drone). */
+  readonly ambients: boolean[];
   readonly startCount: () => number;
   readonly releaseCount: () => number;
   readonly clickCount: () => number;
+  readonly cueCount: () => number;
 }
 
 /**
@@ -330,15 +336,21 @@ export function makeFakeSoundEngine(
 ): FakeSoundEngine {
   const calls: string[] = [];
   const applied: { hum: boolean; click: boolean }[] = [];
+  const cues: SoundCue[] = [];
+  const ambients: boolean[] = [];
   let starts = 0;
   let releases = 0;
   let clicks = 0;
+  let cuePlays = 0;
   return {
     calls,
     applied,
+    cues,
+    ambients,
     startCount: () => starts,
     releaseCount: () => releases,
     clickCount: () => clicks,
+    cueCount: () => cuePlays,
     start() {
       starts += 1;
       calls.push("start");
@@ -352,6 +364,15 @@ export function makeFakeSoundEngine(
     click() {
       clicks += 1;
       calls.push("click");
+    },
+    cue(name) {
+      cuePlays += 1;
+      cues.push(name);
+      calls.push(`cue:${name}`);
+    },
+    ambient(on) {
+      ambients.push(on);
+      calls.push(`ambient:${on ? 1 : 0}`);
     },
     release() {
       releases += 1;

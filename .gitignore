@@ -11,3 +11,6 @@ KIRO_PLAYBOOK.md
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Generated marketing screenshots (regenerate with `pnpm --filter @necro/web screenshots`)
+docs/screenshots/*.png

@@ -13,6 +13,14 @@
 // call occurs (R16.11 spirit applied to e2e). The DEMO replay path needs no
 // route interception at all — it loads the bundled, offline demo chunk.
 //
+// Boot signal (visual-necromancy task 18.1): every spec except the full-motion
+// visual spec navigates with `?boot=skip` (the shared `bootTerminal` helper in
+// `e2e/support/terminal.ts` appends it). `apps/web`'s `TerminalScreen` reads
+// that flag into the Terminal's `bootSignal`, so the session lands on the ready
+// prompt without waiting out the ~3.4 s Boot_Sequence. `visual-necromancy.e2e.ts`
+// is the ONLY spec that navigates WITHOUT the flag, exercising the full boot.
+// `apps/web/src/app/layout.tsx` is never modified for any of this.
+//
 // Planned-red note: as of task 32.1 the data-*/ARIA adjustments of task 32.2
 // are not implemented and Playwright browser binaries may be absent, so these
 // specs are EXPECTED to fail / not-yet-run. The maintainer installs browsers
@@ -25,6 +33,18 @@ import { defineConfig, devices } from "@playwright/test";
 /** The port the test Next server binds to (kept off the dev-server 3000). */
 const PORT = 3100;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+
+// The capture-only marketing-screenshot spec (`screenshots.e2e.ts`,
+// visual-necromancy task 22.1) is skipped unless `CAPTURE_SCREENSHOTS` is set,
+// so the default `pnpm --filter @necro/web e2e` / CI gate never writes PNGs
+// into `docs/screenshots/`. The `screenshots` npm script targets that spec by
+// filename; detect that invocation here and enable capture, so a maintainer can
+// run `pnpm --filter @necro/web screenshots` cross-platform without exporting an
+// env var first. Running the whole suite (no explicit screenshots target) keeps
+// the spec skipped. An explicit `CAPTURE_SCREENSHOTS=1` is always honoured.
+if (process.argv.some((arg) => arg.includes("screenshots.e2e.ts"))) {
+  process.env.CAPTURE_SCREENSHOTS = "1";
+}
 
 export default defineConfig({
   // Only the explicit browser specs — never a stray `src` unit test.
