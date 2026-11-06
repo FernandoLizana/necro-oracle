@@ -141,7 +141,7 @@ columns).
     - fast-check `numRuns: 1000` over sets of grimoire ids
     - **Validates: Requirements 15.1, 15.2, 15.3**
 
-- [ ] 8. Implement candidate selection
+- [x] 8. Implement candidate selection
   - [x] 8.1 Implement candidate selection from reading evidence
     - In `packages/coven/src/select.ts` derive `Candidate_File`s as the distinct `.py` paths referenced by Python-2-classified `reading.draws[].evidence[].path`; bare target ⇒ all such paths ascending by path capped at 50; card-id target ⇒ restricted to that card's evidence paths; file-path target ⇒ single exact match; exclude files > 1 MB with a skip-note; emit deferred-count skip-note when over the 50-file cap; reject repos > 50 MB or > 5,000 files with an `Error_Line`-mapped NecroError
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.5, 2.6, 2.7_
@@ -152,12 +152,12 @@ columns).
     - fast-check `numRuns: 1000` over `arbRepoSnapshot` + reading arbitraries
     - **Validates: Requirements 1.2, 1.3, 1.4, 2.1, 2.2**
 
-  - [~] 8.3 Write property test for selection ordering and the per-run cap
+  - [x] 8.3 Write property test for selection ordering and the per-run cap
     - **Property 2: Selection ordering and the per-run cap** — engine processes the ascending-by-path prefix of length `min(n, 50)` and reports a deferred count of `max(0, n - 50)`, excluding any file over 1 MB with a naming skip-note
     - fast-check `numRuns: 1000`
     - **Validates: Requirements 1.5, 2.5, 2.6**
 
-  - [~] 8.4 Write unit tests for selection guard cases
+  - [x] 8.4 Write unit tests for selection guard cases
     - Cover unknown card id (R2.3 / R1.8), zero-candidate target Result_Line (R1.7 / R2.4), and repo-too-large error (R2.7)
     - _Requirements: 1.7, 1.8, 2.3, 2.4, 2.7_
 
@@ -167,7 +167,7 @@ columns).
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.7_
     - _Design: Diff and Patch_
 
-  - [~] 9.2 Write property test for patch round-trip and unvalidated exclusion
+  - [x] 9.2 Write property test for patch round-trip and unvalidated exclusion
     - **Property 9: Patch round-trips and excludes unvalidated files** — the Patch contains exactly validated+changed files; applying it to each `Before_Content` yields the `After_Content`; zero changed+validated ⇒ empty patch
     - fast-check `numRuns: 1000` over `arbFileResult`
     - **Validates: Requirements 7.4, 7.5, 7.7**

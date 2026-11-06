@@ -29,12 +29,13 @@ import {
   type CardDraw,
   type CardId,
   type Evidence,
+  type FileEntry,
   type Reading,
   type RepoRef,
   type RepoMeta,
   type RepoSnapshot,
 } from "@necro/oracle";
-import type { ResurrectTarget } from "@necro/coven";
+import type { FileResult, ResurrectTarget } from "@necro/coven";
 
 // ---------------------------------------------------------------------------
 // Python-2 construct kinds the Judgement detector emits as static evidence.
@@ -418,3 +419,293 @@ export const arbSelectionCase: fc.Arbitrary<SelectionCase> = fc
 export const arbCardTarget: fc.Arbitrary<ResurrectTarget> = fc
   .constantFrom(...CARD_IDS)
   .map((card) => ({ kind: "card", card }));
+
+// ---------------------------------------------------------------------------
+// File_Result arbitraries (task 9.2 — Property 9: patch round-trip + unvalidated
+// exclusion).
+//
+// The diff/patch property (P9) asserts a byte-for-byte round-trip, so the
+// generated `before`/`after` contents must exercise exactly the edges the
+// unified-diff generator in `diff.ts` cares about: empty files, files with and
+// without a trailing newline, and lines that themselves may be empty. The
+// trailing-newline edge is the load-bearing one — `diff.ts` emits the standard
+// "\ No newline at end of file" marker when a side lacks a trailing newline, so
+// the generator must produce both kinds freely and in combination.
+//
+// `arbFileResult` builds a schema-valid `FileResult` directly (it does NOT call
+// the module under test to fill `diff`/`fullyConverted`): the property derives
+// the expected patch membership from `validated` and `before !== after`
+// independently, and only `path`/`before`/`after`/`validated` matter to P9.
+// The `diff` field is filled with a trivially-valid placeholder so the object
+// satisfies `FileResultSchema` without re-deriving via `lineDiff`.
+// ---------------------------------------------------------------------------
+
+/**
+ * A small text content that freely exercises the trailing-newline edge:
+ *  - 0..5 lines, each 0..12 chars drawn from a mix that includes spaces, so an
+ *    all-whitespace or empty line can appear;
+ *  - a boolean decides whether the content ends with a trailing "\n".
+ *
+ * An empty line array yields "" (the empty-file edge). A non-empty array is
+ * joined with "\n" and optionally gets a trailing "\n". Only "\n" is used as a
+ * terminator so it matches `splitLines` in `diff.ts`.
+ */
+const arbTextContent: fc.Arbitrary<string> = fc
+  .tuple(
+    fc.array(
+      fc
+        .string({ minLength: 0, maxLength: 12 })
+        // Keep content to printable ASCII plus space; crucially never contains
+        // "\n" (lines are joined explicitly) and never U+0000 (the diff's
+        // internal no-newline sentinel), so neither perturbs the round-trip.
+        .map((s) => s.replace(/[\u0000\n\r]/g, "")),
+      { minLength: 0, maxLength: 5 },
+    ),
+    fc.boolean(),
+  )
+  .map(([lines, trailingNewline]) => {
+    if (lines.length === 0) return "";
+    const joined = lines.join("\n");
+    return trailingNewline ? `${joined}\n` : joined;
+  });
+
+/**
+ * A schema-valid `FileResult` whose `before`/`after`/`validated` fields are the
+ * only ones P9 reasons about. `after` is drawn independently of `before`, so
+ * both the changed (before !== after) and unchanged (before === after) cases
+ * arise naturally; `validated` is a free boolean so the not-validated exclusion
+ * (R7.7) is exercised. `diff`/`residuals`/`fullyConverted` are filled with a
+ * schema-valid placeholder — the property never inspects them.
+ */
+export const arbFileResult: fc.Arbitrary<FileResult> = fc
+  .record({
+    path: arbPyPath,
+    before: arbTextContent,
+    after: arbTextContent,
+    validated: fc.boolean(),
+  })
+  .map(({ path, before, after, validated }) => ({
+    path,
+    before,
+    after,
+    diff: [],
+    residuals: [],
+    fullyConverted: true,
+    validated,
+  }));
+
+/**
+ * A set of `FileResult`s with DISTINCT paths. The patch is keyed by path, so a
+ * duplicate path across two sections would make membership ambiguous; the
+ * property drives `buildPatch` with a uniquely-pathed set and asserts against
+ * the validated+changed subset of exactly those paths.
+ */
+export const arbFileResultSet: fc.Arbitrary<readonly FileResult[]> =
+  fc.uniqueArray(arbFileResult, {
+    maxLength: 12,
+    selector: (f) => f.path,
+  });
+
+// ===========================================================================
+// Cap / oversize selection case (task 8.3, Property 2)
+//
+// Appended as a distinct export so it does not disturb `arbSelectionCase`
+// above (which deliberately stays at or below the 50-file cap and well under
+// the 1 MB per-file limit). This generator does the opposite: it produces a
+// bare-target scenario with MORE than 50 py2 `.py` files and some files over
+// the 1 MB per-file limit, so Property 2 can assert the ascending-by-path
+// prefix of length min(n, 50), the deferred count max(0, n - 50), and the
+// per-file size exclusion with its naming skip-note.
+//
+// Everything is known by construction: `oversizePaths` are the py2 paths whose
+// snapshot content exceeds 1 MB (and so must be excluded before the cap),
+// while `eligiblePaths` are the ascending, under-limit py2 paths the cap then
+// applies to. No network / LLM / sandbox.
+// ===========================================================================
+
+/** The per-file byte ceiling mirrored from `select.ts` (`MAX_FILE_BYTES`). */
+const CAP_MAX_FILE_BYTES = 1_000_000;
+
+/** The per-run file cap mirrored from `select.ts` (`MAX_CANDIDATES`). */
+const CAP_MAX_CANDIDATES = 50;
+
+/**
+ * A cap/oversize scenario whose expected answers are known by construction.
+ *
+ * - `snapshot` / `reading` drive a *bare*-target `selectCandidates` call.
+ * - `eligiblePaths` is the ascending, distinct set of py2 `.py` paths whose
+ *   content is under the 1 MB limit (the set the cap applies to).
+ * - `oversizePaths` is the set of py2 `.py` paths whose content exceeds 1 MB
+ *   (each must be excluded with a naming skip-note before the cap).
+ * - `expectedCandidates` is the ascending prefix of `eligiblePaths` of length
+ *   min(eligible.length, 50) — exactly what selection should process.
+ * - `expectedDeferred` is max(0, eligible.length - 50).
+ */
+export interface SelectionCapCase {
+  readonly snapshot: RepoSnapshot;
+  readonly reading: Reading;
+  readonly eligiblePaths: readonly string[];
+  readonly oversizePaths: readonly string[];
+  readonly expectedCandidates: readonly string[];
+  readonly expectedDeferred: number;
+}
+
+/**
+ * Build the runtime `RepoSnapshot` *directly* (not via
+ * `buildSnapshotFromFileMap`). The builder applies its own 1 MB size *filter*
+ * that would drop an oversize file from the snapshot entirely before
+ * `select.ts` ever sees it, and materializing real megabyte strings 1000×
+ * would also make the property both slow and unserializable on failure.
+ *
+ * Instead we record a `FileEntry.size` over `select.ts`'s `MAX_FILE_BYTES`
+ * for each oversize path while keeping the stored content tiny. `select.ts`
+ * reads `FileEntry.size` as its primary size signal (falling back to content
+ * byte length only when no entry is found), so this faithfully exercises the
+ * per-file size guard (R2.5) without any large allocation.
+ */
+function buildCapSnapshot(
+  ref: RepoRef,
+  meta: RepoMeta,
+  createdAt: string,
+  eligiblePaths: readonly string[],
+  oversizePaths: readonly string[],
+): RepoSnapshot {
+  const files: FileEntry[] = [];
+  const contents = new Map<string, string>();
+
+  for (const p of eligiblePaths) {
+    const content = `# ${p}\nprint "legacy"\n`;
+    files.push({
+      path: p,
+      // Well under the per-file limit.
+      size: Buffer.byteLength(content, "utf8"),
+      lang: "python",
+      sha: "0".repeat(8),
+    });
+    contents.set(p, content);
+  }
+
+  for (const p of oversizePaths) {
+    // Tiny stored content, but a recorded size one byte over the limit so the
+    // size guard must exclude it (R2.5) — no megabyte allocation.
+    contents.set(p, "# oversize placeholder\n");
+    files.push({
+      path: p,
+      size: CAP_MAX_FILE_BYTES + 1,
+      lang: "python",
+      sha: "0".repeat(8),
+    });
+  }
+
+  return {
+    ref,
+    files,
+    meta,
+    manifests: [],
+    contents,
+    oversizeFiles: [],
+    truncated: false,
+    createdAt,
+  };
+}
+
+/**
+ * Build a reading that flags every path in `allPy2Paths` as py2 via one static
+ * print-statement evidence item on a single draw (the Judgement card). The
+ * draw's card identity does not matter to a bare target; a single draw keeps
+ * the generator simple while still exercising the full ascending/cap path.
+ */
+function buildCapReading(
+  repo: RepoSnapshot["ref"],
+  allPy2Paths: readonly string[],
+  now: string,
+): Reading {
+  const evidence: Evidence[] = allPy2Paths.map((path) => ({
+    kind: "print_statement",
+    path,
+    line: 1,
+    detail: "legacy print statement",
+    source: "static",
+  }));
+
+  const draws: CardDraw[] = [
+    {
+      card: "judgement",
+      severity: 1,
+      orientation: "reversed",
+      evidence,
+      summary: "",
+      grimoires: [],
+    },
+  ];
+
+  return {
+    id: crypto.randomUUID(),
+    repo,
+    draws,
+    spread: [],
+    vitality: 100,
+    createdAt: now,
+    engineVersion: "0.0.0",
+    errors: [],
+  };
+}
+
+/**
+ * `arbSelectionCapCase` — a bare-target scenario with > 50 eligible py2 files
+ * (so the cap bites) and some py2 files over 1 MB (so the size guard excludes
+ * them first). Expected prefix, deferred count, and oversize set are all known
+ * by construction.
+ */
+export const arbSelectionCapCase: fc.Arbitrary<SelectionCapCase> = fc
+  .record({
+    ref: arbRepoRef,
+    meta: arbRepoMeta,
+    createdAt: fc
+      .date({
+        min: new Date("2020-01-01T00:00:00Z"),
+        max: new Date("2030-01-01T00:00:00Z"),
+      })
+      .map((d) => d.toISOString()),
+    // 51..70 distinct under-limit py2 `.py` paths so n > 50 always (the cap
+    // bites) while keeping the case small enough for 1000 runs.
+    eligible: fc.uniqueArray(arbPyPath, {
+      minLength: CAP_MAX_CANDIDATES + 1,
+      maxLength: CAP_MAX_CANDIDATES + 20,
+      selector: (p) => p,
+    }),
+    // 0..5 oversize py2 `.py` paths — excluded by the size guard before the cap.
+    oversizeRaw: fc.uniqueArray(arbPyPath, { maxLength: 5, selector: (p) => p }),
+  })
+  .map((base) => {
+    // Keep the oversize pool disjoint from the eligible pool.
+    const eligibleSet = new Set(base.eligible);
+    const oversizePaths = base.oversizeRaw.filter((p) => !eligibleSet.has(p));
+
+    const eligiblePaths = [...base.eligible].sort();
+    const allPy2Paths = [...eligiblePaths, ...oversizePaths];
+
+    const snapshot = buildCapSnapshot(
+      base.ref,
+      base.meta,
+      base.createdAt,
+      eligiblePaths,
+      oversizePaths,
+    );
+    const reading = buildCapReading(snapshot.ref, allPy2Paths, base.createdAt);
+
+    const expectedCandidates = eligiblePaths.slice(0, CAP_MAX_CANDIDATES);
+    const expectedDeferred = Math.max(
+      0,
+      eligiblePaths.length - CAP_MAX_CANDIDATES,
+    );
+
+    return {
+      snapshot,
+      reading,
+      eligiblePaths,
+      oversizePaths,
+      expectedCandidates,
+      expectedDeferred,
+    };
+  });
