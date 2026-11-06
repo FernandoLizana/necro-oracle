@@ -27,6 +27,7 @@ export default [
           allowDefaultProject: [
             // Allow vitest config files to fall back to default project
             "packages/*/vitest.config.ts",
+            "packages/grimoires/*/vitest.config.ts",
             "apps/*/vitest.config.ts",
             "vitest.config.ts",
           ],
@@ -64,6 +65,7 @@ export default [
     files: [
       "vitest.config.ts",
       "packages/*/vitest.config.ts",
+      "packages/grimoires/*/vitest.config.ts",
       "apps/*/vitest.config.ts",
       // Package-level test dirs sit outside the src-only tsconfig; parse them
       // with the TS parser but without type information.

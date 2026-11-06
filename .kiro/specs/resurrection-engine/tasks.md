@@ -97,18 +97,18 @@ columns).
     - fast-check `numRuns: 1000` over `arbPy2Program`
     - **Validates: Requirements 3.6, 3.8**
 
-  - [~] 4.5 Write golden fixtures for the Pre_Pass transforms
+  - [x] 4.5 Write golden fixtures for the Pre_Pass transforms
     - Add `fixtures/<case>/before` → `after` golden pairs under `packages/grimoires/py2to3/fixtures` covering each of the six fixers; add a test that asserts each `before` produces its pinned `after`
     - _Requirements: 3.1, 3.8_
 
 - [ ] 5. Implement the grimoire LLM step and validation
-  - [~] 5.1 Implement the declarative LlmStep (prompt, schema, mock fixture, apply)
+  - [x] 5.1 Implement the declarative LlmStep (prompt, schema, mock fixture, apply)
     - In `packages/grimoires/py2to3/llm/` implement `buildRequest` to mask secret-like substrings via oracle `maskSecret` before placing code in the prompt, wrap the masked code in the fixed `UNTRUSTED_REPOSITORY_CODE` delimiters marked as data-not-instructions, and set `maxTokens`/`timeoutMs`/`cacheKey = sha256(pairId + construct + prompt)`; define `outputSchema` (zod), `apply(source, parsed)`, and a deterministic `mockFixture`
     - Wire the `LlmStep` into the grimoire `llm` field; fixers and the step import no adapters
     - _Requirements: 4.1, 4.2, 4.3, 12.3, 15.6, 15.7_
     - _Design: LLM_Pass_
 
-  - [~] 5.2 Implement `validate()` Target_Parser check
+  - [x] 5.2 Implement `validate()` Target_Parser check
     - In `packages/grimoires/py2to3/validate.ts` implement `validate(after)` using `parsePython` and counting error nodes (zero ⇒ valid Python 3); return a `ValidationResult`; never execute repository code
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
     - _Design: Validation_
@@ -161,7 +161,7 @@ columns).
     - Cover unknown card id (R2.3 / R1.8), zero-candidate target Result_Line (R1.7 / R2.4), and repo-too-large error (R2.7)
     - _Requirements: 1.7, 1.8, 2.3, 2.4, 2.7_
 
-- [ ] 9. Implement diff, patch, and vitality re-diagnosis
+- [x] 9. Implement diff, patch, and vitality re-diagnosis
   - [x] 9.1 Implement per-file diff and unified Patch generation
     - In `packages/coven/src/diff.ts` compute a line-oriented LCS diff into `DiffLine[]` (identical content ⇒ context-only, no add/remove), and generate a single unified-diff `Patch` over validated, changed files only (excluding not-validated files; zero changed ⇒ empty patch) such that applying the patch to `Before_Content` reproduces `After_Content` byte-for-byte
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.7_
@@ -177,12 +177,12 @@ columns).
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
     - _Design: Vitality re-diagnosis_
 
-  - [~] 9.4 Write property test for Vitality_Delta consistency
+  - [x] 9.4 Write property test for Vitality_Delta consistency
     - **Property 6: Vitality_Delta is consistent with the oracle** — reported `Vitality_Delta` equals `computeVitalityDelta(before, after)` equals `after - before`
     - fast-check `numRuns: 200`
     - **Validates: Requirements 6.3**
 
-  - [~] 9.5 Write property test for the changed-card set
+  - [x] 9.5 Write property test for the changed-card set
     - **Property 7: Changed-card set is the exact draw difference** — reported changed cards are exactly those whose draw differs in presence, severity, or orientation; no unchanged card is reported
     - fast-check `numRuns: 200`
     - **Validates: Requirements 6.4**

@@ -99,4 +99,4 @@ export {
 // before/after vitality, the signed delta, and the changed-card set. On
 // post-reading failure it returns a typed REDIAGNOSIS_FAILED error with
 // after/delta nulled, never discarding the produced File_Results (R6.1–R6.5).
-export { rediagnose, type RediagnoseResult } from "./rediagnose.js";
+export { rediagnose, changedCards, type RediagnoseResult } from "./rediagnose.js";

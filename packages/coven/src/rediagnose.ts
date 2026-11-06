@@ -128,8 +128,17 @@ function contribution(draw: CardDraw): number {
  * change kind (severity takes precedence when both differ). `improved` is true
  * when the card's vitality contribution drops after resurrection — a removed
  * card (contribution → 0) is always an improvement.
+ *
+ * Exported for property testing (task 9.5 / Property 7): the changed-card set
+ * is a pure function of the two draw sets, so the property drives it directly
+ * with generated `CardDraw[]` pairs rather than through the full `rediagnose`
+ * pipeline (which would re-divine an overlaid snapshot and so could not control
+ * the `after` draws independently of the `before`).
  */
-function changedCards(before: readonly CardDraw[], after: readonly CardDraw[]): ChangedCard[] {
+export function changedCards(
+  before: readonly CardDraw[],
+  after: readonly CardDraw[],
+): ChangedCard[] {
   const beforeByCard = new Map<string, CardDraw>();
   for (const draw of before) beforeByCard.set(draw.card, draw);
   const afterByCard = new Map<string, CardDraw>();
