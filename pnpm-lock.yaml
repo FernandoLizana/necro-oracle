@@ -35,6 +35,9 @@ importers:
       '@necro/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@necro/coven':
+        specifier: workspace:*
+        version: link:../../packages/coven
       '@necro/github':
         specifier: workspace:*
         version: link:../../packages/github

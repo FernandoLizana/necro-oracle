@@ -61,7 +61,6 @@ import type {
 } from "../ports.js";
 import {
   LanguagePairIdSchema,
-  type FileResult,
   type LedgerEvent,
   type RitualInput,
 } from "../models.js";

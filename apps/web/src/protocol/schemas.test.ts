@@ -25,6 +25,7 @@ import {
   ErrorEnvelopeSchema,
   ReadingRequestSchema,
   ReadingResponseSchema,
+  ResurrectRequestSchema,
   SummonRequestSchema,
   SummonSummarySchema,
 } from "./schemas.js";
@@ -128,6 +129,90 @@ describe("ReadingRequestSchema (Q15, R12.1, R12.3)", () => {
     ).toBe(false);
     expect(
       ReadingRequestSchema.safeParse({ ref: `octocat/hello-world@${SHA}` }).success,
+    ).toBe(false);
+  });
+});
+
+describe("ResurrectRequestSchema (R9.1, Request schema)", () => {
+  it("accepts a pinned ref with spread fates|necropsy and no target (bare run)", () => {
+    expect(
+      ResurrectRequestSchema.parse({ ref: `octocat/hello-world@${SHA}`, spread: "fates" }),
+    ).toEqual({ ref: `octocat/hello-world@${SHA}`, spread: "fates" });
+    expect(
+      ResurrectRequestSchema.safeParse({ ref: `o/n@${SHA}`, spread: "necropsy" }).success,
+    ).toBe(true);
+  });
+
+  it("accepts an optional target (card id or file path) up to 400 chars", () => {
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        target: "hanged_man",
+        spread: "fates",
+      }).success,
+    ).toBe(true);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        target: "src/lich.py",
+        spread: "fates",
+      }).success,
+    ).toBe(true);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        target: "x".repeat(400),
+        spread: "fates",
+      }).success,
+    ).toBe(true);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        target: "x".repeat(401),
+        spread: "fates",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts the optional demo: true marker and rejects demo: false", () => {
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        spread: "fates",
+        demo: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        spread: "fates",
+        demo: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects the celtic spread, a bad sha and unknown keys (strict)", () => {
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        spread: "celtic",
+      }).success,
+    ).toBe(false);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${"A".repeat(40)}`,
+        spread: "fates",
+      }).success,
+    ).toBe(false);
+    expect(
+      ResurrectRequestSchema.safeParse({
+        ref: `octocat/hello-world@${SHA}`,
+        spread: "fates",
+        extra: 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      ResurrectRequestSchema.safeParse({ ref: `octocat/hello-world@${SHA}` }).success,
     ).toBe(false);
   });
 });

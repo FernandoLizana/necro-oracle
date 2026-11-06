@@ -47,6 +47,26 @@ export const ReadingRequestSchema = z
   .strict();
 
 /**
+ * `POST /api/resurrect` request body (design: "Request schema"). A
+ * commit-pinned ref (same `owner/name@<40-hex-lowercase-sha>` shape as the
+ * reading request), an optional `target` (a card id or a file path; absent ⇒ a
+ * bare run over all py2 candidates, R1.4), the spread of the in-scope reading
+ * (`celtic` is rejected, matching the reading route), and the optional
+ * literal-`true` demo marker.
+ */
+export const ResurrectRequestSchema = z
+  .object({
+    ref: z
+      .string()
+      .max(200)
+      .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/),
+    target: z.string().max(400).optional(),
+    spread: z.enum(["fates", "necropsy"]),
+    demo: z.literal(true).optional(),
+  })
+  .strict();
+
+/**
  * The validated summary of a summon: public repo metadata only, never any
  * snapshot contents. Mirrors the `@necro/ui-crt` `SummonSummary` interface.
  * The ref reuses the oracle `RepoRefSchema` but tightens `sha` to exactly 40

@@ -7,6 +7,14 @@
     "11.3 Write property test for ordered, once-each phase emission": {
       "status": "passed",
       "lastRunTimestamp": 1793940475908
+    },
+    "12.2 Write property test for no-secret-in-any-output": {
+      "status": "passed",
+      "lastRunTimestamp": 1793940748756
+    },
+    "12.3 Write property test for well-formed typed NecroError": {
+      "status": "passed",
+      "lastRunTimestamp": 1793940782422
     }
   },
   "executionHistory": {
@@ -614,6 +622,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931359362
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793940592199
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793941112826
       }
     ],
     "12.3 Write property test for well-formed typed NecroError": [
@@ -621,6 +639,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931359395
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793940593116
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793941113739
       }
     ],
     "13.1 Add the resurrection NDJSON schemas": [
@@ -628,6 +656,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931359423
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793940594513
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793941115138
       }
     ],
     "13.2 Implement the Resurrection_Route handler": [
@@ -764,6 +802,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931360085
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793940595539
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793941115876
       }
     ],
     "16.3 Write property tests for demo labelling and determinism": [
@@ -855,6 +903,13 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793940544998
+      }
+    ],
+    "12. Implement secret masking and typed-error guarantees": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793941113775
       }
     ]
   }

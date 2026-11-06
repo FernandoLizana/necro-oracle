@@ -156,3 +156,26 @@ export {
   type InngestClientLike,
   type InngestStepTools,
 } from "./runners/inngest.js";
+
+// --- Demo_Mode wiring (demo/*) ---------------------------------------------
+// The browser-safe Demo_Mode seam (design: "Demo mode"; R14.2, R14.3, R14.4,
+// R14.6). The NODE-ONLY fixture loader (`loadDemoRitualInput`) lives behind the
+// package's "./node" subpath so this barrel stays `fs`-free; what ships here is
+// the pure wiring the route composes:
+//   - `[DEMO]` line labelling applied once at the server emit layer (R14.3):
+//     `demoEmit` wraps a `PhaseEmit` to prefix the runner's free-text
+//     skip-notes; `prefixDemoLine`/`DEMO_PREFIX` label every other serialized
+//     stream line (phase, terminal) so each line carries exactly one `[DEMO]`.
+//   - `createDemoPorts` assembles the demo `RitualPorts` from the injected Mock
+//     `LlmPort` with the sandbox omitted (R14.4); `installNetworkBlockGuard`
+//     blocks outbound network for the run with a guard that throws (R14.2).
+//   - `demoFixtureMissingError` is the canonical `DEMO_FIXTURE_MISSING` the
+//     Node loader raises for a missing/unreadable fixture (R14.6).
+export { DEMO_PREFIX, prefixDemoLine, demoEmit } from "./demo/prefix.js";
+export {
+  createDemoPorts,
+  installNetworkBlockGuard,
+  demoNetworkBlockedError,
+  type DemoPortsInput,
+} from "./demo/ports.js";
+export { demoFixtureMissingError } from "./demo/errors.js";

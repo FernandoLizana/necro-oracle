@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@necro/config": "workspace:*",
+    "@necro/coven": "workspace:*",
     "@necro/github": "workspace:*",
     "@necro/oracle": "workspace:*",
     "@necro/ui-crt": "workspace:*",

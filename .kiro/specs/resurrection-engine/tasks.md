@@ -210,24 +210,24 @@ columns).
     - _Requirements: 10.2, 10.5_
     - _Design: Default vs optional runtime_
 
-- [ ] 12. Implement secret masking and typed-error guarantees
+- [x] 12. Implement secret masking and typed-error guarantees
   - [x] 12.1 Implement cross-sink secret masking and error typing in the runner path
     - Ensure every diff, Patch, Stream_Line, ledger entry, and LLM prompt routes through `maskSecret`/`redactDeep` so no raw secret value (including the LLM key) survives; if masking cannot complete for a content item, withhold it from all sinks and raise a typed NecroError; ensure every failure is a `NecroError` with non-empty `code` and oracle-voice `userMessage` containing no path, secret, or stack
     - _Requirements: 12.3, 12.4, 12.5, 13.2_
     - _Design: Error Handling_
 
-  - [~] 12.2 Write property test for no-secret-in-any-output
+  - [x] 12.2 Write property test for no-secret-in-any-output
     - **Property 12: No secret survives into any output** — for content with secret-like values routed through any sink (diff, Patch, Stream_Line, LLM prompt, log, error), no raw secret appears; every occurrence is the fixed mask token
     - fast-check `numRuns: 200`
     - **Validates: Requirements 12.3, 13.2**
 
-  - [~] 12.3 Write property test for well-formed typed NecroError
+  - [x] 12.3 Write property test for well-formed typed NecroError
     - **Property 13: Every failure is a well-formed typed NecroError** — raised value is a `NecroError` with non-empty `code` and oracle-voice `userMessage`, no path/secret/stack
     - fast-check `numRuns: 200`
     - **Validates: Requirements 12.5**
 
 - [ ] 13. Wire the engine into apps/web
-  - [~] 13.1 Add the resurrection NDJSON schemas
+  - [x] 13.1 Add the resurrection NDJSON schemas
     - Create `apps/web/src/protocol/resurrect-stream.ts` with `ResurrectionPhaseSchema`, `ResurrectPhaseLineSchema`, `ResurrectResultLineSchema` (redaction-safe wire form of `RitualResult`), and `ResurrectStreamLineSchema` reusing `SkipNoteLineSchema` and `ErrorLineSchema` verbatim; add `ResurrectRequestSchema` to `apps/web/src/protocol/schemas.ts`
     - _Requirements: 9.1, 9.5_
     - _Design: Resurrection NDJSON additions, Request schema_
@@ -311,7 +311,7 @@ columns).
     - _Requirements: 16.4_
     - _Design: Demo mode_
 
-  - [~] 16.2 Wire Demo_Mode into the runner and route
+  - [x] 16.2 Wire Demo_Mode into the runner and route
     - When `demo: true`, load the Ritual from `fixtures/graveyard/lich-py2`, wire the Mock `LlmPort`, block any outbound network via a guard that throws rather than reaching the wire, prefix every emitted line with `[DEMO]`, and return a `DEMO_FIXTURE_MISSING` Error_Line when a required fixture is missing/unreadable
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.6_
     - _Design: Demo mode_
