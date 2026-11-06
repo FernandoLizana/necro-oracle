@@ -247,6 +247,19 @@ export async function handleResurrect(
       // Terminate with exactly one Error_Line for a given thrown value (R9.3).
       const terminateError = (err: unknown): void => {
         if (finished) return;
+        // Server-side observability (Vercel runtime logs): the terminal error
+        // path mapped the error onto the stream but logged NOTHING, so a
+        // production failure (e.g. PARSER_INIT_FAILED) was invisible. Called
+        // for both real throws and the overall-timeout — log all of them. Log
+        // ONLY the stable tag, the NecroError machine code (when present), the
+        // message and the stack — never the tokens, env, request body, or the
+        // mapped `userMessage` (which may echo caller input).
+        console.error(
+          "[api/resurrect] ritual failed:",
+          err instanceof NecroError ? err.code : undefined,
+          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.stack : undefined,
+        );
         const mapped = mapError(mapEngineError(err), githubToken);
         finished = true;
         // The mapped body is an oracle-code envelope; `enqueueValidated` redacts

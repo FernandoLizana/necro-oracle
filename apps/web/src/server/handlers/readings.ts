@@ -357,6 +357,18 @@ async function runPipeline(args: {
   } catch (err) {
     // f. Any throw after streaming began -> a final { error } line at 200.
     if (isFinished()) return;
+    // Server-side observability (Vercel runtime logs): the handler's catch
+    // previously mapped the error onto the stream but logged NOTHING, so a
+    // production failure like PARSER_INIT_FAILED was invisible in the logs.
+    // Log ONLY the stable tag, the NecroError machine code (when present), the
+    // message and the stack — never the token, env, request body, or the
+    // mapped `userMessage` (which may echo caller input).
+    console.error(
+      "[api/readings] reading pipeline failed:",
+      err instanceof NecroError ? err.code : undefined,
+      err instanceof Error ? err.message : String(err),
+      err instanceof Error ? err.stack : undefined,
+    );
     const mapped = mapError(err, token);
     write({ error: mapped.body.error });
     finish();

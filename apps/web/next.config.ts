@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,6 +18,11 @@ interface WebpackConfig {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(__dirname, "../../");
+
+// A module resolver anchored at this config so `require.resolve(...)` finds the
+// same real files the oracle parser loads at runtime (it resolves the grammar
+// with `createRequire(import.meta.url).resolve("tree-sitter-python/...wasm")`).
+const require = createRequire(import.meta.url);
 
 // Tree-sitter WASM file tracing (decision D11, task 1.2 / Q8b).
 //
@@ -43,6 +50,60 @@ const WASM_TRACING_GLOBS = [
   "node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
   "node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
 ];
+
+// The two WASM specifiers the oracle parser resolves at runtime. Resolving them
+// here, at config time, with the SAME module resolution the parser uses, yields
+// the exact real file on disk — including pnpm's virtual-store path — which we
+// can then name explicitly in the trace. The globs above stay as a belt-and-
+// braces fallback, but a glob that matches nothing (or a hoisted path Next
+// emits that does not exist) is what let `tree-sitter-python.wasm` slip out of
+// the `/api/readings` lambda in production. A resolved real path cannot.
+const WASM_TRACING_SPECIFIERS = [
+  "tree-sitter-python/tree-sitter-python.wasm",
+  "web-tree-sitter/web-tree-sitter.wasm",
+];
+
+/**
+ * Resolve a module-relative WASM specifier to a path RELATIVE to
+ * `monorepoRoot` (the `outputFileTracingRoot`), POSIX-normalized so it is a
+ * valid trace-include entry on every OS — but only when the resolved absolute
+ * file actually exists on disk. Returns null (and warns) when the specifier
+ * cannot be resolved, so a missing optional package never breaks the build.
+ */
+function resolvedWasmRelPath(spec: string): string | null {
+  try {
+    const abs = require.resolve(spec);
+    if (!existsSync(abs)) return null;
+    return path.relative(monorepoRoot, abs).split(path.sep).join("/");
+  } catch {
+    console.warn(`[next.config] could not resolve ${spec} for tracing`);
+    return null;
+  }
+}
+
+/**
+ * Build the `outputFileTracingIncludes` map. Both `/api/readings` and
+ * `/api/resurrect` parse Python and therefore need BOTH WASM files packaged
+ * into their serverless function, so both routes get the SAME include list:
+ * the resolved REAL paths first (authoritative), then the globs as a fallback.
+ *
+ * Exported so the config can be asserted by a fast unit test without running a
+ * full `next build`.
+ */
+export function buildWasmTracingIncludes(): Record<string, string[]> {
+  const resolvedRelPaths = WASM_TRACING_SPECIFIERS.map(resolvedWasmRelPath);
+  const includes = [
+    ...resolvedRelPaths.filter((p): p is string => p !== null),
+    ...WASM_TRACING_GLOBS,
+  ];
+  return {
+    "/api/readings": includes,
+    "/api/resurrect": includes,
+  };
+}
+
+/** The composed trace-include map, shared by the config and the unit test. */
+export const wasmTracingIncludes = buildWasmTracingIncludes();
 
 // Server packages that must stay external (not bundled by webpack) so their
 // runtime WASM resolution survives (decision D11). `@necro/oracle` is consumed
@@ -72,9 +133,10 @@ const nextConfig: NextConfig = {
 
   // Trace the monorepo root so pnpm's virtual store is in scope for tracing.
   outputFileTracingRoot: monorepoRoot,
-  outputFileTracingIncludes: {
-    "/api/readings": WASM_TRACING_GLOBS,
-  },
+  // Both /api/readings and /api/resurrect parse Python and need the grammar +
+  // runtime WASM packaged into their lambdas (resolved real paths first, globs
+  // as fallback). See buildWasmTracingIncludes above.
+  outputFileTracingIncludes: wasmTracingIncludes,
 
   // Externalise the WASM-loading packages on the server build via webpack.
   // `serverExternalPackages` is kept for the two real node packages (it is a

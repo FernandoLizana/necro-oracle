@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
+    "check:wasm-trace": "node scripts/check-wasm-trace.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "e2e": "playwright test",
