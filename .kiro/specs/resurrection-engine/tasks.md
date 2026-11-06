@@ -253,11 +253,11 @@ columns).
     - _Requirements: 1.1, 1.4_
     - _Design: Browser/terminal rendering, Resurrect_Command_
 
-  - [~] 14.2 Write unit tests for the resurrect command parser and HELP entry
+  - [x] 14.2 Write unit tests for the resurrect command parser and HELP entry
     - Cover bare `resurrect`, a card-id argument, a file-path argument, and malformed args (extra tokens, empty token); assert the HELP text lists the command and argument and stays ASCII-only within the column budget
     - _Requirements: 1.1, 1.4_
 
-  - [~] 14.3 Extend the browser API client to POST to the Resurrection_Route and consume its NDJSON stream
+  - [x] 14.3 Extend the browser API client to POST to the Resurrection_Route and consume its NDJSON stream
     - In `apps/web/src/terminal/api-client.ts` add a `resurrect(pinned, target, spread, signal, onProgress)` method mirroring `read`: POST the `ResurrectRequestSchema` body to `/api/resurrect` with `accept: application/x-ndjson`, read the body with the existing `createNdjsonParser` from `apps/web/src/terminal/ndjson.ts`, and validate each line against `ResurrectStreamLineSchema`; dispatch Phase_Lines, Skip_Note_Lines, the terminal Result_Line (re-validated against the `RitualResult` wire schema) and Error_Lines (raised as `NecroError`), reusing the user-abort vs 55 s timeout discrimination already in the client; surface phase/skip/error text to the terminal in the oracle voice via `packages/ui-crt/src/voice/phrases.ts`, pushed through an `aria-live` region so updates are announced. In demo mode the server already applies the `[DEMO]` prefix to every line; render it verbatim and do not add a second prefix client-side
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 14.3_
     - _Design: Resurrection NDJSON additions, Browser/terminal rendering, Demo mode_
@@ -266,7 +266,7 @@ columns).
     - Drive the client with a recorded line sequence (phases in order → a skip-note → a Result_Line) asserting progress callbacks and the resolved `RitualResult`, plus an error-terminal case (an Error_Line raises a `NecroError` with only `code`/`userMessage`); no real network — use a mocked `fetch`/readable stream; assert a demo sequence is rendered with its server-applied `[DEMO]` prefix and never double-prefixed
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 14.3_
 
-  - [~] 14.5 Render the per-file before/after diff and the Residual_List in the CRT terminal
+  - [x] 14.5 Render the per-file before/after diff and the Residual_List in the CRT terminal
     - Add a diff renderer in `packages/ui-crt/src/render/` that turns a `FileResult.diff` (`DiffLine[]`) into CRT lines marking added `+`, removed `-`, and context ` ` lines, ASCII-only and wrapped/truncated to ≤ 72 columns in the phosphor palette; render each file's `Residual_List` entries as `path:line` with the unconverted construct, and render a fully-converted indication when `residuals.length === 0`; an identical before/after renders as unchanged with no add/remove lines; wire the renderer into the terminal result view in `apps/web/src/components`
     - _Requirements: 7.1, 7.2, 8.1, 8.3_
     - _Design: Browser/terminal rendering, Diff and Patch_
@@ -284,7 +284,7 @@ columns).
     - Assert the builder produces the correct filename and mime for a non-empty patch and handles the empty-patch case gracefully, using a DOM/URL mock (`URL.createObjectURL`/`Blob`) — no real network and no real file write
     - _Requirements: 7.3, 7.4_
 
-  - [~] 14.9 Show the Vitality_Delta and the changed-card set in the terminal
+  - [x] 14.9 Show the Vitality_Delta and the changed-card set in the terminal
     - Render `beforeVitality`/`afterVitality`, the signed `vitalityDelta`, and each entry of `changedCards` (card, change kind, `improved` flag) as CRT lines in the oracle voice (ASCII-only, ≤ 72 columns); when re-diagnosis failed (`afterVitality`/`vitalityDelta` are `null`) render a re-diagnosis-incomplete line instead of a delta. The delta and changed-card data arrive on the Result_Line
     - _Requirements: 6.3, 6.4, 6.5, 9.3_
     - _Design: Vitality re-diagnosis, Browser/terminal rendering_
@@ -293,7 +293,7 @@ columns).
     - Cover a positive delta with at least one improved changed card, a zero/negative delta, and the null case (re-diagnosis incomplete) rendering the incomplete line rather than a delta
     - _Requirements: 6.3, 6.4, 6.5_
 
-  - [~] 14.11 Respect reduced-motion and the web JS budget for the new terminal code
+  - [x] 14.11 Respect reduced-motion and the web JS budget for the new terminal code
     - Ensure the diff reveal and result rendering honor `prefers-reduced-motion` and the terminal `quiet` command (no motion when either is set), reusing the existing ui-crt motion/prefs modules; keep the terminal route within the ≤ 250 KB gzipped budget by lazy-loading any heavy diff/patch helper and keeping card images lazy, so the new code adds no eager weight to the initial route
     - _Requirements: 14.1, 14.5_
     - _Design: Browser/terminal rendering, Default vs optional runtime_

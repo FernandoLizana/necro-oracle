@@ -23,8 +23,12 @@ import type {
   ProgressEvent,
   ReadProgress,
   ReadingResponse,
+  ResurrectProgress,
+  ResurrectProgressEvent,
+  RitualResponse,
   SummonSummary,
 } from "../protocol.js";
+import type { ResurrectTarget } from "../command/types.js";
 import type {
   FramePort,
   MediaPort,
@@ -227,15 +231,31 @@ export interface FakeApi extends ApiPort {
     resolve: (response: ReadingResponse) => void;
     reject: (error: unknown) => void;
   }[];
+  /**
+   * Every `resurrect` call. `emit(event)` pushes one decoded resurrection
+   * Progress_Event to the live `onProgress` callback; `resolve`/`reject` settle
+   * the final `RitualResult`.
+   */
+  readonly resurrects: {
+    pinned: string;
+    target: ResurrectTarget;
+    spread: PlayableSpread;
+    signal: AbortSignal;
+    emit: (event: ResurrectProgressEvent) => void;
+    resolve: (response: RitualResponse) => void;
+    reject: (error: unknown) => void;
+  }[];
 }
 
 /** Build a fake readings API whose every call is resolved manually by the test. */
 export function makeFakeApi(): FakeApi {
   const summons: FakeApi["summons"] = [];
   const reads: FakeApi["reads"] = [];
+  const resurrects: FakeApi["resurrects"] = [];
   return {
     summons,
     reads,
+    resurrects,
     summon(repo, signal) {
       return new Promise<SummonSummary>((resolve, reject) => {
         summons.push({ repo, signal, resolve, reject });
@@ -245,6 +265,19 @@ export function makeFakeApi(): FakeApi {
       return new Promise<ReadingResponse>((resolve, reject) => {
         reads.push({
           pinned,
+          spread,
+          signal,
+          emit: (event) => onProgress(event),
+          resolve,
+          reject,
+        });
+      });
+    },
+    resurrect(pinned, target, spread, signal, onProgress: ResurrectProgress) {
+      return new Promise<RitualResponse>((resolve, reject) => {
+        resurrects.push({
+          pinned,
+          target,
           spread,
           signal,
           emit: (event) => onProgress(event),

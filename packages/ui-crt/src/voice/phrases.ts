@@ -14,7 +14,7 @@
 //
 // _Requirements: R7.3, R7.4, R6.15, R6.21_
 
-import type { ReadingPhase } from "../protocol.js";
+import type { ReadingPhase, ResurrectionPhase } from "../protocol.js";
 
 /** The canonical boot banner (oracle-voice Fixed phrases). */
 export const BOOT_PHRASE =
@@ -71,6 +71,44 @@ export const PHASE_VOICE: Readonly<Record<ReadingPhase, PhaseVoice>> = {
 export const EXTERNAL_SKIP_NOTE =
   "The mists hide the outer registries this time.\n" +
   "EXTERNAL skipped; the reading rests on the snapshot alone.";
+
+/**
+ * One Progress_Line per Resurrection_Phase (R9.2), surfaced by the terminal as
+ * the resurrection stream reports each phase. The key set is exactly the six
+ * ordered phases of the Ritual pipeline (SELECT, PRE_PASS, LLM_PASS, VALIDATE,
+ * REDIAGNOSE, DIFF); each technical line carries its own phase token verbatim so
+ * the client can key its progress display off it and a renamed phase is caught
+ * by the example test. Pure Oracle_Voice: ASCII-only, no emoji, each physical
+ * line within 72 columns and the mystical half ≤ 16 words.
+ */
+export const RESURRECT_PHASE_VOICE: Readonly<
+  Record<ResurrectionPhase, PhaseVoice>
+> = {
+  SELECT: {
+    mystical: "The oracle marks which corpses are worth raising.",
+    technical: "SELECT: choosing the Python 2 files named by the cards.",
+  },
+  PRE_PASS: {
+    mystical: "The deterministic rites rewrite what they safely can.",
+    technical: "PRE_PASS: applying the mechanical Python 2 to 3 fixers.",
+  },
+  LLM_PASS: {
+    mystical: "A bound spirit is asked to mend what rules could not.",
+    technical: "LLM_PASS: converting the constructs the fixers left behind.",
+  },
+  VALIDATE: {
+    mystical: "Each mended body is tested against the parser's gate.",
+    technical: "VALIDATE: confirming each file parses as Python 3.",
+  },
+  REDIAGNOSE: {
+    mystical: "The cards are laid again over the revived body.",
+    technical: "REDIAGNOSE: re-reading the spread to measure the change.",
+  },
+  DIFF: {
+    mystical: "The oracle draws the line between what was and is.",
+    technical: "DIFF: assembling the before/after patch over fixed files.",
+  },
+};
 
 /**
  * Narrate a 0–100 vitality score in one mystical line (≤ 16 words). Pure: the

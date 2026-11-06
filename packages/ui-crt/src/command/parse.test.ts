@@ -13,7 +13,7 @@
 // implements the command modules. That red is the point.
 
 import { describe, expect, it } from "vitest";
-import { parseCommand } from "./parse.js";
+import { parseCommand, parseResurrectTarget } from "./parse.js";
 import { printCommand } from "./print.js";
 import { MAX_ENTRY_LENGTH, type Command } from "./types.js";
 
@@ -163,6 +163,65 @@ describe("parseCommand — command names and argument forms", () => {
       arg: "off",
     });
   });
+
+  // resurrection-engine R1.4: bare `resurrect` targets every py2 candidate.
+  it("parses a bare resurrect as a bare target (R1.4)", () => {
+    expect(parseCommand("resurrect")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "bare" },
+    });
+    // Command name is matched case-insensitively like every other command.
+    expect(parseCommand("RESURRECT")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "bare" },
+    });
+    expect(parseCommand("ReSuRrEcT")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "bare" },
+    });
+  });
+
+  // resurrection-engine R1.2: a plain token is a card-id target, lowercased
+  // to match the canonical card-id casing (mirrors `explain`).
+  it("parses resurrect with a card-id argument (R1.1, R1.2)", () => {
+    expect(parseCommand("resurrect judgement")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "card", card: "judgement" },
+    });
+    expect(parseCommand("resurrect hanged_man")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "card", card: "hanged_man" },
+    });
+    // A mixed-case card id is normalised to lowercase.
+    expect(parseCommand("resurrect Judgement")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "card", card: "judgement" },
+    });
+  });
+
+  // resurrection-engine R1.3: a token with a `/` or a `.py` suffix is a file
+  // path, its case preserved because paths are case-sensitive.
+  it("parses resurrect with a file-path argument, case preserved (R1.1, R1.3)", () => {
+    expect(parseCommand("resurrect src/app.py")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "file", path: "src/app.py" },
+    });
+    // A `.py` suffix alone (no slash) is still a file path.
+    expect(parseCommand("resurrect app.py")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "file", path: "app.py" },
+    });
+    // A directory-only path (slash, no `.py`) is a file path too.
+    expect(parseCommand("resurrect pkg/module")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "file", path: "pkg/module" },
+    });
+    // Mixed-case path segments are preserved verbatim.
+    expect(parseCommand("resurrect Src/App.py")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "file", path: "Src/App.py" },
+    });
+  });
 });
 
 describe("parseCommand — empty, whitespace and unknown entries", () => {
@@ -202,6 +261,35 @@ describe("parseCommand — empty, whitespace and unknown entries", () => {
       raw: "demo Not_A_Demo",
     });
   });
+
+  // resurrection-engine R1.1: resurrect accepts at most one argument; extra
+  // tokens are rejected as an unknown carrying the trimmed raw entry.
+  it("returns unknown for resurrect with extra tokens (R1.1)", () => {
+    expect(parseCommand("resurrect a b")).toStrictEqual<Command>({
+      kind: "unknown",
+      raw: "resurrect a b",
+    });
+    expect(parseCommand("resurrect src/app.py tower")).toStrictEqual<Command>({
+      kind: "unknown",
+      raw: "resurrect src/app.py tower",
+    });
+  });
+
+  // resurrection-engine R1.1: a present-but-empty argument token (surrounding
+  // whitespace is trimmed, so `resurrect   ` collapses to a bare `resurrect`,
+  // and a quoted empty-looking token still tokenizes to one non-empty token).
+  // Whitespace-only trailing input cannot produce an empty token, so the bare
+  // form is what survives; this pins that collapse.
+  it("collapses trailing whitespace so resurrect stays bare (R1.1, R2.9)", () => {
+    expect(parseCommand("resurrect   ")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "bare" },
+    });
+    expect(parseCommand("  resurrect\t")).toStrictEqual<Command>({
+      kind: "resurrect",
+      target: { kind: "bare" },
+    });
+  });
 });
 
 describe("printCommand — canonical form (R2.14)", () => {
@@ -237,6 +325,62 @@ describe("printCommand — canonical form (R2.14)", () => {
     expect(printCommand({ kind: "sound" })).toBe("sound");
     expect(printCommand({ kind: "sound", arg: "on" })).toBe("sound on");
     expect(printCommand({ kind: "sound", arg: "off" })).toBe("sound off");
+  });
+
+  // resurrection-engine R1.1-R1.4: each resurrect target round-trips through
+  // printCommand → parseCommand back to an equal Command.
+  it("round-trips every resurrect target form (R1.1-R1.4)", () => {
+    const commands: Extract<Command, { kind: "resurrect" }>[] = [
+      { kind: "resurrect", target: { kind: "bare" } },
+      { kind: "resurrect", target: { kind: "card", card: "judgement" } },
+      { kind: "resurrect", target: { kind: "file", path: "src/app.py" } },
+    ];
+    for (const cmd of commands) {
+      expect(printCommand(cmd)).toBe(
+        cmd.target.kind === "bare"
+          ? "resurrect"
+          : cmd.target.kind === "card"
+            ? `resurrect ${cmd.target.card}`
+            : `resurrect ${cmd.target.path}`,
+      );
+      expect(parseCommand(printCommand(cmd))).toStrictEqual<Command>(cmd);
+    }
+  });
+});
+
+describe("parseResurrectTarget — token discrimination (R1.2, R1.3, R1.4)", () => {
+  // R1.2: a plain token is a card id, lowercased.
+  it("treats a plain token as a card id, lowercased (R1.2)", () => {
+    expect(parseResurrectTarget("judgement")).toStrictEqual({
+      kind: "card",
+      card: "judgement",
+    });
+    expect(parseResurrectTarget("Tower")).toStrictEqual({
+      kind: "card",
+      card: "tower",
+    });
+  });
+
+  // R1.3: a token with a `/` or a `.py` suffix is a file path, case preserved.
+  it("treats a slash/.py token as a file path, case preserved (R1.3)", () => {
+    expect(parseResurrectTarget("src/app.py")).toStrictEqual({
+      kind: "file",
+      path: "src/app.py",
+    });
+    expect(parseResurrectTarget("app.py")).toStrictEqual({
+      kind: "file",
+      path: "app.py",
+    });
+    expect(parseResurrectTarget("Pkg/Mod")).toStrictEqual({
+      kind: "file",
+      path: "Pkg/Mod",
+    });
+  });
+
+  // R1.1: an empty token is rejected (returns null) so the caller maps it to
+  // an unknown rather than a malformed target.
+  it("returns null for an empty token (R1.1)", () => {
+    expect(parseResurrectTarget("")).toBeNull();
   });
 });
 

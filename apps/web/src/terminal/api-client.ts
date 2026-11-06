@@ -22,6 +22,9 @@ import type {
   PlayableSpread,
   ReadProgress,
   ReadingResponse,
+  ResurrectProgress,
+  ResurrectTarget,
+  RitualResponse,
   SummonSummary,
 } from "@necro/ui-crt";
 import { invalidResponseError, networkError, upstreamError } from "@necro/ui-crt";
@@ -31,6 +34,10 @@ import {
   ReadingResponseSchema,
   SummonSummarySchema,
 } from "../protocol/schemas.js";
+import {
+  ResurrectStreamLineSchema,
+  RitualResultWireSchema,
+} from "../protocol/resurrect-wire.js";
 import { createNdjsonParser } from "./ndjson.js";
 
 /** The internal per-request client timeout composed with the caller's signal. */
@@ -230,5 +237,126 @@ export function createApiPort(fetchImpl: typeof fetch): ApiPort {
     }
   }
 
-  return { summon, read };
+  async function resurrect(
+    pinned: string,
+    target: ResurrectTarget,
+    spread: PlayableSpread,
+    signal: AbortSignal,
+    onProgress: ResurrectProgress,
+  ): Promise<RitualResponse> {
+    // Serialize the parsed target to the optional `target` string field of
+    // ResurrectRequestSchema: a bare run OMITS the field, a card target sends
+    // its id, a file target sends its path (R1.4). The server owns all semantic
+    // validation (card/file existence, py2 classification).
+    const body: { ref: string; spread: PlayableSpread; target?: string } = {
+      ref: pinned,
+      spread,
+    };
+    if (target.kind === "card") {
+      body.target = target.card;
+    } else if (target.kind === "file") {
+      body.target = target.path;
+    }
+
+    // The 55 s client timeout stays armed across both the POST and the whole
+    // stream read, so a mid-stream stall is mapped to NETWORK_TIMEOUT. The
+    // user-abort vs timeout discrimination is identical to `read`.
+    const timeout = withClientTimeout(signal);
+    try {
+      let res: Response;
+      try {
+        res = await fetchImpl("/api/resurrect", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/x-ndjson",
+          },
+          body: JSON.stringify(body),
+          signal: timeout.signal,
+        });
+      } catch (error) {
+        if (signal.aborted) {
+          throw error;
+        }
+        throw networkError();
+      }
+
+      const stream = res.body;
+      if (stream === null) {
+        throw networkError();
+      }
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      // Reuse the same incremental splitter as `read`, validating every line
+      // against the Resurrection_Route line union (R9.5, R9.6). The server
+      // already applies the `[DEMO]` prefix to every line in demo mode, so the
+      // phase/skip/error text is surfaced verbatim — no client double-prefix.
+      const parser = createNdjsonParser(ResurrectStreamLineSchema);
+
+      // Dispatch one parsed line. Returns the final RitualResult once a result
+      // line is seen; otherwise undefined (so the loop keeps reading).
+      const dispatch = (
+        lines: ReturnType<typeof parser.push>,
+      ): RitualResponse | undefined => {
+        for (const line of lines) {
+          if ("phase" in line) {
+            onProgress({ kind: "phase", phase: line.phase });
+          } else if ("skip" in line) {
+            onProgress({ kind: "skip-note", note: line.note });
+          } else if ("error" in line) {
+            throw new NecroError(line.error.code, line.error.userMessage);
+          } else {
+            // Result line: re-validate against the RitualResult wire schema
+            // before resolving, exactly as `read` re-validates the reading
+            // result line (R9.3, R6.18).
+            return RitualResultWireSchema.parse(line.result);
+          }
+        }
+        return undefined;
+      };
+
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          const chunk = decoder.decode(value, { stream: true });
+          const result = dispatch(parser.push(chunk));
+          if (result !== undefined) {
+            return result;
+          }
+        }
+        const tail = dispatch(parser.flush());
+        if (tail !== undefined) {
+          return tail;
+        }
+      } catch (error) {
+        // A NecroError from an error line is the reader's deliberate rejection.
+        if (error instanceof NecroError) {
+          throw error;
+        }
+        // A user Ctrl+C aborted the caller's signal: rethrow verbatim.
+        if (signal.aborted) {
+          throw error;
+        }
+        // Any other abort is the 55 s client timeout or a dropped connection.
+        if (error instanceof DOMException && error.name === "AbortError") {
+          throw networkError();
+        }
+        // A parser throw (bad JSON or a line failing ResurrectStreamLineSchema),
+        // or a RitualResultWireSchema failure on the result line, is an invalid
+        // response (R9.6, R6.18).
+        throw invalidResponseError();
+      }
+
+      // The stream ended cleanly with no result or error line (R6.17, R11.6).
+      throw networkError();
+    } finally {
+      timeout.dispose();
+    }
+  }
+
+  return { summon, read, resurrect };
 }

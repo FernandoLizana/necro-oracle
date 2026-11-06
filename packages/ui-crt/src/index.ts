@@ -11,6 +11,13 @@ export type {
   ReadProgress,
   ReadingPhase,
   ReadingResponse,
+  ResurrectDiffLine,
+  ResurrectFileResult,
+  ResurrectionPhase,
+  ResurrectProgress,
+  ResurrectProgressEvent,
+  ResurrectResidual,
+  RitualResponse,
   SummonSummary,
 } from "./protocol.js";
 
@@ -33,6 +40,7 @@ export {
   EXTERNAL_SKIP_NOTE,
   PHASE_VOICE,
   PRE_READING_PHRASE,
+  RESURRECT_PHASE_VOICE,
   vitalityVoice,
   type PhaseVoice,
 } from "./voice/phrases.js";
@@ -115,6 +123,10 @@ export {
   upstreamError,
 } from "./render/errors.js";
 export { withDemoLabel } from "./render/demo-label.js";
+export {
+  renderFileResult,
+  renderFileResults,
+} from "./render/resurrect-diff.js";
 
 // Session — command history, the bounded output log, and the pinned reference.
 export {
@@ -197,3 +209,12 @@ export {
 export { useMotion, type MotionSignal } from "./hooks/use-motion.js";
 export { useReveal, type UseRevealOptions } from "./hooks/use-reveal.js";
 export { useSound, type UseSoundOptions } from "./hooks/use-sound.js";
+
+// Resurrection vitality — render inputs (types only) and the Vitality_Delta /
+// changed-card renderer for the terminal resurrection result view (task 14.9).
+export type {
+  ChangedCard,
+  ChangedCardKind,
+  VitalityResult,
+} from "./protocol.js";
+export { renderResurrectVitality } from "./render/resurrect-vitality.js";
