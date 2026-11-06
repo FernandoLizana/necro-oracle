@@ -75,7 +75,7 @@ columns).
 - [~] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Scaffold the py2to3 grimoire and its pure fixers
+- [x] 4. Scaffold the py2to3 grimoire and its pure fixers
   - [x] 4.1 Scaffold `packages/grimoires/py2to3` from `_template`
     - Create the package from the `_template` scaffold with `src/index.ts`, `fixers/`, `llm/`, `validate.ts`, `fixtures/`, `package.json` scoped `@necro/grimoires-py2to3` (or per existing convention); declare the `Grimoire` object shell with `id: "py2to3"`, `pair`, input/output schemas, empty `fixers`, and a placeholder `llm` step; import `@necro/oracle` only (no adapters)
     - _Requirements: 15.4, 15.5, 15.6_
@@ -87,12 +87,12 @@ columns).
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.7, 3.8_
     - _Design: Pre_Pass transforms_
 
-  - [~] 4.3 Write property test for Pre_Pass idempotence
+  - [x] 4.3 Write property test for Pre_Pass idempotence
     - **Property 3: Pre_Pass is idempotent** — applying the Pre_Pass twice equals applying it once (byte-identical)
     - fast-check `numRuns: 1000` over `arbPy2Program`; `describe` title names the requirement
     - **Validates: Requirements 3.4**
 
-  - [~] 4.4 Write property test for Pre_Pass determinism
+  - [x] 4.4 Write property test for Pre_Pass determinism
     - **Property 4: Pre_Pass is deterministic** — two independent invocations from a clean state produce byte-identical `After_Content` and identical `Residual_List`
     - fast-check `numRuns: 1000` over `arbPy2Program`
     - **Validates: Requirements 3.6, 3.8**
