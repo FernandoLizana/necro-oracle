@@ -109,3 +109,60 @@ const arbLine: fc.Arbitrary<string> = fc.oneof(
 export const arbPy2Program: fc.Arbitrary<string> = fc
   .array(arbLine, { minLength: 0, maxLength: 8 })
   .map((lines) => lines.join("\n"));
+
+// ---------------------------------------------------------------------------
+// Unparseable / malformed inputs (shared; appended for task 5.3 — P5).
+//
+// Property 5 ("output always parses as Python 3 or is reported unconverted")
+// must exercise inputs tree-sitter CANNOT parse cleanly, not only the mostly-
+// valid programs `arbPy2Program` emits. `arbMalformedPyLine` is a vocabulary of
+// deliberately broken top-level lines (unbalanced brackets, dangling operators,
+// stray delimiters, an unterminated string, a lone colon). Joined into a short
+// program they reliably produce `ERROR`/MISSING nodes under the Target_Parser,
+// so `validate()` reports them as NOT valid Python 3 — the case P5 pins as
+// "unparseable content is never presented as converted".
+//
+// Like `arbPy2Program`, this is pure data generation: no parse, no fixer, no
+// network/LLM/sandbox. Consumers parse with the injected `parsePython`.
+// ---------------------------------------------------------------------------
+
+/** A single deliberately malformed Python line (produces parse errors). */
+const arbMalformedPyLine: fc.Arbitrary<string> = fc.oneof(
+  // Unbalanced parenthesis — never closed.
+  arbIdent.map((name) => `${name} = (1, 2`),
+  // Unbalanced bracket.
+  arbIdent.map((name) => `${name} = [1, 2`),
+  // Dangling binary operator with no right operand.
+  arbIdent.map((name) => `${name} = 1 +`),
+  // Stray closing delimiter with nothing opened.
+  fc.constant(")"),
+  // A lone `def` with no name/params/body.
+  fc.constant("def"),
+  // Unterminated string literal.
+  fc.constant('x = "unterminated'),
+  // A bare colon where a compound header is expected.
+  fc.constant(":"),
+  // `return` outside any function at module top level is tolerated by
+  // tree-sitter, so pair it with a dangling operator to force an error.
+  fc.constant("return ="),
+);
+
+/**
+ * `arbMalformedPy` — a short program of 1..5 malformed lines. Every line is a
+ * syntactic defect, so the whole program is unparseable to the Target_Parser
+ * (non-zero error-node count). Used to drive the P5 "unparseable" branch.
+ */
+export const arbMalformedPy: fc.Arbitrary<string> = fc
+  .array(arbMalformedPyLine, { minLength: 1, maxLength: 5 })
+  .map((lines) => lines.join("\n"));
+
+/**
+ * `arbMaybeUnparseable` — the P5 input space: a mix of the grammar-based
+ * `arbPy2Program` (mostly-valid py2) and `arbMalformedPy` (guaranteed-broken),
+ * weighted toward the valid programs so both the "parses after conversion" and
+ * the "reported unconverted" branches of Property 5 are exercised across a run.
+ */
+export const arbMaybeUnparseable: fc.Arbitrary<string> = fc.oneof(
+  { weight: 3, arbitrary: arbPy2Program },
+  { weight: 2, arbitrary: arbMalformedPy },
+);

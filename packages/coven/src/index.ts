@@ -100,3 +100,25 @@ export {
 // post-reading failure it returns a typed REDIAGNOSIS_FAILED error with
 // after/delta nulled, never discarding the produced File_Results (R6.1–R6.5).
 export { rediagnose, changedCards, type RediagnoseResult } from "./rediagnose.js";
+
+// --- Local Coven_Runner (runners/local) ------------------------------------
+// The central orchestration module: drives one Ritual through
+// SELECT -> PRE_PASS -> LLM_PASS -> VALIDATE -> REDIAGNOSE -> DIFF via a
+// monotonic `emit`, injecting `RitualPorts`. Imports @necro/oracle + local
+// modules only — no grimoire package (the grimoire arrives through the injected
+// `LanguagePairRegistry`) and no adapter (adapters come via ports). It skips
+// LLM_PASS in Degraded_Mode with exactly one oracle-voice skip-note, falls back
+// to the Target_Parser when the optional SandboxPort is unavailable, enforces a
+// wall-clock budget that ends the Ritual with partial File_Results and a
+// BUDGET_EXHAUSTED error, and appends append-only, increasing-`seq` ledger
+// events.
+export {
+  LocalCovenRunner,
+  budgetExhaustedError,
+  RESURRECTION_PHASES,
+  type ResurrectionPhase,
+  type PhaseEmit,
+  type CovenRunner,
+  type CovenRunnerOptions,
+  type RitualOutcome,
+} from "./runners/local.js";

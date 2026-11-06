@@ -273,6 +273,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931358571
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939162992
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939593006
       }
     ],
     "5.4 Write unit tests for LLM retry/timeout/no-key paths and Residual completeness": [
@@ -280,6 +290,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931358605
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939164228
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939591625
       }
     ],
     "5.5 Write import-ban static test for the grimoire fixers": [
@@ -287,6 +307,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931358638
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939165110
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939593959
       }
     ],
     "6. Checkpoint - Ensure all tests pass": [
@@ -495,6 +525,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931359182
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939161599
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939594989
       }
     ],
     "11.2 Write unit tests for runner orchestration edge paths": [
@@ -757,6 +797,13 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793939117223
+      }
+    ],
+    "5. Implement the grimoire LLM step and validation": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793939594020
       }
     ]
   }

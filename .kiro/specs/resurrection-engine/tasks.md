@@ -101,7 +101,7 @@ columns).
     - Add `fixtures/<case>/before` → `after` golden pairs under `packages/grimoires/py2to3/fixtures` covering each of the six fixers; add a test that asserts each `before` produces its pinned `after`
     - _Requirements: 3.1, 3.8_
 
-- [ ] 5. Implement the grimoire LLM step and validation
+- [x] 5. Implement the grimoire LLM step and validation
   - [x] 5.1 Implement the declarative LlmStep (prompt, schema, mock fixture, apply)
     - In `packages/grimoires/py2to3/llm/` implement `buildRequest` to mask secret-like substrings via oracle `maskSecret` before placing code in the prompt, wrap the masked code in the fixed `UNTRUSTED_REPOSITORY_CODE` delimiters marked as data-not-instructions, and set `maxTokens`/`timeoutMs`/`cacheKey = sha256(pairId + construct + prompt)`; define `outputSchema` (zod), `apply(source, parsed)`, and a deterministic `mockFixture`
     - Wire the `LlmStep` into the grimoire `llm` field; fixers and the step import no adapters
@@ -113,17 +113,17 @@ columns).
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
     - _Design: Validation_
 
-  - [~] 5.3 Write property test for output-parses-or-reported (incl. delimiters)
+  - [x] 5.3 Write property test for output-parses-or-reported (incl. delimiters)
     - **Property 5: Output always parses as Python 3 or is reported unconverted** — every produced `After_Content` parses with zero error nodes; every excluded construct appears in the `Residual_List`; the LLM prompt wraps code in the fixed untrusted-data delimiters
     - fast-check `numRuns: 1000`, using the Mock provider; generators include unparseable inputs
     - **Validates: Requirements 4.2, 5.1, 5.2, 5.3**
 
-  - [~] 5.4 Write unit tests for LLM retry/timeout/no-key paths and Residual completeness
+  - [x] 5.4 Write unit tests for LLM retry/timeout/no-key paths and Residual completeness
     - Cover zod-failure-then-retry-then-`llm_invalid_output` (R4.4), timeout/unavailable ⇒ `llm_unavailable` (R4.5), no-key skip retains residuals (R4.6), and Residual_List entries carry valid path+line
     - **Property 8: Residual_List completeness and well-formedness** (as example + property seed) — entry count equals attempted-but-unconfirmed conversions; zero residuals ⇒ fully converted
     - **Validates: Requirements 4.4, 4.5, 4.6, 3.5, 8.1, 8.2, 8.3**
 
-  - [~] 5.5 Write import-ban static test for the grimoire fixers
+  - [x] 5.5 Write import-ban static test for the grimoire fixers
     - Assert the fixers and LLM step import no adapter modules and call no `eval`/`child_process` (mirrors oracle client-guard tests)
     - **Validates: Requirements 3.2, 3.3, 5.4, 15.6, 15.7**
 
@@ -191,7 +191,7 @@ columns).
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Implement the local Coven_Runner orchestration
-  - [~] 11.1 Implement the local runner driving the phase pipeline
+  - [x] 11.1 Implement the local runner driving the phase pipeline
     - Create `packages/coven/src/runners/local.ts` implementing `CovenRunner.run` to drive SELECT → PRE_PASS → LLM_PASS → VALIDATE → REDIAGNOSE → DIFF through a monotonic `emit`, injecting `RitualPorts`; skip LLM_PASS when no `LlmPort` is injected (Degraded_Mode) emitting exactly one oracle-voice skip-note; call the optional `SandboxPort` parse-check when injected and fall back to the Target_Parser with a skip-note on timeout/unavailability; mark VALIDATE-budget files `validated: false` with a `not_validated` residual and exclude them from the Patch; enforce a wall-clock budget that ends the Ritual, disposes any sandbox, and returns partial File_Results with a `BUDGET_EXHAUSTED` error; append ledger events (append-only, increasing `seq`); wire registry, selection, diff, and rediagnose modules together
     - _Requirements: 4.6, 5.5, 5.6, 5.8, 9.7, 10.1, 10.4, 10.5, 13.3, 13.4_
     - _Design: Coven_Runner, Default vs optional runtime, Degraded mode_
