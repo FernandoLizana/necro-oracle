@@ -241,6 +241,9 @@ importers:
       react-dom:
         specifier: ^19
         version: 19.3.1(react@19.3.1)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0

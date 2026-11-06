@@ -1,0 +1,603 @@
+/*
+ * src/arcana/arcana.css
+ *
+ * Feature: 06-arcana-visions, task 11.
+ *
+ * The Arcana_Visions pixel-art presentation layer, an ADDITIVE stylesheet on
+ * top of the Spec 05 `src/crt.css`. It never redefines a Spec 05 token, class,
+ * or keyframe; it only adds the pixel-card rules Arcana_Visions needs and
+ * RIDES the existing Spec 05 glitch contract (the `.crt[data-motion="full"]
+ * .crt-glitch[data-glitch-intensity="N"]` selector and the `crt-glitch-kf`
+ * keyframes declared in `crt.css`). The arcana custom properties it keys off —
+ * `--ritual-total-ms`, `--motion-zone-period-ms`, `--motion-zone-steps` — are
+ * the ones already declared on `.crt` in `crt.css` and mirrored from
+ * `tokens.ts` (`RITUAL_TOTAL_MS`, `MOTION_ZONE_PERIOD_MS`, `MOTION_ZONE_STEPS`).
+ *
+ * TWO PALETTES, as the design fixes them:
+ *   - The pixel art inside each WebP is the strict 4-shade Asset_Palette
+ *     (#001a00, #0b4f1a, #2fa84a, #8cff9e). The <img> carries NO colour-altering
+ *     or blurring filter (R1.1, R1.5, R7.2), and every Motion_Zone animation
+ *     tints only within those 4 shades (R4.4).
+ *   - The surrounding chrome — the header/footer Text_Band text and the
+ *     Diagnosis_Caption below the image — is phosphor DOM text drawn in the CRT
+ *     tokens (`--crt-fg`, `--crt-fg-dim`), so it matches the terminal and keeps
+ *     the existing >= 4.5:1 contrast the Spec 05 `crt-tokens.test.ts` guards.
+ *
+ * `#001a00` is shared by both palettes, so the card edges sit seamlessly on the
+ * terminal background.
+ *
+ * FLASH_LIMIT (R4.5, R5.6): every animated region here honours Arcana_Visions'
+ * stricter cap of at most 2 luminance changes per second. Motion-zone keyframes
+ * run `steps(var(--motion-zone-steps)) ... infinite` where the token pair gives
+ * `steps / (period/1000) = 4 / 2 = 2` changes/s; the one-shot glitch and the
+ * ritual phases use `animation-iteration-count: 1`, so no rolling one-second
+ * window can accumulate repeats. ALL motion is gated behind
+ * `.crt[data-motion="full"]`; `.crt[data-motion="reduced"] *` in `crt.css`
+ * already strips every animation/transition, and the static rules below keep
+ * zones and glitch steady out of full motion (R4.7, R5.5).
+ *
+ * This file loads NO image via CSS `url(...)`: the card/Seer/Necronomicon
+ * bitmaps arrive through `<img>` elements in the components, never a CSS
+ * background, so the stylesheet pulls no asset itself.
+ *
+ * Requirements: R1.1, R1.5, R1.6, R1.7, R1.8, R2.9, R4.2, R4.4, R4.6, R4.7,
+ * R5.3, R5.4, R5.6, R6.1, R6.2, R7.2
+ */
+
+/* ------------------------------------------------------------------------ */
+/* Asset_Palette (R1.5, R4.4) — the strict 4 shades the pixel art uses.      */
+/* Declared as scoped custom properties so Motion_Zone keyframes can only    */
+/* ever reach for one of these four values, never a fifth colour.            */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-pixel-card,
+.crt .crt-seer-portrait,
+.crt .crt-necronomicon {
+  /* Asset_Palette: darkest -> brightest phosphor pixel shade. */
+  --arcana-shade-0: #001a00;
+  --arcana-shade-1: #0b4f1a;
+  --arcana-shade-2: #2fa84a;
+  --arcana-shade-3: #8cff9e;
+
+  /*
+   * Integer_Scale for this card/region. Set per element by the component from
+   * `integerScale(available, logical)`; always a whole number >= 1. Defaults to
+   * 1 so a card rendered before measurement is at least pixel-exact.
+   */
+  --arcana-scale: 1;
+
+  /*
+   * Logical pixel size of the asset (120x160 diagnosis card by default). The
+   * component overrides `--arcana-logical-w/h` for the Seer (256x144) and the
+   * Necronomicon frames. The rendered box is logical x scale on both axes.
+   */
+  --arcana-logical-w: 120;
+  --arcana-logical-h: 160;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Pixel_Card: single <img>, pixelated, no colour-altering filter.           */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-pixel-card {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  /* The card column is exactly the scaled image width; the caption wraps to it. */
+  width: calc(var(--arcana-logical-w) * var(--arcana-scale) * 1px);
+  color: var(--crt-fg);
+}
+
+/*
+ * The card image (R1.1, R1.5). `image-rendering: pixelated` keeps the 4-shade
+ * art crisp at every Integer_Scale; `filter: none` guarantees NO blur/smooth or
+ * colour-altering filter is ever applied to the pixels. Width/height are the
+ * logical size multiplied by the Integer_Scale custom property, so the image
+ * scales on both axes by the same whole factor and the aspect ratio is
+ * preserved (R1.2, R7.3).
+ */
+.crt .crt-pixel-card-img,
+.crt .crt-seer-img,
+.crt .crt-necronomicon-img {
+  display: block;
+  image-rendering: pixelated;
+  /* No colour-altering / blurring / smoothing filter, ever (R1.5, R7.2). */
+  filter: none;
+  width: calc(var(--arcana-logical-w) * var(--arcana-scale) * 1px);
+  height: calc(var(--arcana-logical-h) * var(--arcana-scale) * 1px);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Text_Bands + Diagnosis_Caption: phosphor DOM text (R1.6, R1.7, R1.8).     */
+/*                                                                           */
+/* The header band is logical rows [0,19] (20 rows) and the footer band is   */
+/* logical rows [147,160] (13 rows); their heights scale with the card. They */
+/* overlay the top and bottom of the image, drawn in the phosphor tokens so  */
+/* they match the terminal chrome and keep contrast. At scale 1 the band     */
+/* text clips with an ellipsis and never overflows its band (R1.8).          */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-pixel-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0 calc(2 * var(--arcana-scale) * 1px);
+  /* Legible phosphor DOM text matching the terminal (R1.6). */
+  color: var(--crt-fg);
+  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  line-height: 1;
+  /*
+   * Scale-1 safety (R1.8): the text never overflows its band. A single line
+   * clips to the band width with an ellipsis rather than wrapping or spilling.
+   */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Header band: logical rows [0,19] => 20 rows tall, pinned to the top. */
+.crt .crt-pixel-band[data-band="header"] {
+  top: 0;
+  height: calc(20 * var(--arcana-scale) * 1px);
+  justify-content: space-between;
+  gap: calc(2 * var(--arcana-scale) * 1px);
+  font-size: calc(12 * var(--arcana-scale) * 1px);
+}
+
+/* Footer band: logical rows [147,160] => 13 rows tall, pinned to the bottom. */
+.crt .crt-pixel-band[data-band="footer"] {
+  bottom: 0;
+  height: calc(13 * var(--arcana-scale) * 1px);
+  justify-content: center;
+  color: var(--crt-fg-dim);
+  font-size: calc(9 * var(--arcana-scale) * 1px);
+}
+
+/* The band label span itself also clips, so neither half of the header spills. */
+.crt .crt-pixel-band > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Diagnosis_Caption (R1.7): phosphor DOM text directly BELOW the image, outside
+ * the Text_Bands, in both the Spread_View and the Fullscreen_Card_View. It
+ * wraps within the card column width and is dimmed to read as a subtitle.
+ */
+.crt .crt-pixel-caption {
+  margin: calc(4 * var(--arcana-scale) * 1px) 0 0 0;
+  color: var(--crt-fg-dim);
+  font-family: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-size: calc(10 * var(--arcana-scale) * 1px);
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Spread_View row: left-to-right slots in the Reading's spread order.       */
+/* Pure layout (NOT gated behind data-motion), mirroring `.crt-card-reveal`. */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-spread-pixel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.crt .crt-spread-pixel .crt-pixel-card {
+  flex: 0 0 auto;
+}
+
+/* Narrow-viewport fallback: stack the row into a single column (R15.8 parity). */
+@media (max-width: 48rem) {
+  .crt .crt-spread-pixel {
+    flex-direction: column;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Seer landing region (R7.1): the oracle's face in the boot/landing area.   */
+/* The Seer_Image and the boot overlay share this region while the boot is   */
+/* playing; the region just centres the portrait. Pure layout, no motion.    */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-seer-region {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Reversed orientation (R2.9): rotate the IMAGE 180deg, keep text upright.  */
+/* Same counter-rotation technique Spec 05 uses for ASCII cards.             */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-pixel-card[data-orientation="reversed"] .crt-pixel-card-img {
+  transform: rotate(180deg);
+}
+
+/*
+ * The band and caption text live in the normal, unrotated DOM flow (they are
+ * siblings of the image, not children of a rotated wrapper), so they already
+ * read upright. The explicit `rotate(0deg)` documents and guarantees the
+ * intent: even if a future wrapper rotates, these stay upright and readable.
+ */
+.crt .crt-pixel-card[data-orientation="reversed"] .crt-pixel-band,
+.crt .crt-pixel-card[data-orientation="reversed"] .crt-pixel-caption {
+  transform: rotate(0deg);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Motion_Zones (R4.2, R4.4, R4.6, R4.7): CSS-only steps() animations, each  */
+/* bounded to its declared rectangle, palette-safe, full-motion only.        */
+/*                                                                           */
+/* The component renders one absolutely-positioned overlay <span> per valid  */
+/* zone, sized and placed from the zone rect scaled by `--arcana-scale`      */
+/* (`--zone-x/y/w/h` logical pixels set inline). The overlay is `overflow:   */
+/* hidden` so no animated pixel can render outside the rectangle (R4.6).     */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-motion-zone {
+  position: absolute;
+  box-sizing: border-box;
+  /* Rect in logical px x scale — fully within the card, outside the bands. */
+  left: calc(var(--zone-x) * var(--arcana-scale) * 1px);
+  top: calc(var(--zone-y) * var(--arcana-scale) * 1px);
+  width: calc(var(--zone-w) * var(--arcana-scale) * 1px);
+  height: calc(var(--zone-h) * var(--arcana-scale) * 1px);
+  /* Nothing animated inside may paint beyond the declared rectangle (R4.6). */
+  overflow: hidden;
+  pointer-events: none;
+  /* Static by default: no animation unless full motion opts in below (R4.7). */
+  opacity: 1;
+}
+
+/*
+ * Each effect is a gentle, palette-safe overlay tint using ONLY the 4 asset
+ * shades (R4.4). The zones ride a `steps(var(--motion-zone-steps))` timing
+ * function over `var(--motion-zone-period-ms)`, so the discrete-frame cadence
+ * is `steps / (period/1000) = 4 / 2 = 2` luminance changes/s — the Flash_Limit
+ * ceiling, never exceeded (R4.5). Transform/clip keyframes carry no luminance
+ * change; the glow/flicker/pulse keyframes make at most two opacity steps per
+ * cycle so the per-second change count stays at the cap.
+ */
+
+/* Flicker (tower flame, hermit lantern): a bright shade pulsing on/off. */
+@keyframes arcana-zone-flicker-kf {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--arcana-shade-3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Shimmer (star hair + water): a soft mid-shade sweep, clip-bounded. */
+@keyframes arcana-zone-shimmer-kf {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--arcana-shade-2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Pulse (moon glow): a slow swell of the brightest shade. */
+@keyframes arcana-zone-pulse-kf {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--arcana-shade-3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Rays (judgement light): a mid-shade wash rising through the band. */
+@keyframes arcana-zone-rays-kf {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--arcana-shade-2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Glow (seer candle + crystal ball): a faint bright-shade breathing glow. */
+@keyframes arcana-zone-glow-kf {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--arcana-shade-3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/*
+ * Zones animate ONLY in full motion (R4.7). The token pair keeps every effect
+ * at the Flash_Limit (<= 2 changes/s). `steps(var(--motion-zone-steps),
+ * jump-none)` discretises the cycle, and the animation loops (`infinite`) but
+ * at a cadence that never exceeds the cap because the per-second change count
+ * is fixed by the token pair, not by repetition.
+ */
+.crt[data-motion="full"] .crt-motion-zone[data-effect="flicker"] {
+  animation: arcana-zone-flicker-kf var(--motion-zone-period-ms)
+    steps(var(--motion-zone-steps), jump-none) infinite;
+}
+.crt[data-motion="full"] .crt-motion-zone[data-effect="shimmer"] {
+  animation: arcana-zone-shimmer-kf var(--motion-zone-period-ms)
+    steps(var(--motion-zone-steps), jump-none) infinite;
+}
+.crt[data-motion="full"] .crt-motion-zone[data-effect="pulse"] {
+  animation: arcana-zone-pulse-kf var(--motion-zone-period-ms)
+    steps(var(--motion-zone-steps), jump-none) infinite;
+}
+.crt[data-motion="full"] .crt-motion-zone[data-effect="rays"] {
+  animation: arcana-zone-rays-kf var(--motion-zone-period-ms)
+    steps(var(--motion-zone-steps), jump-none) infinite;
+}
+.crt[data-motion="full"] .crt-motion-zone[data-effect="glow"] {
+  animation: arcana-zone-glow-kf var(--motion-zone-period-ms)
+    steps(var(--motion-zone-steps), jump-none) infinite;
+}
+
+/*
+ * Reduced motion shows zones as static images (R4.7). `crt.css`'s
+ * `.crt[data-motion="reduced"] *` already removes the animation; this makes the
+ * resting state explicit (fully transparent overlay — the untouched pixel art).
+ */
+.crt[data-motion="reduced"] .crt-motion-zone {
+  background-color: transparent;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Severity glitch on a Pixel_Card (R5.1-R5.6): REUSE the Spec 05 contract.  */
+/*                                                                           */
+/* The component sets the SAME attributes Spec 05 uses — `data-motion` on the */
+/* `.crt` root and `data-glitch-intensity="N"` + the `--glitch-*` custom      */
+/* properties on a `.crt-glitch` wrapper — so the existing                   */
+/* `.crt[data-motion="full"] .crt-glitch[data-glitch-intensity="N"]` contract */
+/* and the `crt-glitch-kf` keyframes from `crt.css` apply unchanged. The only */
+/* arcana-specific addition here is attaching that EXISTING keyframe to the   */
+/* pixel <img> (Spec 05 attaches it to the ASCII `.crt-ascii-card-art`), with */
+/* the identical one-shot bound: `animation-iteration-count: 1` and           */
+/* `var(--glitch-duration, var(--crt-glitch-max-ms))` (<= 300 ms). We do NOT  */
+/* redefine `crt-glitch-kf`.                                                  */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Resting state (R5.2, R5.4): a pixel card at severity 0 — or any card after
+ * the one-shot finishes — carries no chromatic offset, tear, or corruption.
+ * The <img> is simply the clean single bitmap; `transform` is governed only by
+ * the reversed-orientation rule above. There is nothing to add here for the
+ * steady state: the offset layers live ONLY inside the one-shot animation.
+ */
+
+/*
+ * One-shot glitch, FULL MOTION ONLY (R5.1, R5.3, R5.6). Rides the existing
+ * `crt-glitch-kf` from `crt.css`. `animation-iteration-count: 1` (the trailing
+ * `1`) makes it a single pass; the duration is the per-card
+ * `--glitch-duration` bounded to `--crt-glitch-max-ms` (<= 300 ms), so a
+ * rolling one-second window can never exceed the Flash_Limit. On completion the
+ * keyframe's 100% frame restores the clean single-image state (R5.4). A
+ * severity-0 card never carries `.crt-glitch`/`data-glitch-intensity`, so it is
+ * steady from first paint (R5.2); reduced motion strips the animation via the
+ * `crt.css` reduced-motion block (R5.5).
+ */
+.crt[data-motion="full"] .crt-glitch .crt-pixel-card-img {
+  animation: crt-glitch-kf var(--glitch-duration, var(--crt-glitch-max-ms))
+    steps(3, jump-none) 1;
+}
+
+/*
+ * Burning cards (tower/devil) ride the amber one-shot variant, exactly as Spec
+ * 05 does for the ASCII art, so the amber double-image appears only during the
+ * <= 300 ms reveal and settles to the clean single bitmap at rest (R5.4, R5.8).
+ */
+.crt[data-motion="full"] .crt-glitch[data-burning="true"] .crt-pixel-card-img {
+  animation: crt-glitch-burning-kf
+    var(--glitch-duration, var(--crt-glitch-max-ms)) steps(3, jump-none) 1;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Resurrection_Ritual keyframes (R6.1, R6.2): the four-phase Necronomicon   */
+/* animation, bounded by the `--ritual-total-ms` token (<= 3 s).             */
+/*                                                                           */
+/* The phase SEQUENCING is driven by `ritualTimeline()` through the Spec 05  */
+/* FramePort (no wall-clock timers) — the component toggles a `data-ritual`   */
+/* phase attribute per step. These keyframes are the per-phase visuals the    */
+/* component attaches; each runs once (`animation-iteration-count: 1`). Every */
+/* keyframe honours the Flash_Limit: the closed-glitch reuses the bounded     */
+/* glitch feel, the tremble is transform-only (no luminance change), the      */
+/* crossfade is a single opacity ramp (one luminance transition), and the     */
+/* rising-diff is a transform-only slide. Full motion only.                   */
+/* ------------------------------------------------------------------------ */
+
+/* Phase 1 — closed book glitch: transform-only shudder, no luminance change. */
+@keyframes arcana-ritual-closed-glitch-kf {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(-2px, 1px);
+  }
+  70% {
+    transform: translate(2px, -1px);
+  }
+}
+
+/* Phase 2 — tremble: a slightly larger transform-only wobble, no flash. */
+@keyframes arcana-ritual-tremble-kf {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-1px, 1px) rotate(-0.5deg);
+  }
+  50% {
+    transform: translate(1px, -1px) rotate(0.5deg);
+  }
+  75% {
+    transform: translate(-1px, -1px) rotate(-0.25deg);
+  }
+}
+
+/*
+ * Phase 3 — crossfade from the closed to the open book: a single opacity ramp
+ * (one luminance transition, well within the Flash_Limit). The component layers
+ * the open frame over the closed frame and fades it in.
+ */
+@keyframes arcana-ritual-crossfade-kf {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/*
+ * Phase 4 — rising diff lines: the resurrected diff lines rise from the pages.
+ * Transform + a single fade-in per line (no repeating flash); the slide carries
+ * no luminance change beyond the one fade-in.
+ */
+@keyframes arcana-ritual-rising-diff-kf {
+  0% {
+    transform: translateY(calc(8 * var(--arcana-scale, 1) * 1px));
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/*
+ * The ritual visuals run ONLY in full motion and only one pass each. Durations
+ * come from the per-phase `--ritual-phase-ms` the component sets from the
+ * `ritualTimeline()` step (whose summed durations are capped at
+ * `--ritual-total-ms` <= 3 s, R6.2). The fallback keeps a bounded value even if
+ * a phase variable is missing.
+ */
+.crt[data-motion="full"] .crt-ritual[data-ritual="closed-glitch"] {
+  animation: arcana-ritual-closed-glitch-kf
+    var(--ritual-phase-ms, var(--crt-glitch-max-ms)) steps(3, jump-none) 1;
+}
+.crt[data-motion="full"] .crt-ritual[data-ritual="tremble"] {
+  animation: arcana-ritual-tremble-kf var(--ritual-phase-ms, var(--crt-shake-ms))
+    ease-in-out 1;
+}
+.crt[data-motion="full"] .crt-ritual[data-ritual="crossfade"] .crt-ritual-open {
+  animation: arcana-ritual-crossfade-kf
+    var(--ritual-phase-ms, var(--crt-afterglow-ms)) ease-in 1;
+}
+.crt[data-motion="full"] .crt-ritual[data-ritual="rising-diff"] .crt-ritual-line {
+  animation: arcana-ritual-rising-diff-kf
+    var(--ritual-phase-ms, var(--crt-afterglow-ms)) ease-out 1;
+}
+
+/*
+ * Reduced motion / skipped ritual: the diff/patch view renders in a single
+ * static pass (R6.4). `crt.css`'s reduced-motion block removes the animations;
+ * this makes the resting state explicit so the open book and diff lines sit
+ * fully visible with no transform.
+ */
+.crt[data-motion="reduced"] .crt-ritual,
+.crt[data-motion="reduced"] .crt-ritual-open,
+.crt[data-motion="reduced"] .crt-ritual-line {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Fullscreen_Card_View (R2.*, R10.3, R10.5, R10.6): modal single-card       */
+/* inspector. A full-viewport overlay holding one large Pixel_Card, a close  */
+/* control, and a navigation hint. Pure layout (NOT gated behind data-motion */
+/* — it carries no animation of its own); the card inside still rides the    */
+/* Spec 05 glitch/zone contracts through `PixelCard`.                        */
+/*                                                                           */
+/* The visible focus ring on the dialog and the close button is the Spec 05  */
+/* `.crt :focus-visible { outline: 2px solid var(--crt-focus) }` rule        */
+/* (the CRT_FOCUS token) — no arcana-specific ring is defined (R10.5).       */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-fullscreen-card {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  /* Dim the terminal behind the modal with the shared darkest shade. */
+  background-color: var(--crt-bg, #001a00);
+  color: var(--crt-fg);
+  /* The dialog itself is focusable (tabIndex -1) but shows no stray outline
+     until it receives keyboard focus; the Spec 05 :focus-visible handles it. */
+  overflow: auto;
+}
+
+/* The close control sits in a top row, out of the card's way. */
+.crt .crt-fullscreen-controls {
+  align-self: flex-end;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crt .crt-fullscreen-close {
+  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-size: 1rem;
+  color: var(--crt-fg);
+  background: transparent;
+  border: 1px solid var(--crt-fg-dim);
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+}
+
+/* The region the large card measures itself against for its Integer_Scale. */
+.crt .crt-fullscreen-region {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Navigation hint: dimmed phosphor DOM text, readable with motion stopped. */
+.crt .crt-fullscreen-hint {
+  margin: 0;
+  color: var(--crt-fg-dim);
+  font-family: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-size: 0.875rem;
+}

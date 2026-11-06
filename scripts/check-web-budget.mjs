@@ -18,12 +18,21 @@
 //      `tree-sitter-python.wasm`, `tar-stream`. The oracle import-closure test
 //      is the primary guard; this scan catches leaks through any other path.
 //
-//   3. (R16.12) The demo bundle, the sound engine and the resurrection result
-//      view each exist as a separate dynamic chunk, distinct from one another
-//      and from the initial route. The resurrection view is lazy-loaded through
+//   3. (R16.12 + Arcana_Visions R8.9/R11.2) The demo bundle, the sound engine,
+//      the resurrection result view and the Background_Theme synthesis engine
+//      each exist as a separate dynamic chunk, distinct from one another and
+//      from the initial route. The resurrection view is lazy-loaded through
 //      `apps/web/src/terminal/load-resurrection-view.ts`
 //      (`import("../components/ResurrectionResult.js")`), so the heavy diff /
 //      vitality / patch renderers it pulls in never land in the initial route.
+//      The Background_Theme engine is lazy-loaded through
+//      `@necro/ui-crt` `load-background-theme.ts`
+//      (`import("./background-theme-engine.js")`), so the Web Audio chiptune
+//      synthesiser never enters the first Terminal_Route render. The theme
+//      engine shares the sound engine's `createOscillator` / `createGain`
+//      content markers, so it is disambiguated by theme-specific markers
+//      (`MAX_THEME_GAIN`, `createBackgroundThemeEngine`, `scheduleLoop`) and by
+//      the `background-theme` name fragment.
 //
 // The pure helpers (BUDGET_BYTES, FORBIDDEN_MARKERS, collectInitialRouteJs,
 // scanForbiddenMarkers, findSeparateChunks) are exported with NO side effects
@@ -137,18 +146,37 @@ export function scanForbiddenMarkers(fileText, markers = FORBIDDEN_MARKERS) {
  * content-based scan — see `findSeparateChunksByContent`. This name-based
  * helper is the pure, synchronous contract the test pins.
  *
+ * The Arcana_Visions Background_Theme synthesis engine is a FOURTH such lazy
+ * chunk: `apps/web/src/terminal/browser-ports.ts` wires `loadBackgroundTheme`,
+ * whose string-literal `import("./background-theme-engine.js")` makes Next emit
+ * the chiptune synthesiser as its own chunk, fetched only when the theme first
+ * turns on after a user gesture — never in the first Terminal_Route render
+ * (Arcana_Visions R8.9, R11.2). A chunk name containing `background-theme` is
+ * that chunk. It is returned on the `backgroundTheme` field and must be a
+ * separate, non-initial chunk distinct from demo / sound / resurrection.
+ *
  * @param {readonly string[]} chunkNames
- * @returns {{ demo: string | null; sound: string | null; resurrection: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null }}
  */
 export function findSeparateChunks(chunkNames) {
   const names = Array.isArray(chunkNames) ? chunkNames : [];
+  // Match the background-theme chunk FIRST so its name (which also contains the
+  // substring "engine" via `background-theme-engine`) is not mistaken for the
+  // Spec 05 sound engine chunk below.
+  const backgroundTheme =
+    names.find((n) => typeof n === "string" && /background-theme/.test(n)) ?? null;
   const demo =
     names.find((n) => typeof n === "string" && /bundle\.generated/.test(n)) ?? null;
   const sound =
-    names.find((n) => typeof n === "string" && /\bengine\b|engine\./.test(n)) ?? null;
+    names.find(
+      (n) =>
+        typeof n === "string" &&
+        n !== backgroundTheme &&
+        (/\bengine\b|engine\./.test(n)),
+    ) ?? null;
   const resurrection =
     names.find((n) => typeof n === "string" && /ResurrectionResult/i.test(n)) ?? null;
-  return { demo, sound, resurrection };
+  return { demo, sound, resurrection, backgroundTheme };
 }
 
 // ── CLI-only helpers (filesystem; not part of the pinned pure contract) ───────
@@ -157,6 +185,20 @@ export function findSeparateChunks(chunkNames) {
 const DEMO_CONTENT_MARKERS = ["lich-py2", "mixed-ruins", "green-garden"];
 /** Markers that uniquely identify the sound-engine chunk's *content*. */
 const SOUND_CONTENT_MARKERS = ["createOscillator", "OscillatorNode", "createGain"];
+/**
+ * Markers that uniquely identify the Background_Theme engine chunk's *content*.
+ * The theme engine ALSO uses `createOscillator` / `OscillatorNode` /
+ * `createGain`, so it would collide with SOUND_CONTENT_MARKERS; these markers
+ * are stable identifiers that appear ONLY in `background-theme-engine.ts`
+ * (`MAX_THEME_GAIN`, the factory `createBackgroundThemeEngine`, the internal
+ * `scheduleLoop`), so the theme chunk is detected distinctly from the Spec 05
+ * sound engine. (Arcana_Visions R8.9, R11.2)
+ */
+const BACKGROUND_THEME_CONTENT_MARKERS = [
+  "MAX_THEME_GAIN",
+  "createBackgroundThemeEngine",
+  "scheduleLoop",
+];
 /** Markers that uniquely identify the resurrection result-view chunk's *content*. */
 const RESURRECTION_CONTENT_MARKERS = [
   "renderFileResults",
@@ -188,21 +230,36 @@ function collectJsFiles(dir) {
  * when Next names lazy chunks by numeric module id. Returns the relative chunk
  * names (POSIX separators) or null.
  *
+ * The Background_Theme engine is matched BEFORE the sound engine: it shares the
+ * `createOscillator` / `createGain` markers, so its theme-specific markers
+ * (`MAX_THEME_GAIN` etc.) are checked first and the chunk is claimed as the
+ * theme chunk, never miscounted as the Spec 05 sound engine.
+ *
  * @param {readonly string[]} chunkAbsPaths — absolute paths of candidate chunk files
  * @param {ReadonlySet<string>} initialRouteSet — POSIX names already in the initial route
  * @param {string} staticDir — absolute `.next/static` dir for relativising names
- * @returns {{ demo: string | null; sound: string | null; resurrection: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null }}
  */
 function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) {
   let demo = null;
   let sound = null;
   let resurrection = null;
+  let backgroundTheme = null;
   for (const abs of chunkAbsPaths) {
     const rel = toPosix(join("static", relative(staticDir, abs)));
     if (initialRouteSet.has(rel)) continue; // skip initial-route files
     const text = readFileSync(abs, "utf8");
     if (demo === null && DEMO_CONTENT_MARKERS.every((m) => text.includes(m))) {
       demo = rel;
+      continue;
+    }
+    // Background theme BEFORE sound: it also contains the sound markers, so its
+    // unique markers must claim the chunk first (Arcana_Visions R8.9, R11.2).
+    if (
+      backgroundTheme === null &&
+      BACKGROUND_THEME_CONTENT_MARKERS.some((m) => text.includes(m))
+    ) {
+      backgroundTheme = rel;
       continue;
     }
     if (sound === null && SOUND_CONTENT_MARKERS.some((m) => text.includes(m))) {
@@ -216,7 +273,7 @@ function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) 
       resurrection = rel;
     }
   }
-  return { demo, sound, resurrection };
+  return { demo, sound, resurrection, backgroundTheme };
 }
 
 /** Normalise OS path separators to POSIX for stable manifest-style names. */
@@ -328,12 +385,18 @@ export function runBudgetGate(webDir) {
 
   // Try name-based first (covers builds that embed the source name), then fall
   // back to a content scan (Next may name lazy chunks by numeric module id).
-  let { demo, sound, resurrection } = findSeparateChunks(chunkNames);
-  if (demo === null || sound === null || resurrection === null) {
+  let { demo, sound, resurrection, backgroundTheme } = findSeparateChunks(chunkNames);
+  if (
+    demo === null ||
+    sound === null ||
+    resurrection === null ||
+    backgroundTheme === null
+  ) {
     const byContent = findSeparateChunksByContent(staticJs, initialSet, staticDir);
     demo = demo ?? byContent.demo;
     sound = sound ?? byContent.sound;
     resurrection = resurrection ?? byContent.resurrection;
+    backgroundTheme = backgroundTheme ?? byContent.backgroundTheme;
   }
 
   if (demo === null) {
@@ -372,6 +435,27 @@ export function runBudgetGate(webDir) {
     failed = true;
   } else {
     console.log(`check-web-budget: OK — resurrection result view is a separate chunk (${resurrection}).`);
+  }
+
+  // The Background_Theme synthesis engine must also be a separate, non-initial
+  // chunk so the chiptune synthesiser never loads in the first Terminal_Route
+  // render — it is fetched only after the theme turns on post-gesture.
+  // (Arcana_Visions R8.9, R11.2)
+  if (backgroundTheme === null) {
+    console.error("check-web-budget: FAIL — background-theme engine chunk not found as a separate chunk.");
+    failed = true;
+  } else if (initialSet.has(backgroundTheme)) {
+    console.error(`check-web-budget: FAIL — background-theme engine ${backgroundTheme} is in the initial route, not a lazy chunk.`);
+    failed = true;
+  } else if (
+    backgroundTheme === demo ||
+    backgroundTheme === sound ||
+    backgroundTheme === resurrection
+  ) {
+    console.error("check-web-budget: FAIL — background-theme engine resolved to the same chunk as the demo bundle, sound engine or resurrection view.");
+    failed = true;
+  } else {
+    console.log(`check-web-budget: OK — background-theme engine is a separate chunk (${backgroundTheme}).`);
   }
 
   return failed ? 1 : 0;

@@ -16,6 +16,9 @@
 //                     `performance.now`.
 //   - `sound`      — `loadEngine` (the lazy Web Audio engine chunk).
 //   - `demo`       — `loadDemoBundle` (the lazy, validated Demo_Bundle).
+//   - `backgroundTheme` — `loadBackgroundTheme` (the lazy Web Audio chiptune
+//                     engine chunk) + an `isTest` signal so the theme stays
+//                     silent in a Playwright / CI run (Arcana_Visions, R8.10).
 //
 // Every adapter is built INSIDE the factory, so merely importing this module
 // touches no browser global — it is safe to import from a client component
@@ -26,7 +29,7 @@
 //
 // _Requirements: R12.8, R16.4_
 
-import { loadEngine } from "@necro/ui-crt";
+import { loadBackgroundTheme, loadEngine } from "@necro/ui-crt";
 import type {
   DemoPort,
   FramePort,
@@ -158,6 +161,22 @@ function createDemoPort(): DemoPort {
 }
 
 /**
+ * Whether the terminal is running under an automation/test harness, forwarded
+ * into the pure `backgroundThemeActive` gate so the Background_Theme NEVER
+ * starts in a Playwright / headless or CI run (Arcana_Visions, R8.10). A
+ * detected WebDriver automation (the Playwright e2e runs) or a non-production
+ * `NODE_ENV` (test builds) both count as a test run; a normal browser load
+ * resolves to `false`. SSR-guarded: with no `navigator` it resolves from the
+ * env alone.
+ */
+function detectTestRun(): boolean {
+  if (typeof navigator !== "undefined" && navigator.webdriver === true) {
+    return true;
+  }
+  return process.env.NODE_ENV === "test";
+}
+
+/**
  * A `PatchDownloadPort` that offers a completed Ritual's unified Patch as a
  * client-side `.patch` download (R7.3). The heavy `Blob`/`URL`/anchor helper is
  * reached through a literal-path dynamic import so it lands in its OWN chunk,
@@ -195,5 +214,11 @@ export function createBrowserPorts(): TerminalPorts {
     frames: createFramePort(),
     sound: loadEngine,
     patchDownload: createPatchDownloadPort(),
+    // The lazy Background_Theme engine chunk + the test/CI signal. The theme
+    // still plays only once the pure gate turns true (sound on, after a user
+    // gesture, visible) AND `isTest` is false, so a Playwright / CI run stays
+    // silent (R8.10).
+    backgroundTheme: loadBackgroundTheme,
+    isTest: detectTestRun(),
   };
 }

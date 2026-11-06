@@ -149,3 +149,51 @@ export const CRT_ROT_FRAME_MIN_MS = 500;
  * the Flash_Limit exactly like the glitch window (R13.2, R13.4, R10.3).
  */
 export const CRT_BLOOM_MS = 300;
+
+// ---------------------------------------------------------------------------
+// Arcana_Visions motion / ritual tokens (arcana-visions, task 1)
+// ---------------------------------------------------------------------------
+//
+// Bounded durations for the Arcana_Visions pixel-art layer (Spec 06), added in
+// this same `tokens.ts` module and mirrored as custom properties on `.crt` so
+// `arcana.css` can key off them. Like the Visual_Layer tokens above, every
+// value honours the Flash_Limit — here stated as Arcana_Visions' stricter cap
+// of <= 2 luminance changes per second per animated region (R4.5) — and the
+// ritual total stays within the 3-second ceiling (R6.2).
+//
+// Two groups:
+//
+//   - The Resurrection_Ritual total: `RITUAL_TOTAL_MS` caps the sum of the
+//     four ritual phase durations (`closed-glitch -> tremble -> crossfade ->
+//     rising-diff`) that `ritualTimeline()` emits. At <= 3000 ms it satisfies
+//     R6.2 (the ritual completes within 3 s from first frame to the diff view).
+//     The pure timeline module re-exports this as its own `RITUAL_TOTAL_MS`.
+//   - The Motion_Zone cadence bounds: `MOTION_ZONE_PERIOD_MS` and
+//     `MOTION_ZONE_STEPS` are the shared defaults for the CSS-only `steps()`
+//     zone animations. The Flash_Limit is `steps / (periodMs / 1000)`; with a
+//     2000 ms period and 4 steps that is exactly `4 / (2000/1000) = 2`
+//     changes/s — the ceiling, never exceeded (R4.5). Authored per-zone values
+//     in the Motion_Zone_Table are validated against this same bound.
+
+/**
+ * Resurrection_Ritual total duration ceiling in ms. Caps the summed durations
+ * of the ritual phase steps so the ritual completes within 3 s, first frame to
+ * the standard diff/patch view (R6.2). Chosen at the 3-second limit itself so
+ * the four phases have the full budget while never exceeding it.
+ */
+export const RITUAL_TOTAL_MS = 3000;
+
+/**
+ * Default Motion_Zone animation period in ms (one full `steps()` cycle). Paired
+ * with `MOTION_ZONE_STEPS` it keeps a zone's luminance changes at the
+ * Flash_Limit of <= 2 per second: `MOTION_ZONE_STEPS / (MOTION_ZONE_PERIOD_MS /
+ * 1000) = 4 / 2 = 2` (R4.5).
+ */
+export const MOTION_ZONE_PERIOD_MS = 2000;
+
+/**
+ * Default number of discrete `steps()` frames across one Motion_Zone period. At
+ * 4 steps over a 2000 ms period this yields exactly 2 luminance changes per
+ * second, the Flash_Limit ceiling for an animated region (R4.5).
+ */
+export const MOTION_ZONE_STEPS = 4;

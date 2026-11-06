@@ -43,6 +43,7 @@ import { useMotion } from "./use-motion.js";
 import { useReveal } from "./use-reveal.js";
 import { useBoot } from "./use-boot.js";
 import { useSound, type SoundCueRequest } from "./use-sound.js";
+import { useBackgroundTheme } from "./use-background-theme.js";
 import { ambientHumActive } from "../sound/ambient-hum.js";
 import type { SoundEvent } from "../sound/sound-reducer.js";
 import type { SoundCue } from "../sound/sound-cue.js";
@@ -55,8 +56,11 @@ import {
   type BootFrame,
   type BootFrameKind,
 } from "../render/boot.js";
-import { resolveSeed } from "../session/demo-seed.js";
+import { isDemoSession, resolveSeed } from "../session/demo-seed.js";
+import { DEMO_SEED } from "../demo/catalog.js";
 import { currentVisualReading } from "../session/visual-reading.js";
+import { parseCommand } from "../command/parse.js";
+import type { ExplainTarget } from "../command/types.js";
 
 /** The surface the Terminal view consumes. */
 export interface TerminalController {
@@ -114,11 +118,26 @@ export interface TerminalController {
    * per-ritual seed otherwise (`resolveSeed`, visual-necromancy task 13.1).
    */
   readonly visualSeed: number;
+  /**
+   * The captured external Ritual_Force_Flag (`?ritual=force`). Forwarded to the
+   * Terminal's `ritualTimeline` call so the Resurrection_Ritual plays even
+   * during a Playwright run or `?boot=skip` load (R6.6). Captured once per
+   * mount, so a later prop change never re-seeds it.
+   */
+  readonly ritualForce: boolean;
 }
 
 /** The fixed in-world message shown when the sound engine is unavailable (R19.14). */
 export const SOUND_UNAVAILABLE_MESSAGE =
   "The old speakers are silent. Sound is unavailable here.";
+
+/**
+ * The fixed seed the live Background_Theme loop is composed from (Arcana_Visions
+ * task 21). A stable constant so the DOS-flavoured bed is identical across
+ * every live reading in a session; demo mode substitutes `DEMO_SEED` for
+ * deterministic replay. `composeTheme` is pure and deterministic in the seed.
+ */
+const BACKGROUND_THEME_SEED = 0x6e6563726f; // "necro" as a stable constant seed.
 
 /** The storage key each `prefs.save` effect maps to (R1.6: only these two). */
 const PREFS_KEY: Readonly<Record<"motion" | "sound", string>> = {
@@ -138,6 +157,18 @@ export interface UseTerminalOptions {
    */
   readonly bootSignal?: boolean | undefined;
   /**
+   * The external Ritual_Force_Flag the one-time `boot` carries as a parallel
+   * signal to `bootSignal`. The host app wires this from the `?ritual=force`
+   * query flag (Arcana_Visions task 20). When `true`, the Resurrection_Ritual
+   * plays the full Necronomicon animation BEFORE the diff even during a
+   * Playwright run or a `?boot=skip` load (R6.6); omitted / `undefined` /
+   * `false` leaves the ritual gated by `ritualTimeline` the usual way (a
+   * Playwright run or `?boot=skip` without the force flag skips it, R6.5).
+   * Captured once per mount (like `bootSignal`) and exposed on the controller
+   * so the Terminal threads it into `ritualTimeline` for the resurrect view.
+   */
+  readonly ritualForce?: boolean | undefined;
+  /**
    * Whether the decorative Resurrection_Animation (rot-then-rebirth) is
    * actively playing right now (visual-necromancy task 21.1, OPTIONAL polish).
    * The `RotOverlay` owns the rot playback (`useRot`) and reports its live
@@ -149,6 +180,19 @@ export interface UseTerminalOptions {
    * animating, so the hum stays silent. (R13.1, R13.4)
    */
   readonly resurrectionPlaying?: boolean | undefined;
+  /**
+   * Notified whenever an `explain <position|card>` command is submitted, with
+   * the parsed `ExplainTarget`, so the Terminal can OPEN the
+   * Fullscreen_Card_View for a card present in the current reading (R2.3). This
+   * is a pure observation of the entered command and does NOT change the
+   * reducer's own `explain` handling: the log still renders the full evidence
+   * (present card) or the oracle-voice error (absent reference) through
+   * `renderExplain`/`renderError` exactly as before (R2.4). The Terminal
+   * resolves the target against `visualCards` and decides whether to open; a
+   * target absent from the reading leaves the view unchanged. Omitted means no
+   * fullscreen wiring (the terminal behaves exactly as the Spec 05 terminal).
+   */
+  readonly onExplain?: (target: ExplainTarget) => void;
 }
 
 /** Drive the whole terminal from the injected ports. */
@@ -160,6 +204,10 @@ export function useTerminal(
   // in the mount effect below, so a later prop change must not re-seed the boot
   // (the boot runs exactly once for a terminal instance).
   const bootSignalRef = useRef(options.bootSignal ?? false);
+  // Capture the Ritual_Force_Flag once per mount, exactly as `bootSignal` is
+  // captured above, so a later prop change never re-seeds it. Exposed on the
+  // controller for the Terminal's `ritualTimeline` call (R6.6).
+  const ritualForceRef = useRef(options.ritualForce ?? false);
   const [state, setState] = useState<SessionState>(initialState);
   const [ariaBusy, setAriaBusy] = useState(false);
   const [revealClock, setRevealClock] = useState<number | null>(null);
@@ -535,6 +583,29 @@ export function useTerminal(
   });
 
   // -------------------------------------------------------------------------
+  // Background theme (Arcana_Visions task 21): the DOS-flavoured chiptune bed.
+  //
+  // A parallel bridge to `useSound`, driven entirely by the pure
+  // `backgroundThemeActive` gate: the lazy engine chunk loads and `start()`s
+  // only once the gate turns true (sound on, after a user gesture, document
+  // visible, and NOT a test/CI run), and `stop()`s when it falls (R8.4, R8.5,
+  // R8.7, R8.8). Without a `backgroundTheme` loader port (the default, and
+  // every `@necro/ui-crt` unit test) the theme is never loaded and never plays,
+  // and `isTest` forces the gate false in any test/CI run (R8.10).
+  //
+  // The theme seed is stable so the bed is identical across readings: the fixed
+  // `DEMO_SEED` in demo mode (deterministic replay, R6.7/R6.8 parity) and the
+  // same constant otherwise. It is NOT the per-reading `visualSeed`, so a new
+  // reading never re-composes the loop mid-session.
+  const themeSeed = isDemoSession(state) ? DEMO_SEED : BACKGROUND_THEME_SEED;
+  useBackgroundTheme({
+    loader: ports.backgroundTheme,
+    state: state.sound,
+    seed: themeSeed,
+    isTest: ports.isTest ?? false,
+  });
+
+  // -------------------------------------------------------------------------
   // Auto-scroll: the log is the one scroll container; scroll to end on growth.
   // -------------------------------------------------------------------------
   useLayoutEffect(() => {
@@ -546,9 +617,26 @@ export function useTerminal(
   // -------------------------------------------------------------------------
   // View handlers.
   // -------------------------------------------------------------------------
+  // A stable ref to the latest `onExplain` so the stable `submit` callback can
+  // notify it without being torn down when the parent re-renders.
+  const onExplainRef = useRef(options.onExplain);
+  onExplainRef.current = options.onExplain;
+
   const submit = useCallback(
     (raw: string, source: "enter" | "button") => {
       dispatch({ type: "submit", raw, source });
+      // Observe an `explain` command AFTER dispatch so the reducer's log output
+      // (full evidence or oracle-voice error) is produced first; the Terminal
+      // then resolves the target against the current reading and opens the
+      // Fullscreen_Card_View only for a present card (R2.3, R2.4). Parsing here
+      // reuses the single `parseCommand` and never mutates reducer state.
+      const notify = onExplainRef.current;
+      if (notify !== undefined) {
+        const command = parseCommand(raw);
+        if (command !== null && command.kind === "explain") {
+          notify(command.target);
+        }
+      }
     },
     [dispatch],
   );
@@ -659,6 +747,7 @@ export function useTerminal(
   const bootFrameForRender = bootFrame(state.boot.stepIndex);
   const bootFrameKindForRender = bootFrameKind(state.boot.stepIndex);
   const visualSeed = resolveSeed(state);
+  const ritualForce = ritualForceRef.current;
 
   return {
     state,
@@ -676,6 +765,7 @@ export function useTerminal(
     bootFrameForRender,
     bootFrameKindForRender,
     visualSeed,
+    ritualForce,
   };
 }
 

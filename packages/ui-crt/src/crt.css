@@ -58,6 +58,17 @@
    */
   --crt-bloom-ms: 300ms;
 
+  /*
+   * Arcana_Visions motion / ritual tokens (arcana-visions task 1) — mirror
+   * tokens.ts exactly. The ritual total caps the four-phase Resurrection_Ritual
+   * at <= 3 s (R6.2); the motion-zone period/step defaults keep a CSS-only
+   * steps() zone animation at the Flash_Limit of <= 2 luminance changes/s
+   * (4 steps / 2 s = 2), the ceiling Arcana_Visions never exceeds (R4.5).
+   */
+  --ritual-total-ms: 3000ms;
+  --motion-zone-period-ms: 2000ms;
+  --motion-zone-steps: 4;
+
   position: relative;
   display: block;
   box-sizing: border-box;

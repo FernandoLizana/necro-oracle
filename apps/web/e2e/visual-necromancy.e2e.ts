@@ -1,8 +1,22 @@
 // apps/web/e2e/visual-necromancy.e2e.ts
 //
-// Feature: visual-necromancy, task 18.1 — the end-to-end + accessibility proof
-// for the Visual_Layer, run in a REAL browser against the offline demo chunk
-// and the mocked resurrection stream (no GitHub, LLM, sandbox, or network).
+// Feature: visual-necromancy (Spec 05), task 18.1 — the end-to-end +
+// accessibility proof for the Visual_Layer, run in a REAL browser against the
+// offline demo chunk and the mocked resurrection stream (no GitHub, LLM,
+// sandbox, or network).
+//
+// NOTE (Arcana_Visions, Spec 06, tasks 19-22 + 28): `apps/web`
+// (`TerminalScreen.tsx`) now threads the committed Arcana_Visions manifest into
+// `<Terminal>`. Per the APPROVED Arcana_Visions design, when the manifest
+// covers a reading the Terminal renders the pixel-art `SpreadPixelView`
+// (`.crt-spread-pixel` / `.crt-pixel-card` / `.crt-pixel-card-img`) IN PLACE OF
+// the Spec 05 ASCII `CardReveal` (`.crt-card-slot` / `.crt-ascii-card`). The
+// `lich-py2` fates reading draws tower (pos 1), judgement (pos 2) and devil
+// (pos 3) — all covered by the manifest — so `read fates` renders a three-slot
+// pixel spread. The demo-path tests below therefore assert the PIXEL DOM; the
+// ASCII card remains the proven compact/fallback view and is exercised through
+// the per-slot image-error fallback assertion (and the `<noscript>` SSR spread,
+// plus the `@necro/ui-crt` unit tests for `SpreadPixelView`/`PixelCard`).
 //
 // This is the ONLY e2e spec that exercises the full-motion Boot_Sequence: it
 // navigates with `bootTerminalFull` (no `?boot=skip`), so the `.crt-boot-overlay`
@@ -13,21 +27,26 @@
 //
 // What it proves, in a real browser (not jsdom):
 //   - Full motion (no `?boot=skip`): the boot overlay appears and resolves to
-//     the ready prompt within budget (R1.1); a demo reading reveals its cards
-//     one-by-one (R4.1); the three drawn cards render as FRAMED ASCII cards —
-//     box-drawing glyphs visible in the card art, not plain text (R3.1); a
-//     severe card (THE TOWER) carries the glitch class and `data-burning` on its
-//     card element (R3.6, R5.1); and a resurrection plays a rot phase that is
+//     the ready prompt within budget (R1.1); a demo reading renders its three
+//     drawn cards as PIXEL cards in spread order, each with a `<img>`
+//     (R3.1 pixel-layer parity); a severe card (THE TOWER) carries the glitch
+//     class, `data-glitch-intensity` and `data-burning` on its pixel card
+//     element (R3.6, R5.1); and a resurrection plays a rot phase that is
 //     observable in the DOM BEFORE the diff renders (R6.1).
 //   - With `?boot=skip` and/or reduced motion: all animations skip straight to
-//     their final state instantly — no boot overlay, no running rot frame, no
-//     typewriter reveal (R12.5, R10.3, R10.5).
-//   - `axe` finds no new violations on the boot, cards/reveal, glitch, and
+//     their final state instantly — no boot overlay, no running rot frame, and
+//     the pixel cards render static with no `.crt-glitch` and no running
+//     `.crt-motion-zone` (R12.5, R10.3, R10.5).
+//   - A per-slot image failure falls back to the ASCII card IN PLACE
+//     (`.crt-ascii-card`), proving the Spec 05 ASCII card remains the compact
+//     fallback view behind every pixel slot (R3.3 ASCII-fallback guarantee).
+//   - `axe` finds no new violations on the boot, pixel spread, glitch, and
 //     resurrection states (R10.5).
 //   - The documented Flash_Limit caps hold in the live stylesheet: the glitch
-//     animation runs with `iteration-count: 1` and a duration within the
-//     `--crt-glitch-max-ms` (≤ 300 ms) cap, and the rot cadence floor
-//     `--crt-rot-frame-min-ms` stays ≥ 500 ms (≤ 2 luminance changes/s) (R10.3).
+//     animation on the Tower's pixel image runs with `iteration-count: 1` and a
+//     duration within the `--crt-glitch-max-ms` (<= 300 ms) cap, and the rot
+//     cadence floor `--crt-rot-frame-min-ms` stays >= 500 ms (<= 2 luminance
+//     changes/s) (R10.3).
 //
 // Transport: the demo reading loads the bundled offline demo chunk (no route
 // interception); the resurrection path uses `mockRoutes` to fulfil
@@ -36,7 +55,7 @@
 // network. Run by the maintainer via `pnpm --filter @necro/web e2e` (Playwright
 // browser binaries may be absent on some machines).
 //
-// _Requirements: 1.1, 3.1, 3.6, 4.1, 5.1, 6.1, 10.3, 10.5, 12.5_
+// _Requirements: 1.1, 3.1, 3.3, 3.6, 5.1, 5.5, 6.1, 10.3, 10.5, 12.5_
 
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
@@ -51,14 +70,17 @@ import {
   sel,
 } from "./support/terminal.js";
 
-/** The box-drawing border glyphs the ASCII_Card_Renderer frames cards with. */
-const BOX_GLYPHS = ["\u250c", "\u2510", "\u2514", "\u2518", "\u2502", "\u2500"]; // ┌ ┐ └ ┘ │ ─
+/** The pixel-art Spread_View row and its per-card elements (Arcana_Visions). */
+const pixelCards = (page: Page): Locator =>
+  page.locator(".crt-spread-pixel .crt-pixel-card[data-card]");
 
-/** The decorative card layer and its per-position slots (aria-hidden). */
-const cardSlots = (page: Page): Locator => page.locator(".crt-card-slot");
+/** Every rendered pixel-card bitmap (`.crt-pixel-card-img`) in the spread. */
+const pixelImages = (page: Page): Locator =>
+  page.locator(".crt-spread-pixel .crt-pixel-card-img");
 
-/** Every rendered ASCII card element (`.crt-ascii-card`) inside the overlay. */
-const asciiCards = (page: Page): Locator => page.locator(".crt-ascii-card");
+/** One drawn pixel card by its card id, inside the spread row. */
+const pixelCard = (page: Page, card: string): Locator =>
+  page.locator(`.crt-spread-pixel .crt-pixel-card[data-card="${card}"]`);
 
 /** Run an axe scan scoped to the terminal and return its violations. */
 async function axeViolations(
@@ -84,11 +106,11 @@ function guardNetwork(page: Page): { leaked: boolean } {
 }
 
 // ---------------------------------------------------------------------------
-// Full-motion boot → demo reveal → framed ASCII cards → THE TOWER glitch
+// Full-motion boot → demo pixel spread → THE TOWER glitch
 // ---------------------------------------------------------------------------
 
-test.describe("full-motion boot, card reveal, and the glitch (R1.1, R3.1, R3.6, R4.1, R5.1)", () => {
-  test("boot plays and resolves, a demo reveals framed ASCII cards one-by-one, and THE TOWER glitches", async ({
+test.describe("full-motion boot, pixel spread, and the glitch (R1.1, R3.1, R3.6, R5.1)", () => {
+  test("boot plays and resolves, a demo renders three pixel cards in spread order, and THE TOWER glitches", async ({
     page,
   }) => {
     const net = guardNetwork(page);
@@ -98,7 +120,7 @@ test.describe("full-motion boot, card reveal, and the glitch (R1.1, R3.1, R3.6, 
     // and leaves no overlay in the DOM (R1.1). `bootTerminalFull` asserts the
     // overlay count returns to 0 and focus lands on the Command_Line.
     await bootTerminalFull(page);
-    expect(await asciiCards(page).count(), "no cards before a reading").toBe(0);
+    expect(await pixelCards(page).count(), "no cards before a reading").toBe(0);
 
     // axe on the freshly-booted terminal (no new violations — R10.5).
     expect(
@@ -107,77 +129,87 @@ test.describe("full-motion boot, card reveal, and the glitch (R1.1, R3.1, R3.6, 
     ).toEqual([]);
 
     // A demo reading needs no route mocks — it loads the bundled offline chunk.
-    // `lich-py2` fates draws three cards and includes THE TOWER (severity 2,
-    // upright), the severe burning card this spec checks the glitch on.
+    // `lich-py2` fates draws three cards — tower (pos 1), judgement (pos 2),
+    // devil (pos 3) — all covered by the committed arcana manifest, so the
+    // pixel Spread_View renders (not the ASCII fallback). THE TOWER (severity 2,
+    // upright, burning) is the severe card this spec checks the glitch on.
     await runCommand(page, "demo lich-py2");
     await runCommand(page, "read fates");
 
-    // R4.1 — the three drawn positions each render a card slot, in spread order.
-    await expect(cardSlots(page)).toHaveCount(3);
-    const positions = await cardSlots(page).evaluateAll((slots) =>
-      slots.map((s) => (s as HTMLElement).dataset.position),
+    // R3.1 (pixel-layer parity) — the three drawn positions each render a pixel
+    // card, in the reading's exact spread order, each with its own `<img>`.
+    await expect(pixelCards(page)).toHaveCount(3);
+    const order = await pixelCards(page).evaluateAll((cards) =>
+      cards.map((c) => (c as HTMLElement).dataset.card),
     );
-    expect(positions).toEqual(["1", "2", "3"]);
+    expect(order).toEqual(["tower", "judgement", "devil"]);
+    await expect(pixelImages(page)).toHaveCount(3);
 
-    // R4.1 — the reveal is one-by-one: at least one slot flips before all do.
-    // Catch the intermediate state where the first slot is up while a later one
-    // is still face-down, proving the reveal is ordered, not simultaneous.
-    await expect
-      .poll(async () =>
-        cardSlots(page).evaluateAll(
-          (slots) => (slots[0] as HTMLElement | undefined)?.dataset.flipped,
-        ),
-      )
-      .toBe("true");
-
-    // Then complete the whole reveal at once with Escape (R4.5): in full motion
-    // each card typewriters its diagnosis before the next flips, so waiting the
-    // animation out is slow and flaky. Escape flips every remaining card and
-    // finishes every diagnosis, letting the glitch assertions run against the
-    // final, fully-revealed state.
-    await sel.input(page).focus();
-    await page.keyboard.press("Escape");
-    await expect
-      .poll(async () =>
-        cardSlots(page).evaluateAll((slots) =>
-          slots.every((s) => (s as HTMLElement).dataset.flipped === "true"),
-        ),
-      )
-      .toBe(true);
-
-    // R3.1 — the drawn cards render as FRAMED ASCII cards: each flipped card's
-    // art contains box-drawing border glyphs, so these are real framed cards,
-    // not plain text. Assert against the first card's rendered art.
-    await expect(asciiCards(page)).toHaveCount(3);
-    const firstArt = await asciiCards(page)
-      .first()
-      .locator("pre.crt-ascii-card-art")
-      .innerText();
-    for (const glyph of BOX_GLYPHS) {
-      expect(firstArt, `card art is missing box glyph ${glyph}`).toContain(glyph);
-    }
-
-    // R3.6 / R5.1 — THE TOWER card element carries the glitch class and the
-    // amber `data-burning` attribute in full motion. The Tower is a burning
-    // card; at severity ≥ 2 it also gets the shake class.
-    const tower = page.locator('.crt-ascii-card[data-card="tower"]');
+    // R3.6 / R5.1 — THE TOWER pixel card carries the glitch class, the
+    // `data-glitch-intensity` severity hook, and the amber `data-burning`
+    // attribute in full motion (the arcana glitch rides the Spec 05 contract).
+    const tower = pixelCard(page, "tower");
     await expect(tower).toHaveCount(1);
     await expect(tower).toHaveClass(/\bcrt-glitch\b/);
+    await expect(tower).toHaveAttribute("data-glitch-intensity", "2");
     await expect(tower).toHaveAttribute("data-burning", "true");
-    await expect(tower).toHaveClass(/\bcrt-shake\b/);
 
-    // The glyph art is still authored plain text (the glitch never mutates the
-    // selectable text), and the card's severity integer is surfaced in the log.
+    // The card's diagnosis text is still announced in the authoritative log
+    // (the pixel image carries the same severity feel, never new text).
     const log = sel.log(page);
     await expect(log).toContainText("THE TOWER");
 
-    // R10.5 — axe on the rendered reading (cards + glitch) has no violations.
+    // R10.5 — axe on the rendered pixel reading (cards + glitch) has no
+    // violations.
     expect(
       await axeViolations(page),
-      "axe violations on the rendered reading",
+      "axe violations on the rendered pixel reading",
     ).toEqual([]);
 
     expect(net.leaked, "demo reading must make no real network request").toBe(
+      false,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ASCII fallback: a per-slot image failure swaps to the ASCII card in place
+// ---------------------------------------------------------------------------
+
+test.describe("ASCII fallback behind every pixel slot (R3.3)", () => {
+  test("a pixel card whose image fails to load renders the ASCII card in place", async ({
+    page,
+  }) => {
+    const net = guardNetwork(page);
+
+    // Force every arcana WebP request to fail BEFORE the spread renders, so the
+    // pixel `<img>` `onError` fires and `PixelCard` swaps the image in place for
+    // the Spec 05 `AsciiCardView` — with no broken-image indicator. This proves
+    // the ASCII card remains the compact fallback view behind each pixel slot
+    // (R3.3), exercised through the real image-error path rather than a
+    // synthetic no-manifest build.
+    await page.route("**/arcana/*.webp", (route) => route.abort());
+
+    await bootTerminal(page); // ?boot=skip — this test is about the fallback.
+    await runCommand(page, "demo lich-py2");
+    await runCommand(page, "read fates");
+
+    // Each of the three slots is still present and in order (the spread never
+    // drops a position on image failure), and each now shows the ASCII card.
+    const asciiCards = page.locator(".crt-spread-pixel .crt-ascii-card");
+    await expect(asciiCards).toHaveCount(3);
+    // The failed images were swapped out in place — no live pixel bitmap, and
+    // no broken-image placeholder, remains in the spread row.
+    await expect(pixelImages(page)).toHaveCount(0);
+
+    // R10.5 — axe on the ASCII-fallback reading has no violations.
+    await expect(sel.log(page)).toHaveAttribute("aria-busy", "false");
+    expect(
+      await axeViolations(page),
+      "axe violations on the ASCII-fallback reading",
+    ).toEqual([]);
+
+    expect(net.leaked, "ASCII-fallback reading must make no real network request").toBe(
       false,
     );
   });
@@ -251,34 +283,28 @@ test.describe("resurrection rot precedes the diff (R6.1, R10.5)", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Flash_Limit caps: iteration-count and durations (R10.3)", () => {
-  test("glitch animation runs once within the glitch cap and the rot cadence floor holds", async ({
+  test("the pixel glitch animation runs once within the glitch cap and the rot cadence floor holds", async ({
     page,
   }) => {
     await bootTerminal(page); // ?boot=skip; the stylesheet is what we probe.
     await runCommand(page, "demo lich-py2");
     await runCommand(page, "read fates");
 
-    // Complete the reveal at once with Escape so the glitched Tower art is
-    // rendered in its final state (the full-motion typewriter is slow to drain).
-    await sel.input(page).focus();
-    await page.keyboard.press("Escape");
-    await expect
-      .poll(async () =>
-        cardSlots(page).evaluateAll((slots) =>
-          slots.every((s) => (s as HTMLElement).dataset.flipped === "true"),
-        ),
-      )
-      .toBe(true);
+    // All three pixel cards render at once (the pixel Spread_View has no
+    // one-by-one flip); wait for the severe Tower card and its image.
+    await expect(pixelCards(page)).toHaveCount(3);
+    const tower = pixelCard(page, "tower");
+    await expect(tower).toHaveClass(/\bcrt-glitch\b/);
 
-    // The glitch animation is declared on the card's `.crt-ascii-card-art`
-    // under `.crt[data-motion="full"]`. Read its computed animation properties
-    // in the real browser: it must run exactly once (iteration-count: 1) and
-    // for no longer than the documented `--crt-glitch-max-ms` (≤ 300 ms) cap.
-    const glitchArt = page
-      .locator('.crt-ascii-card[data-card="tower"] .crt-ascii-card-art')
-      .first();
-    await expect(glitchArt).toHaveCount(1);
-    const glitch = await glitchArt.evaluate((el) => {
+    // The arcana one-shot glitch animation is declared on the pixel card's
+    // `.crt-pixel-card-img` under `.crt[data-motion="full"] .crt-glitch[
+    // data-burning="true"]` (the burning Tower variant). Read its computed
+    // animation properties in the real browser: it must run exactly once
+    // (iteration-count: 1) and for no longer than the documented
+    // `--crt-glitch-max-ms` (<= 300 ms) cap.
+    const glitchImg = tower.locator(".crt-pixel-card-img").first();
+    await expect(glitchImg).toHaveCount(1);
+    const glitch = await glitchImg.evaluate((el) => {
       const s = getComputedStyle(el as HTMLElement);
       const durationMs = s.animationDuration
         .split(",")[0]!
@@ -295,12 +321,12 @@ test.describe("Flash_Limit caps: iteration-count and durations (R10.3)", () => {
     // One-shot: never `infinite`, exactly one iteration (Flash_Limit).
     expect(glitch.iterationCount).toBe("1");
     expect(glitch.name).not.toBe("none");
-    // Duration within the documented glitch cap (≤ 300 ms).
+    // Duration within the documented glitch cap (<= 300 ms).
     expect(glitch.durationMs).toBeGreaterThan(0);
     expect(glitch.durationMs).toBeLessThanOrEqual(300);
 
     // The rot cadence floor token `--crt-rot-frame-min-ms` keeps visible
-    // luminance shifts at ≤ 2/s: it must be ≥ 500 ms. Read it off `main.crt`.
+    // luminance shifts at <= 2/s: it must be >= 500 ms. Read it off `main.crt`.
     const rotFloorMs = await sel.terminal(page).evaluate((el) => {
       const raw = getComputedStyle(el as HTMLElement)
         .getPropertyValue("--crt-rot-frame-min-ms")
@@ -315,7 +341,7 @@ test.describe("Flash_Limit caps: iteration-count and durations (R10.3)", () => {
 // ?boot=skip and reduced motion skip animations to their final state (R12.5)
 // ---------------------------------------------------------------------------
 
-test.describe("skip and reduced motion land on the final state instantly (R12.5, R10.3)", () => {
+test.describe("skip and reduced motion land on the final state instantly (R12.5, R10.3, R5.5)", () => {
   test("?boot=skip renders no boot overlay and the ready prompt immediately", async ({
     page,
   }) => {
@@ -327,14 +353,14 @@ test.describe("skip and reduced motion land on the final state instantly (R12.5,
     await expect(sel.input(page)).toBeFocused();
   });
 
-  test("reduced motion renders cards face-up with no running reveal or rot frame", async ({
+  test("reduced motion renders pixel cards static with no glitch or motion-zone animation", async ({
     page,
   }) => {
     const net = guardNetwork(page);
 
     // Force reduced motion before the first paint. Under reduced motion the
     // boot downgrades to `done` (no overlay) and the reading renders in one
-    // pass with every card face-up and no animating state.
+    // pass with every card static.
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/${BOOT_SKIP_QUERY}`);
 
@@ -345,30 +371,36 @@ test.describe("skip and reduced motion land on the final state instantly (R12.5,
     await runCommand(page, "demo lich-py2");
     await runCommand(page, "read fates");
 
-    // Every card is already face-up in the single render (R10.3) — no tick.
-    await expect(cardSlots(page)).toHaveCount(3);
-    const allFlipped = await cardSlots(page).evaluateAll((slots) =>
-      slots.every((s) => (s as HTMLElement).dataset.flipped === "true"),
-    );
-    expect(allFlipped, "reduced motion flips every card in one render").toBe(
-      true,
-    );
-    // No animating reveal copy and no running rot frame under reduced motion.
+    // The terminal resolved reduced Motion_Mode on the `.crt` root (R5.5).
+    await expect(sel.terminal(page)).toHaveAttribute("data-motion", "reduced");
+
+    // The pixel cards still render (reduced motion hides MOTION, not content):
+    // all three drawn cards are present as static images (R5.5).
+    await expect(pixelCards(page)).toHaveCount(3);
+    await expect(pixelImages(page)).toHaveCount(3);
+
+    // No running reveal copy and no running rot frame under reduced motion.
     await expect(
       page.locator('section.crt-block[data-reveal="running"]'),
     ).toHaveCount(0);
-    await expect(page.locator(".crt-reveal")).toHaveCount(0);
     await expect(
       page.locator('.crt-rot-overlay[data-rot="running"]'),
     ).toHaveCount(0);
 
+    // No Motion_Zone overlay animates under reduced motion — `PixelCard`
+    // resolves zero zones when the mode is not "full", so no `.crt-motion-zone`
+    // span is emitted at all (R5.5).
+    await expect(page.locator(".crt-spread-pixel .crt-motion-zone")).toHaveCount(
+      0,
+    );
+
     // THE TOWER still renders, but with NO glitch class in reduced motion (the
-    // glitch effect is full-motion-only).
-    const tower = page.locator('.crt-ascii-card[data-card="tower"]');
+    // severity glitch is gated on full motion) (R5.5).
+    const tower = pixelCard(page, "tower");
     await expect(tower).toHaveCount(1);
     await expect(tower).not.toHaveClass(/\bcrt-glitch\b/);
 
-    // R10.5 — axe on the reduced-motion reading has no violations.
+    // R10.5 — axe on the reduced-motion pixel reading has no violations.
     expect(
       await axeViolations(page),
       "axe violations under reduced motion",

@@ -10,9 +10,20 @@
 // non-interactive. `Screen` holds no state; the live behaviour lives in
 // `Terminal`.
 //
+// It also imports the additive Arcana_Visions stylesheet `arcana/arcana.css`
+// (Spec 06, task 11) as a side effect, the same way it imports `crt.css`. Every
+// Arcana_Visions surface (Spread_View, Fullscreen_Card_View, Necronomicon
+// ritual, Seer landing) renders inside this shared `.crt` chrome, so bundling
+// the pixel-card rules here guarantees they are present wherever a `.crt`
+// screen is, without each new arcana component having to re-import the sheet.
+// `arcana.css` only ADDS rules and rides the Spec 05 glitch contract; it never
+// redefines a `crt.css` token or keyframe. Both are no-ops in the jsdom suites
+// (vitest `css: false`); Next.js bundles them in production.
+//
 // _Requirements: R9.2, R9.3, R9.8, R15.11_
 
 import "../crt.css";
+import "../arcana/arcana.css";
 
 /** Props for the screen chrome. */
 export interface ScreenProps {

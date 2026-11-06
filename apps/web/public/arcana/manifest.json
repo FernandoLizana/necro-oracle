@@ -1,0 +1,448 @@
+{
+  "variant": "final",
+  "card_logical": [
+    120,
+    160
+  ],
+  "landscape_logical": [
+    256,
+    144
+  ],
+  "closed_book_logical": [
+    108,
+    144
+  ],
+  "palette": [
+    "#001a00",
+    "#0b4f1a",
+    "#2fa84a",
+    "#8cff9e"
+  ],
+  "dither": "none",
+  "blank_header_footer": true,
+  "preprocess": {
+    "contrast": 1.65,
+    "sharp": 2.0
+  },
+  "images": [
+    {
+      "id": "judgement",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/judgement.png",
+      "png_bytes": 2869,
+      "webp": "/workspace/necro-cards/pixel/final/judgement.webp",
+      "webp_bytes": 1750,
+      "preview_4x": "/workspace/necro-cards/pixel/final/judgement@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "tower",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/tower.png",
+      "png_bytes": 2607,
+      "webp": "/workspace/necro-cards/pixel/final/tower.webp",
+      "webp_bytes": 1456,
+      "preview_4x": "/workspace/necro-cards/pixel/final/tower@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "devil",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/devil.png",
+      "png_bytes": 2774,
+      "webp": "/workspace/necro-cards/pixel/final/devil.webp",
+      "webp_bytes": 1550,
+      "preview_4x": "/workspace/necro-cards/pixel/final/devil@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "death",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/death.png",
+      "png_bytes": 3110,
+      "webp": "/workspace/necro-cards/pixel/final/death.webp",
+      "webp_bytes": 1840,
+      "preview_4x": "/workspace/necro-cards/pixel/final/death@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "wheel",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/wheel.png",
+      "png_bytes": 2902,
+      "webp": "/workspace/necro-cards/pixel/final/wheel.webp",
+      "webp_bytes": 1664,
+      "preview_4x": "/workspace/necro-cards/pixel/final/wheel@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "hermit",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/hermit.png",
+      "png_bytes": 2378,
+      "webp": "/workspace/necro-cards/pixel/final/hermit.webp",
+      "webp_bytes": 1274,
+      "preview_4x": "/workspace/necro-cards/pixel/final/hermit@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "hanged_man",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/hanged_man.png",
+      "png_bytes": 2486,
+      "webp": "/workspace/necro-cards/pixel/final/hanged_man.webp",
+      "webp_bytes": 1400,
+      "preview_4x": "/workspace/necro-cards/pixel/final/hanged_man@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "temperance",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/temperance.png",
+      "png_bytes": 2564,
+      "webp": "/workspace/necro-cards/pixel/final/temperance.webp",
+      "webp_bytes": 1404,
+      "preview_4x": "/workspace/necro-cards/pixel/final/temperance@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "justice",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/justice.png",
+      "png_bytes": 2493,
+      "webp": "/workspace/necro-cards/pixel/final/justice.webp",
+      "webp_bytes": 1348,
+      "preview_4x": "/workspace/necro-cards/pixel/final/justice@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "moon",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/moon.png",
+      "png_bytes": 2575,
+      "webp": "/workspace/necro-cards/pixel/final/moon.webp",
+      "webp_bytes": 1480,
+      "preview_4x": "/workspace/necro-cards/pixel/final/moon@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "star",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/star.png",
+      "png_bytes": 2487,
+      "webp": "/workspace/necro-cards/pixel/final/star.webp",
+      "webp_bytes": 1340,
+      "preview_4x": "/workspace/necro-cards/pixel/final/star@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "world",
+      "logical": [
+        120,
+        160
+      ],
+      "png": "/workspace/necro-cards/pixel/final/world.png",
+      "png_bytes": 3030,
+      "webp": "/workspace/necro-cards/pixel/final/world.webp",
+      "webp_bytes": 1838,
+      "preview_4x": "/workspace/necro-cards/pixel/final/world@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "seer",
+      "logical": [
+        256,
+        144
+      ],
+      "png": "/workspace/necro-cards/pixel/final/seer.png",
+      "png_bytes": 5179,
+      "webp": "/workspace/necro-cards/pixel/final/seer.webp",
+      "webp_bytes": 3524,
+      "preview_4x": "/workspace/necro-cards/pixel/final/seer@4x.png",
+      "bands": null,
+      "dither": false
+    },
+    {
+      "id": "necronomicon-closed",
+      "logical": [
+        108,
+        144
+      ],
+      "png": "/workspace/necro-cards/pixel/final/necronomicon-closed.png",
+      "png_bytes": 3133,
+      "webp": "/workspace/necro-cards/pixel/final/necronomicon-closed.webp",
+      "webp_bytes": 1856,
+      "preview_4x": "/workspace/necro-cards/pixel/final/necronomicon-closed@4x.png",
+      "bands": null,
+      "dither": false
+    },
+    {
+      "id": "necronomicon-open",
+      "logical": [
+        256,
+        144
+      ],
+      "png": "/workspace/necro-cards/pixel/final/necronomicon-open.png",
+      "png_bytes": 6628,
+      "webp": "/workspace/necro-cards/pixel/final/necronomicon-open.webp",
+      "webp_bytes": 4696,
+      "preview_4x": "/workspace/necro-cards/pixel/final/necronomicon-open@4x.png",
+      "bands": null,
+      "dither": false
+    }
+  ],
+  "chosen_settings": {
+    "chosen": "120x160_nodither",
+    " rationales": "120x160 keeps iconography readable; no-dither gives cleaner console-sprite silhouettes (less Bayer noise looking 'AI mush'). 96x128 loses death/wheel detail. Dither helps gradients but muddies complex cards.",
+    "card_logical": [
+      120,
+      160
+    ],
+    "landscape_logical": [
+      256,
+      144
+    ],
+    "closed_book_logical": [
+      108,
+      144
+    ],
+    "palette": [
+      "#001a00",
+      "#0b4f1a",
+      "#2fa84a",
+      "#8cff9e"
+    ],
+    "dither": "none",
+    "blank_header_footer": true,
+    "upscale_hint": "CSS image-rendering: pixelated; image-rendering: crisp-edges",
+    "degrades_badly": [
+      "death",
+      "wheel"
+    ],
+    "notes": {
+      "death": "Busy Rider-Waite scene becomes abstract at 120x160; silhouette of rider/horse still OK but background mushy.",
+      "wheel": "Corner creatures and rim letters nearly lost; wheel disk still readable.",
+      "star": "Jug asymmetry still ambiguous at pixel scale (upstream AI flaw)."
+    },
+    "variants_compared": [
+      "120x160_dither",
+      "120x160_nodither",
+      "96x128_dither",
+      "96x128_nodither"
+    ],
+    "script": "/workspace/necro-cards/pixelize.py"
+  }
+}

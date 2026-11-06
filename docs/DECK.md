@@ -83,6 +83,55 @@ reader hears each card once and the ASCII face adds nothing it must announce.
 glyph, identical at every face-down position. Every spread position starts as
 this shared back and flips to its `AsciiCard` when its reveal step fires.
 
+## Pixel-art card faces (Arcana_Visions, Spec 06)
+
+Arcana_Visions adds a **pixel-art presentation** of the same twelve cards on top
+of the ASCII faces above — an additive skin, not a new deck. The detector↔card
+table is unchanged: the cards drawn, their orientation and their evidence are
+exactly as before; only the *faces* gain a second rendering. The twelve arcana
+now render as integer-scaled pixel sprites with bounded motion, and the ASCII
+face remains the fallback whenever JavaScript or an image is unavailable. The
+authoritative card text still lives once in the terminal's `role="log"` region,
+so the pixel face adds nothing a screen reader must announce twice.
+
+The art is served from the committed manifest and sprite sheets under
+`apps/web/public/arcana/`. Each image is declared in `manifest.json` with its
+`id`, native `logical` pixel size and the header/footer text `bands`; the pure
+`loadManifest` loader in `@necro/ui-crt` validates that manifest at the boundary
+(zod) and distils it to a trusted `id -> ArcanaAsset` map, discarding every
+generator bookkeeping field. The twelve diagnosis cards (`DIAGNOSIS_CARD_IDS`,
+in deck order from the oracle `CardIdSchema`) are each a **120×160** sprite with
+a header band `[0,19]` (numeral + title) and a footer band `[147,160]`
+(position · orientation); the landscape extras — the Seer (`256×144`) and the
+open Necronomicon (`256×144`) — carry no bands, and the closed Necronomicon is
+`108×144`.
+
+Each card is drawn by the `PixelCard` component (in `@necro/ui-crt`) as a single
+`<img>` at `logical × integerScale` with `image-rendering: pixelated` and **no
+colour-altering filter**, so the sprite is always shown at a whole-number scale
+and never blurred. The phosphor numeral/title and position·orientation are DOM
+text in the header/footer bands (not baked into the image), and the oracle-voice
+caption (`<= 72` cols) sits below the image. Orientation stays semantic:
+**reversed** rotates the image 180° while the band/caption text is kept upright,
+exactly as the ASCII faces do. Severity still drives the Spec 05 glitch (a calm
+card at severity 0 is perfectly steady), and five cards declare a bounded
+**Motion_Zone** — the Tower flickers, the Star shimmers, the Moon pulses, the
+Hermit flickers, Judgement rays, and the Seer glows — each validated to stay
+inside the card, clear of the text bands, and within the Flash_Limit (≤ 2
+luminance changes/sec). When an image fails to load, `PixelCard` swaps to the
+ASCII `AsciiCardView` in place with no broken-image indicator.
+
+Spreads render through `SpreadPixelView` (a left-to-right row in the reading's
+exact order, 3 slots for a fates reading) and any card opens in
+`FullscreenCardView` (a keyboard-navigable `role="dialog"` inspector). The
+`resurrect` result can play through `NecronomiconRitual`, a closed-book →
+tremble → crossfade-open → rising-diff animation driven by a pure, ≤ 3 s
+timeline over the diff/patch view it never alters. A matching ORIGINAL,
+code-synthesized Background_Theme may play while sound is on. The full module and
+component map lives in `docs/ARCHITECTURE.md` → "Arcana_Visions — the pixel-art
+presentation layer"; the art and audio provenance is recorded in
+`docs/ASSETS.md`.
+
 ## Card ↔ grimoire links
 
 A grimoire is a migration plugin unlocked by the card whose diagnosis it heals. A

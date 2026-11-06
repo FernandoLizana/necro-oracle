@@ -14,6 +14,7 @@
 
 import type { ApiPort, DemoPort } from "./protocol.js";
 import type { SoundCue } from "./sound/sound-cue.js";
+import type { BackgroundThemeLoaderPort } from "./sound/background-theme-engine.js";
 
 /** Synchronous key/value storage. Never throws. */
 export interface StoragePort {
@@ -91,4 +92,22 @@ export interface TerminalPorts {
   readonly frames: FramePort;
   readonly sound: SoundLoaderPort;
   readonly patchDownload: PatchDownloadPort;
+  /**
+   * Lazily loads the Web Audio Background_Theme engine chunk (Arcana_Visions).
+   * OPTIONAL and default-absent: when omitted, the Background_Theme is never
+   * loaded and never plays, so a host (and every `@necro/ui-crt` unit test)
+   * that passes no `backgroundTheme` port behaves exactly as before and never
+   * starts audio (R8.10). Production wires `loadBackgroundTheme`; the theme
+   * still plays only once the pure `backgroundThemeActive` gate turns true
+   * (sound on, after a gesture, visible, and not a test/CI run).
+   */
+  readonly backgroundTheme?: BackgroundThemeLoaderPort | undefined;
+  /**
+   * Whether the terminal is running under a test harness or CI (Arcana_Visions).
+   * Forwarded straight into the pure `backgroundThemeActive(state, { isTest })`
+   * gate so the Background_Theme NEVER starts in a test/CI run regardless of the
+   * sound state (R8.10). OPTIONAL and default-`false`; production resolves it
+   * from a `navigator.webdriver` / env signal in the browser adapters.
+   */
+  readonly isTest?: boolean | undefined;
 }

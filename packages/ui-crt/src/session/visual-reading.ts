@@ -19,6 +19,7 @@
 
 import type { CardDraw, SpreadPosition } from "@necro/oracle/client";
 
+import type { ExplainTarget } from "../command/types.js";
 import type { PlayableSpread, ReadingResponse } from "../protocol.js";
 import type { SessionState } from "./state.js";
 import { isDemoSession } from "./demo-seed.js";
@@ -77,6 +78,31 @@ export function visualCards(state: SessionState): readonly VisualCard[] {
   const response = currentVisualReading(state);
   if (response === null) return [];
   return drawnPositions(response.reading.spread);
+}
+
+/**
+ * Resolve an `ExplainTarget` to the index of the matching drawn card within the
+ * order-preserving `visualCards` list, or `-1` when no drawn card matches.
+ *
+ * This is the pure bridge the Terminal uses to decide whether an `explain`
+ * command should OPEN the Fullscreen_Card_View (R2.3): a `position` target
+ * matches the drawn card at that 1-based spread position, a `card` target
+ * matches the first drawn position holding that card id. A target that names a
+ * void position, an out-of-range position, or a card absent from the reading
+ * resolves to `-1`, so the Terminal leaves the view unchanged and the log's
+ * `renderExplain` path still prints the oracle-voice error (R2.4). The lookup
+ * is over the SAME `visualCards` list the Spread_View and Fullscreen_Card_View
+ * render from, so the opened index always points at the same drawn card the
+ * log explains.
+ */
+export function visualCardIndex(
+  cards: readonly VisualCard[],
+  target: ExplainTarget,
+): number {
+  if (target.kind === "position") {
+    return cards.findIndex((card) => card.position === target.position);
+  }
+  return cards.findIndex((card) => card.draw.card === target.card);
 }
 
 /** Keep only the drawn positions of a spread, preserving order. */

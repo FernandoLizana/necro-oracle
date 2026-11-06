@@ -12,25 +12,51 @@
 // fallback. Repository-derived text is rendered only as text nodes; the sole
 // anchor is a built Evidence_Link (R14.1, R14.5).
 //
-// _Requirements: R1.1-R1.5, R3.1-R3.12, R9.*, R10.*, R14.1, R14.5, R15.*,
-// R16.9, R17.4, R17.5, R19.*_
+// Arcana_Visions wiring (Spec 06, task 19): when a reading completes and an
+// `id -> ArcanaAsset` manifest covering its drawn cards is supplied, the
+// Terminal renders the pixel-art `SpreadPixelView` in place of the ASCII
+// `CardReveal`, and opens the `FullscreenCardView` on a card click, Enter on a
+// focused card, or an `explain <position|card>` command for a card present in
+// the reading (R2.1-R2.3). An `explain` reference absent from the reading leaves
+// the view unchanged — the reducer's `renderExplain`/`renderError` path still
+// prints the oracle-voice error in the log (R2.4). Without a (full) manifest the
+// Spec 05 behaviour is unchanged.
+//
+// _Requirements: R1.1-R1.5, R2.1-R2.4, R3.1, R3.*, R9.*, R10.*, R14.1, R14.5,
+// R15.*, R16.9, R17.4, R17.5, R19.*_
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import type { TerminalPorts } from "../ports.js";
 import { useTerminal } from "../hooks/use-terminal.js";
 import { BOOT_PHRASE } from "../voice/phrases.js";
 import { loadCardArt } from "../render/load-card-art.js";
 import type { CardArtTable } from "../render/ascii-card.js";
-import { visualCards } from "../session/visual-reading.js";
+import { visualCards, visualCardIndex } from "../session/visual-reading.js";
+import type { ArcanaAsset } from "../arcana/manifest.js";
+import type { Size } from "../arcana/integer-scale.js";
+import type { ExplainTarget } from "../command/types.js";
+import type { VisualCard } from "../session/visual-reading.js";
 import { Screen } from "./Screen.js";
 import { OutputLog } from "./OutputLog.js";
 import { CommandLine } from "./CommandLine.js";
 import { ButtonRow } from "./ButtonRow.js";
 import { BootOverlay } from "./BootOverlay.js";
+import { SeerPortrait } from "./SeerPortrait.js";
 import { CardReveal } from "./CardReveal.js";
+import { SpreadPixelView } from "./SpreadPixelView.js";
+import { FullscreenCardView } from "./FullscreenCardView.js";
+import { NecronomiconRitual } from "./NecronomiconRitual.js";
 import { RotOverlay } from "./RotOverlay.js";
 import { VitalityCounter } from "./VitalityCounter.js";
+import { ritualTimeline } from "../arcana/ritual-timeline.js";
+import type { ResurrectFileResult } from "../protocol.js";
 
 /** The accessible name of the terminal and its document title. */
 const TERMINAL_LABEL = "Necro-Oracle CRT terminal";
@@ -48,16 +74,150 @@ export interface TerminalProps {
    * (visual-necromancy task 16.2); omitted / `false` plays the full boot.
    */
   readonly bootSignal?: boolean;
+  /**
+   * The external Ritual_Force_Flag, forwarded to the Resurrection_Ritual gate
+   * as a parallel signal to `bootSignal`. The host app reads the
+   * `?ritual=force` query flag into this prop (Arcana_Visions task 20). When
+   * `true`, the Necronomicon ritual plays in full BEFORE the diff even during a
+   * Playwright run or a `?boot=skip` load (R6.6); omitted / `false` leaves the
+   * ritual gated the usual way (Reduced_Motion, a Playwright run, or
+   * `?boot=skip` without the force flag all skip straight to the diff, R6.5).
+   */
+  readonly ritualForce?: boolean;
+  /**
+   * The trusted `id -> ArcanaAsset` map from `loadManifest` (Arcana_Visions).
+   * When a reading completes AND this map carries the drawn cards' assets, the
+   * Terminal renders the pixel-art `SpreadPixelView` and lets the user open the
+   * `FullscreenCardView` on card click, Enter, or `explain <position|card>`
+   * (R2.3, R3.1). Omitted / empty (the default) keeps the Spec 05 behaviour
+   * exactly: the ASCII `CardReveal` spread, no pixel cards, no fullscreen — so
+   * a no-manifest host renders precisely as before. The host (`apps/web`) loads
+   * `apps/web/public/arcana/manifest.json` and threads `loadManifest(json)`
+   * down through `TerminalScreen`; `@necro/ui-crt` never imports the app's
+   * public file itself (dependency rules).
+   */
+  readonly manifest?: ReadonlyMap<string, ArcanaAsset>;
+}
+
+/** A sensible default spread region before the row measures itself (cards clamp to scale 1 below logical). */
+const DEFAULT_SPREAD_REGION: Size = { w: 640, h: 220 };
+
+/** The empty manifest shared as the default so no-manifest hosts behave exactly as Spec 05. */
+const EMPTY_MANIFEST: ReadonlyMap<string, ArcanaAsset> = new Map();
+
+/** The two Necronomicon frame ids and their committed image URLs (Arcana_Visions). */
+const NECRONOMICON_CLOSED_ID = "necronomicon-closed";
+const NECRONOMICON_OPEN_ID = "necronomicon-open";
+const NECRONOMICON_CLOSED_SRC = "/arcana/necronomicon-closed.webp";
+const NECRONOMICON_OPEN_SRC = "/arcana/necronomicon-open.webp";
+
+/** The Seer landing portrait id (256×144, bands null) and its committed image URL. */
+const SEER_ID = "seer";
+const SEER_SRC = "/arcana/seer.webp";
+
+/** A sensible default landing region the Seer scales into before measurement (integerScale clamps to 1 below logical). */
+const DEFAULT_SEER_REGION: Size = { w: 256, h: 144 };
+
+/**
+ * Whether a detected Playwright / headless automation run is driving the page,
+ * guarded for SSR. The Resurrection_Ritual is skipped during such a run unless
+ * the Ritual_Force_Flag (`?ritual=force`) is set (R6.5, R6.6). `navigator`
+ * absent during the server render resolves to `false` (no ritual forced off).
+ */
+function detectPlaywright(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return navigator.webdriver === true;
+}
+
+/**
+ * Whether the manifest carries BOTH Necronomicon frames, so the ritual has the
+ * images it needs to play. Without a (full) manifest — a no-manifest Spec 05
+ * host — this is `false`, so `ritualTimeline` treats the frames as not ready
+ * (`imagesReady: false`) and the resurrect view renders exactly as Spec 05 did
+ * (a single render straight to the diff/rot presentation).
+ */
+function necronomiconReady(manifest: ReadonlyMap<string, ArcanaAsset>): boolean {
+  return (
+    manifest.has(NECRONOMICON_CLOSED_ID) && manifest.has(NECRONOMICON_OPEN_ID)
+  );
+}
+
+/**
+ * The decorative rising-diff preview lines for the ritual, reconstructed from
+ * the ritual's per-file diff (the `add` and `context` lines = the after-code),
+ * mirroring how `RotOverlay` rebuilds the revived source. These are purely
+ * decorative — `NecronomiconRitual` marks them aria-hidden — and never alter
+ * the authoritative diff/patch view, which stays the `children` (R6.9).
+ */
+function ritualDiffLines(files: readonly ResurrectFileResult[]): string[] {
+  return files.flatMap((file) =>
+    file.diff
+      .filter((line) => line.kind !== "remove")
+      .map((line) => line.text),
+  );
+}
+
+/**
+ * Whether every drawn card of the current reading has a trusted asset in the
+ * manifest. Only then does the pixel `SpreadPixelView` render in place of the
+ * ASCII `CardReveal`; a partial / empty manifest keeps the Spec 05 ASCII spread
+ * so no slot ever renders a broken pixel card. An empty reading is never a
+ * pixel spread (there is nothing to frame).
+ */
+function pixelSpreadReady(
+  cards: readonly VisualCard[],
+  manifest: ReadonlyMap<string, ArcanaAsset>,
+): boolean {
+  if (cards.length === 0) return false;
+  return cards.every((card) => manifest.has(card.draw.card));
 }
 
 /** The live CRT terminal, constructed with a full set of ports. */
-export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Element {
+export function Terminal({
+  ports,
+  bootSignal,
+  ritualForce,
+  manifest = EMPTY_MANIFEST,
+}: TerminalProps): React.JSX.Element {
   // The live rot-then-rebirth playing state, reported up by `RotOverlay` (the
   // single `useRot` owner). It feeds the ambient Resurrection_Animation hum
   // gate inside `useTerminal` so the low drone hums only while the animation is
   // actively playing (visual-necromancy task 21.1, OPTIONAL polish, R13.1).
   const [resurrectionPlaying, setResurrectionPlaying] = useState(false);
-  const terminal = useTerminal(ports, { bootSignal, resurrectionPlaying });
+
+  // The Fullscreen_Card_View state: whether the modal single-card inspector is
+  // open and which drawn card (by index into the order-preserving `visualCards`
+  // list) it shows. The parent owns this mounting decision — click, Enter, and
+  // `explain <position|card>` all set it here (R2.1-R2.3) — while
+  // `FullscreenCardView` owns its own focus trap, arrow navigation and Escape.
+  const [fullscreen, setFullscreen] = useState<{
+    readonly open: boolean;
+    readonly index: number;
+  }>({ open: false, index: 0 });
+
+  // The latest drawn cards, mirrored into a ref so the stable `onExplain`
+  // handler (wired into `useTerminal` below, before `cards` is computed in the
+  // render body) always resolves the target against the current reading.
+  const cardsRef = useRef<readonly VisualCard[]>([]);
+
+  // `explain <position|card>`: resolve the target against the current reading's
+  // drawn cards and OPEN the Fullscreen_Card_View for a present card within the
+  // same submit (R2.3). A target absent from the reading (void / out-of-range /
+  // card not drawn) resolves to -1, so the view is left unchanged (R2.4) — the
+  // reducer's `renderExplain` path has already printed the oracle-voice error.
+  const onExplain = useCallback((target: ExplainTarget) => {
+    const index = visualCardIndex(cardsRef.current, target);
+    if (index >= 0) {
+      setFullscreen({ open: true, index });
+    }
+  }, []);
+
+  const terminal = useTerminal(ports, {
+    bootSignal,
+    ritualForce,
+    resurrectionPlaying,
+    onExplain,
+  });
   const {
     state,
     ariaBusy,
@@ -74,6 +234,7 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
     bootFrameForRender,
     bootFrameKindForRender,
     visualSeed,
+    ritualForce: ritualForceSignal,
   } = terminal;
 
   // The DOWNLOAD PATCH affordance is shown only once a resurrection Ritual has
@@ -107,6 +268,83 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
   // decorative card overlay draws these over the terminal; the authoritative
   // card text stays in the log (design D1, R4.6, R12.2).
   const cards = visualCards(state);
+  cardsRef.current = cards;
+
+  // Whether the pixel-art Spread_View replaces the ASCII CardReveal: only when
+  // a manifest covering every drawn card is supplied (Arcana_Visions). Without
+  // it the terminal renders the Spec 05 ASCII spread, exactly as before.
+  const pixelSpread = pixelSpreadReady(cards, manifest);
+
+  // The trusted `seer` asset, if the manifest carries it (Arcana_Visions task
+  // 21). When present AND the boot is playing, the Seer_Image is shown in the
+  // boot/landing region; a no-manifest host leaves this `undefined` so the boot
+  // renders exactly as Spec 05 did (no Seer).
+  const seerAsset = manifest.get(SEER_ID);
+
+  // The measured landing region the Seer scales itself against. Mirrors the
+  // Spread_View measurement: the region measures its own box when available,
+  // and `integerScale` clamps to 1 for a small region until it does.
+  const seerRef = useRef<HTMLDivElement | null>(null);
+  const [seerRegion, setSeerRegion] = useState<Size>(DEFAULT_SEER_REGION);
+  useLayoutEffect(() => {
+    const node = seerRef.current;
+    if (node === null) return;
+    const measure = (): void => {
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSeerRegion({ w: rect.width, h: rect.height });
+      }
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [seerAsset, state.boot.phase]);
+
+  // The measured Spread_View region each pixel card scales itself against. The
+  // row measures its own box (ResizeObserver when available); until measured it
+  // uses a sensible default, and `integerScale` clamps to 1 for a small region.
+  const spreadRef = useRef<HTMLDivElement | null>(null);
+  const [spreadRegion, setSpreadRegion] = useState<Size>(DEFAULT_SPREAD_REGION);
+  useLayoutEffect(() => {
+    const node = spreadRef.current;
+    if (node === null) return;
+    const measure = (): void => {
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSpreadRegion({ w: rect.width, h: rect.height });
+      }
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [pixelSpread]);
+
+  // Open the Fullscreen_Card_View for a clicked / Enter-activated card (R2.1,
+  // R2.2). The click/Enter both land on `PixelCard`'s `onActivate` (a button-
+  // like activation on the card root), carrying the card's index in the spread.
+  const openFullscreenAt = useCallback((index: number) => {
+    setFullscreen({ open: true, index });
+  }, []);
+
+  const closeFullscreen = useCallback(() => {
+    setFullscreen((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  const changeFullscreenIndex = useCallback((index: number) => {
+    setFullscreen((prev) => ({ ...prev, index }));
+  }, []);
+
+  // A reading that no longer holds the open card (cleared log, fresh `read`)
+  // closes the inspector so it never points past the end of the spread.
+  useEffect(() => {
+    if (fullscreen.open && fullscreen.index >= cards.length) {
+      setFullscreen({ open: false, index: 0 });
+    }
+  }, [cards.length, fullscreen.open, fullscreen.index]);
 
   // A settled resurrection: the decorative rot-then-rebirth overlay plays over
   // the terminal while the diff / Vitality_Delta live in the log (R6.1, R6.10).
@@ -116,6 +354,36 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
   // the ambient hum gate follows the overlay's single `useRot` (task 21.1).
   const onRotPlayingChange = useCallback((playing: boolean) => {
     setResurrectionPlaying(playing);
+  }, []);
+
+  // ── Resurrection_Ritual wiring (Arcana_Visions task 20) ──────────────────
+  //
+  // When a resurrection settles, gate the Spec 05 diff/rot presentation through
+  // the pure `ritualTimeline`: in full motion (or when the Ritual_Force_Flag is
+  // set) the Necronomicon_Ritual plays its four phases BEFORE the diff, then
+  // renders the SAME RotOverlay + Vitality + log view verbatim as its
+  // `children`; otherwise the timeline is empty and that view renders in a
+  // single render, exactly as Spec 05 did. Demo determinism (R6.7, R6.8) rides
+  // `visualSeed` (DEMO_SEED in demo). The ritual only plays when the manifest
+  // carries both Necronomicon frames; a no-manifest host keeps the Spec 05 path
+  // (frames treated as not ready).
+
+  // A detected Playwright / headless run, captured once on mount (SSR-guarded).
+  // During such a run the ritual is skipped unless `?ritual=force` is set.
+  const [playwright] = useState<boolean>(detectPlaywright);
+
+  // Whether the Necronomicon frames are available to the ritual (manifest has
+  // both ids). Without them the resurrect view stays on the Spec 05 path.
+  const necronomiconAvailable = necronomiconReady(manifest);
+
+  // Track the ritual whose Necronomicon animation has already played so a
+  // re-render never replays it; a fresh resurrection (new `lastRitual`) resets.
+  const [playedRitualId, setPlayedRitualId] = useState<string | null>(null);
+
+  // Image-decode failure on either Necronomicon frame: skip straight to the
+  // diff for this ritual (and every re-render of it) by marking it played.
+  const onRitualImageError = useCallback((ritualId: string) => {
+    setPlayedRitualId(ritualId);
   }, []);
 
   // The component owns the document shell attributes in environments where the
@@ -147,12 +415,44 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
         {/* The one-time Boot_Sequence overlay, drawn over the already-mounted
             terminal. It renders nothing once the boot phase settles to "done"
             (reduced motion / bootSignal / skipped / completed), so the ready
-            terminal carries no leftover overlay (R1.1, R1.7, R10.4). */}
-        <BootOverlay
-          frame={bootFrameForRender}
-          bootPhase={state.boot.phase}
-          frameKind={bootFrameKindForRender}
-        />
+            terminal carries no leftover overlay (R1.1, R1.7, R10.4).
+
+            Arcana_Visions (task 21): while the boot is playing AND the manifest
+            carries the `seer` asset, the Seer_Image — the oracle's face — is
+            shown in the boot/landing region at integer scale, with the existing
+            text boot overlay as its onError fallback (R7.1, R7.4). A no-manifest
+            Spec 05 host (no `seer` entry) renders the boot exactly as before: no
+            Seer, just the `BootOverlay`. The BootOverlay keeps its a11y intact —
+            the `crt-sr-only` wordmark and skip hint — regardless of the Seer. */}
+        {seerAsset !== undefined && state.boot.phase === "playing" ? (
+          <div ref={seerRef} className="crt-seer-region" data-boot-seer="playing">
+            {/* The oracle's face. On image error it swaps IN PLACE for `null`
+                (no broken-image indicator) and the sibling `BootOverlay` below
+                remains the text landing — so a failed Seer image degrades to
+                exactly the Spec 05 boot (R7.4). */}
+            <SeerPortrait
+              asset={seerAsset}
+              available={seerRegion}
+              src={SEER_SRC}
+              fallback={null}
+            />
+            {/* Exactly ONE boot overlay renders at a time. It sits alongside the
+                Seer so the boot frames, the accessible `crt-sr-only` wordmark
+                and the skip hint stay present while the oracle's face shows
+                (a11y + skip intact, R1.4, R1.8). */}
+            <BootOverlay
+              frame={bootFrameForRender}
+              bootPhase={state.boot.phase}
+              frameKind={bootFrameKindForRender}
+            />
+          </div>
+        ) : (
+          <BootOverlay
+            frame={bootFrameForRender}
+            bootPhase={state.boot.phase}
+            frameKind={bootFrameKindForRender}
+          />
+        )}
         <OutputLog
           ref={logRef}
           blocks={state.log}
@@ -160,19 +460,77 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
           revealedCountFor={revealedCountFor}
           engineFailed={engineFailed}
         />
-        {/* Decorative card layer: one framed ASCII card per drawn position, in
-            the Reading's order, Card_Back → flip → AsciiCard with the severity
-            glitch. aria-hidden — the log owns the announced card text (D1). */}
-        <CardReveal
-          cards={cards}
-          flippedCount={state.cardReveal.flippedCount}
-          motionMode={state.motionMode}
-          art={cardArt}
-        />
+        {/* Card layer. With an Arcana_Visions manifest covering the reading's
+            drawn cards, the pixel-art `SpreadPixelView` renders the spread as
+            integer-scaled Pixel_Cards (each with its own ASCII + no-JS fallback)
+            and each card opens the `FullscreenCardView` on click / Enter (R2.1,
+            R2.2, R3.1). Without a (full) manifest the Spec 05 decorative ASCII
+            `CardReveal` renders exactly as before — one framed card per drawn
+            position, in order, with the one-by-one flip + severity glitch,
+            aria-hidden (the log owns the announced text, D1). */}
+        {pixelSpread ? (
+          <div ref={spreadRef} className="crt-spread-pixel-region">
+            <SpreadPixelView
+              cards={cards}
+              manifest={manifest}
+              available={spreadRegion}
+              motionMode={state.motionMode}
+              art={cardArt}
+              onActivateCard={openFullscreenAt}
+            />
+          </div>
+        ) : (
+          <CardReveal
+            cards={cards}
+            flippedCount={state.cardReveal.flippedCount}
+            motionMode={state.motionMode}
+            art={cardArt}
+          />
+        )}
+        {/* The modal single-card inspector, mounted only while open. It moves
+            focus inside on open and restores it to the opener on close, traps
+            Tab, wraps arrow navigation, and closes on Escape (R2.5-R2.8). */}
+        {fullscreen.open && cards.length > 0 ? (
+          <FullscreenCardView
+            cards={cards}
+            index={fullscreen.index}
+            manifest={manifest}
+            motionMode={state.motionMode}
+            onIndexChange={changeFullscreenIndex}
+            onClose={closeFullscreen}
+          />
+        ) : null}
         {/* Decorative resurrection layer: the rot-then-rebirth animation plays
-            over the terminal while the diff / Vitality_Delta stay in the log. */}
+            over the terminal while the diff / Vitality_Delta stay in the log.
+            Arcana_Visions wraps this presentation in the Necronomicon_Ritual:
+            in full motion (or when forced) the four-phase book animation plays
+            FIRST, then renders this exact view verbatim as its `children`; when
+            the timeline is empty (Reduced_Motion, a Playwright / `?boot=skip`
+            run without the force flag, or no Necronomicon frames) the children
+            render in a single render, preserving the Spec 05 behaviour (R6.9). */}
         {ritual !== null ? (
-          <>
+          <NecronomiconRitual
+            key={ritual.ritualId}
+            steps={
+              playedRitualId === ritual.ritualId
+                ? []
+                : ritualTimeline({
+                    motionMode: state.motionMode,
+                    playwright,
+                    bootSkip: bootSignal ?? false,
+                    ritualForce: ritualForceSignal,
+                    seed: visualSeed,
+                    imagesReady: necronomiconAvailable,
+                  })
+            }
+            frames={ports.frames}
+            motionMode={state.motionMode}
+            closedSrc={NECRONOMICON_CLOSED_SRC}
+            openSrc={NECRONOMICON_OPEN_SRC}
+            diffLines={ritualDiffLines(ritual.files)}
+            onImageError={() => onRitualImageError(ritual.ritualId)}
+            onComplete={() => setPlayedRitualId(ritual.ritualId)}
+          >
             <RotOverlay
               files={ritual.files}
               seed={visualSeed}
@@ -189,7 +547,7 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
               motionMode={state.motionMode}
               frames={ports.frames}
             />
-          </>
+          </NecronomiconRitual>
         ) : null}
         <CommandLine
           ref={inputRef}

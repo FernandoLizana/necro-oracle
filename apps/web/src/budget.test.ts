@@ -22,9 +22,12 @@
 //     files, so the dynamic demo/sound chunks are excluded. (R16.1, R16.12)
 //   - scanForbiddenMarkers(fileText, markers?): string[] — the markers found in
 //     one chunk's text. (R16.2)
-//   - findSeparateChunks(chunkNames): { demo, sound, resurrection } — locates
-//     the demo-bundle chunk, the sound-engine chunk and the resurrection
-//     result-view chunk as distinct dynamic chunks. (R16.12)
+//   - findSeparateChunks(chunkNames): { demo, sound, resurrection,
+//     backgroundTheme } — locates the demo-bundle chunk, the sound-engine
+//     chunk, the resurrection result-view chunk and the Arcana_Visions
+//     Background_Theme engine chunk as distinct dynamic chunks. The theme chunk
+//     shares the sound engine's Web Audio markers, so it is disambiguated by
+//     name/content. (R16.12, Arcana_Visions R8.9/R11.2)
 //
 // The resurrection-engine terminal client (resurrection-engine task 14.11/14.12)
 // adds the diff / vitality / patch result view, lazy-loaded through
@@ -157,6 +160,7 @@ type SeparateChunks = {
   readonly demo: string | null;
   readonly sound: string | null;
   readonly resurrection: string | null;
+  readonly backgroundTheme: string | null;
 };
 
 describe("R16.12: demo bundle, sound engine and resurrection view are separate chunks", () => {
@@ -188,10 +192,76 @@ describe("R16.12: demo bundle, sound engine and resurrection view are separate c
     ) => SeparateChunks;
 
     const onlyInitial = ["static/chunks/webpack-aaa.js", "static/chunks/app/page-eee.js"];
-    const { demo, sound, resurrection } = findSeparateChunks(onlyInitial);
+    const { demo, sound, resurrection, backgroundTheme } = findSeparateChunks(onlyInitial);
     expect(demo).toBeNull();
     expect(sound).toBeNull();
     expect(resurrection).toBeNull();
+    expect(backgroundTheme).toBeNull();
+  });
+});
+
+// Arcana_Visions (R8.9, R11.2): the Background_Theme synthesis engine is a
+// FOURTH lazy chunk, loaded only after the theme turns on post-gesture through
+// `@necro/ui-crt` `load-background-theme.ts`
+// (`import("./background-theme-engine.js")`). It must be located as its own
+// separate, non-initial chunk, distinct from the demo / sound / resurrection
+// chunks. Crucially the theme engine ALSO uses `createOscillator` /
+// `OscillatorNode` / `createGain`, so a name/content detector that only knew
+// the Spec 05 sound markers would misclassify it as the sound engine — the
+// script disambiguates it by the `background-theme` name fragment and by
+// theme-specific content markers. These examples pin that fourth field without
+// weakening the demo/sound/resurrection contract above.
+//
+// Validates: Requirements 8.9, 11.2 (Arcana_Visions)
+describe("Arcana_Visions R8.9/R11.2: the background-theme engine is a distinct lazy chunk", () => {
+  it("locates the background-theme chunk alongside demo, sound and resurrection as four distinct chunks", async () => {
+    const mod = await loadScript();
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunks;
+
+    const chunkNames = [
+      "static/chunks/webpack-aaa.js",
+      "static/chunks/app/page-eee.js",
+      "static/chunks/bundle.generated.<hash>.js",
+      "static/chunks/engine.<hash>.js",
+      "static/chunks/ResurrectionResult.<hash>.js",
+      "static/chunks/background-theme-engine.<hash>.js",
+    ];
+    const { demo, sound, resurrection, backgroundTheme } =
+      findSeparateChunks(chunkNames);
+
+    expect(demo).not.toBeNull();
+    expect(sound).not.toBeNull();
+    expect(resurrection).not.toBeNull();
+    expect(backgroundTheme).not.toBeNull();
+
+    // The theme chunk is positively identified by its name fragment.
+    expect(backgroundTheme).toBe("static/chunks/background-theme-engine.<hash>.js");
+
+    // All four are distinct dynamic chunks — and, in particular, the theme
+    // chunk is NOT the same as the Spec 05 sound chunk even though its name also
+    // contains the substring "engine".
+    expect(new Set([demo, sound, resurrection, backgroundTheme]).size).toBe(4);
+    expect(backgroundTheme).not.toBe(sound);
+  });
+
+  it("does not steal the sound-engine chunk when only the sound engine is present", async () => {
+    const mod = await loadScript();
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunks;
+
+    // Only the Spec 05 sound engine is present (no background-theme chunk): the
+    // sound field must still resolve, and backgroundTheme must be null rather
+    // than claiming the sound chunk.
+    const chunkNames = [
+      "static/chunks/webpack-aaa.js",
+      "static/chunks/engine.<hash>.js",
+    ];
+    const { sound, backgroundTheme } = findSeparateChunks(chunkNames);
+    expect(sound).toBe("static/chunks/engine.<hash>.js");
+    expect(backgroundTheme).toBeNull();
   });
 });
 

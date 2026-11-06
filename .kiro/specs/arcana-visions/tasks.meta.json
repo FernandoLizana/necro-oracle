@@ -1,0 +1,776 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Add motion and ritual tokens": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091402
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989101134
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989278033
+      }
+    ],
+    "2.1 Implement `packages/ui-crt/src/arcana/integer-scale.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091449
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989102025
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989279143
+      }
+    ],
+    "3.1 Implement `packages/ui-crt/src/arcana/manifest.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091488
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989103492
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989280377
+      }
+    ],
+    "4.1 Implement `packages/ui-crt/src/arcana/motion-zones.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091540
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989104932
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989281847
+      }
+    ],
+    "5.1 Implement `packages/ui-crt/src/arcana/ritual-timeline.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091571
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989524826
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989828726
+      }
+    ],
+    "6.1 Implement `packages/ui-crt/src/arcana/pixel-card-model.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091604
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989105601
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989282530
+      }
+    ],
+    "7.1 Implement `packages/ui-crt/src/sound/background-theme.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091635
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989300554
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989504805
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989888799
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989965444
+      }
+    ],
+    "8. Lazy engine: background theme (Web Audio behind a port)": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091671
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990138735
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990372677
+      }
+    ],
+    "9. Checkpoint - pure modules": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091702
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989991146
+      }
+    ],
+    "10.1 Update `packages/ui-crt/src/render/help.ts`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091738
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989301963
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989505824
+      }
+    ],
+    "11. Arcana stylesheet": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091767
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989525781
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989827325
+      }
+    ],
+    "12.1 Implement `packages/ui-crt/src/components/PixelCard.tsx`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091805
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990137817
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990373721
+      }
+    ],
+    "13.1 Implement `packages/ui-crt/src/components/SpreadPixelView.tsx`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091853
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990380341
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990615145
+      }
+    ],
+    "14.1 Implement `packages/ui-crt/src/components/FullscreenCardView.tsx`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091882
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990381723
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990616332
+      }
+    ],
+    "15.1 Implement `packages/ui-crt/src/components/NecronomiconRitual.tsx`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091906
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990382669
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990617730
+      }
+    ],
+    "16.1 Implement `packages/ui-crt/src/components/SeerPortrait.tsx`": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091938
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990383724
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990618435
+      }
+    ],
+    "17. Export surface": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989091968
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990925357
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991063229
+      }
+    ],
+    "18. Checkpoint - components and exports": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092001
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991069202
+      }
+    ],
+    "19. Wire spread + fullscreen into the Terminal_Route": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092031
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991100070
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991554795
+      }
+    ],
+    "20. Wire the Necronomicon ritual into `resurrect` + `?ritual=force` plumbing": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092056
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991556010
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991873321
+      }
+    ],
+    "21. Wire the Seer onto boot/landing and the background theme onto the sound-on gesture": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092084
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793991874287
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992374664
+      }
+    ],
+    "22. Lazy-loading and chunking per performance budget": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092108
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992380326
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992833769
+      }
+    ],
+    "23. Checkpoint - wiring": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092143
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992839799
+      }
+    ],
+    "24. Playwright end-to-end: arcana": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092203
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992849928
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993280223
+      }
+    ],
+    "25. Screenshot capture update": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092235
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992848934
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993278533
+      }
+    ],
+    "26. Asset and audio disclosure docs": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092261
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992847085
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993276154
+      }
+    ],
+    "27. Update project docs": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092289
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793992848017
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993277105
+      }
+    ],
+    "28. Final bundle-budget verification": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092317
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993516133
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793993944173
+      }
+    ],
+    "29. Final checkpoint - full verification": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989092344
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793994045860
+      }
+    ],
+    "2. Pure module: integer scale": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989279172
+      }
+    ],
+    "3. Pure module: manifest loader (zod)": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989280403
+      }
+    ],
+    "4. Pure module: Motion_Zone table + validator": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989281908
+      }
+    ],
+    "6. Pure module: pixel-card model": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989282556
+      }
+    ],
+    "2.2 Write property tests for integer scale": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989292129
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989302899
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989501530
+      }
+    ],
+    "3.2 Write unit tests for manifest loader": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989293145
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989303874
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989502476
+      }
+    ],
+    "4.2 Write property tests for motion zones": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989294333
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989305046
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989503894
+      }
+    ],
+    "6.2 Write property test for pixel-card model": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989295268
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989527745
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989829685
+      }
+    ],
+    "7. Pure module + gate: background theme": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989504834
+      }
+    ],
+    "10. Help/celtic spread consistency": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989505850
+      }
+    ],
+    "7.2 Write property tests for background theme": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989511549
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989526864
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989830468
+      }
+    ],
+    "5. Pure module: ritual timeline": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989828753
+      }
+    ],
+    "5.2 Write property tests for ritual timeline": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793989836352
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990028052
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990129813
+      }
+    ],
+    "10.2 Write property test for help/spread consistency": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990009997
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990028781
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990130576
+      }
+    ],
+    "12. Component: PixelCard": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990373748
+      }
+    ],
+    "13. Component: SpreadPixelView": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990615189
+      }
+    ],
+    "14. Component: FullscreenCardView": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990616361
+      }
+    ],
+    "15. Component: NecronomiconRitual": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990617757
+      }
+    ],
+    "16. Component: SeerPortrait": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990618482
+      }
+    ],
+    "12.2 Write property + unit tests for PixelCard": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990624483
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990639599
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990919303
+      }
+    ],
+    "13.2 Write property + unit tests for SpreadPixelView": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990625435
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990641049
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990916026
+      }
+    ],
+    "14.2 Write unit tests for FullscreenCardView": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990626840
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990641966
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990920360
+      }
+    ],
+    "15.2 Write unit tests for NecronomiconRitual": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990627818
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990642896
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990917456
+      }
+    ],
+    "16.2 Write unit tests for SeerPortrait": [
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990628722
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990643951
+      },
+      {
+        "executionId": "0d345452-1c68-4140-945f-3a590b2c07df",
+        "chatSessionId": "sess_6a571d7e-adfc-43c4-a77c-daed0fb3bac0",
+        "timestamp": 1793990918357
+      }
+    ]
+  }
+}

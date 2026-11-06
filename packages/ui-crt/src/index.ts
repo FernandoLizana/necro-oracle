@@ -216,6 +216,7 @@ export { isDemoSession, resolveSeed } from "./session/demo-seed.js";
 // authoritative; visual-necromancy task 16.1).
 export {
   currentVisualReading,
+  visualCardIndex,
   visualCards,
   type VisualCard,
 } from "./session/visual-reading.js";
@@ -331,6 +332,10 @@ export {
   type SoundCueRequest,
 } from "./hooks/use-sound.js";
 export {
+  useBackgroundTheme,
+  type UseBackgroundThemeOptions,
+} from "./hooks/use-background-theme.js";
+export {
   MIN_ROT_FRAME_MS,
   useRot,
   type UseRotOptions,
@@ -351,3 +356,103 @@ export type {
   VitalityResult,
 } from "./protocol.js";
 export { renderResurrectVitality } from "./render/resurrect-vitality.js";
+
+// ── Arcana_Visions (Spec 06) — the pixel-art presentation layer ──────────────
+// An additive skin over Spec 05: pure modules (integer scale, manifest loader,
+// motion zones, ritual timeline, pixel-card model, background theme) plus the
+// screen-only React components. The Web Audio engine stays a separate lazy
+// chunk reached ONLY through `loadBackgroundTheme`'s dynamic import — the
+// engine impl is never barrelled here, so it never enters the first terminal
+// render graph (R8.9, R11.2; mirrors the `loadEngine` split above).
+
+// Integer scale — the largest whole-number display factor for a logical size.
+export { integerScale } from "./arcana/integer-scale.js";
+export type { Size } from "./arcana/integer-scale.js";
+
+// Manifest loader — validate the committed asset manifest at the boundary and
+// distil it to the trusted `id -> ArcanaAsset` view the app consumes.
+export {
+  DIAGNOSIS_CARD_IDS,
+  ManifestBandsSchema,
+  ManifestImageSchema,
+  ManifestSchema,
+  loadManifest,
+} from "./arcana/manifest.js";
+export type { ArcanaAsset, ManifestImage } from "./arcana/manifest.js";
+
+// Motion zones — the authored Motion_Zone_Table, the Flash_Limit helper, and
+// the pure validator the PixelCard runtime guard and the property test use.
+export {
+  MOTION_ZONES,
+  luminanceChangesPerSecond,
+  validateMotionZone,
+} from "./arcana/motion-zones.js";
+export type {
+  Bands,
+  MotionEffect,
+  MotionZone,
+  MotionZoneIssue,
+  Rect,
+} from "./arcana/motion-zones.js";
+
+// Ritual timeline — the pure Resurrection_Ritual phase schedule (no clock) and
+// its 3 s total ceiling.
+export { RITUAL_TOTAL_MS, ritualTimeline } from "./arcana/ritual-timeline.js";
+export type {
+  RitualOpts,
+  RitualPhase,
+  RitualStep,
+} from "./arcana/ritual-timeline.js";
+
+// Pixel-card model — the display model one Pixel_Card renders, and the
+// screen-reader alt-text builder.
+export { cardAltText, pixelCardModel } from "./arcana/pixel-card-model.js";
+export type { PixelCardModel } from "./arcana/pixel-card-model.js";
+
+// Background theme — the pure chiptune composer, its peak-gain measure, and the
+// pure gate that decides when the theme may play (mirrors `soundCueAllowed`).
+export {
+  backgroundThemeActive,
+  composeTheme,
+  peakGain,
+} from "./sound/background-theme.js";
+export type { ThemeScore, ThemeVoice } from "./sound/background-theme.js";
+
+// Background theme engine — ONLY the port shape, the engine interface, and the
+// gain ceiling are surfaced. `createBackgroundThemeEngine` (the Web Audio impl)
+// is deliberately NOT re-exported here: a static re-export would pull the
+// synthesis engine into the first-render graph and defeat the chunk split.
+// Callers reach the engine only through `loadBackgroundTheme`, whose dynamic
+// `import("./background-theme-engine.js")` keeps it in its own lazy chunk,
+// outside the first terminal render (R8.9, R11.2).
+export { MAX_THEME_GAIN } from "./sound/background-theme-engine.js";
+export type {
+  BackgroundThemeEngine,
+  BackgroundThemeLoaderPort,
+} from "./sound/background-theme-engine.js";
+
+// Background theme loader — the production BackgroundThemeLoaderPort. The engine
+// itself stays a separate lazy chunk behind this loader's string-literal
+// dynamic import; the engine module is never barrelled.
+export { loadBackgroundTheme } from "./sound/load-background-theme.js";
+
+// Arcana React components — the screen-only pixel-art views: a single card, a
+// spread row, the fullscreen inspector, the Resurrection_Ritual wrapper, and
+// the Seer landing portrait.
+export { PixelCard, type PixelCardProps } from "./components/PixelCard.js";
+export {
+  SpreadPixelView,
+  type SpreadPixelViewProps,
+} from "./components/SpreadPixelView.js";
+export {
+  FullscreenCardView,
+  type FullscreenCardViewProps,
+} from "./components/FullscreenCardView.js";
+export {
+  NecronomiconRitual,
+  type NecronomiconRitualProps,
+} from "./components/NecronomiconRitual.js";
+export {
+  SeerPortrait,
+  type SeerPortraitProps,
+} from "./components/SeerPortrait.js";

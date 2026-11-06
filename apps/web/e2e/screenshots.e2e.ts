@@ -33,7 +33,30 @@
 //   (4) the resurrection diff — after `resurrect`, once the rot overlay reaches
 //       `data-rot="done"` and the unchanged diff is in the log.
 //
-// _Requirements: 9.1, 9.3_
+// Arcana_Visions (task 25) adds four MORE deterministic frames for the
+// pixel-art Visual_Layer, each in its OWN test so fake and real clocks never
+// mix within a single test (the same isolation the boot-logo shot above uses):
+//   (5) the Spread_View with Pixel_Cards — after `demo lich-py2` / `read fates`
+//       the terminal renders the integer-scaled pixel spread (`.crt-spread-pixel`)
+//       because the `apps/web` Arcana manifest is present; captured on a
+//       normally-clocked page (no clock needed — the spread is a static layout);
+//   (6) a Fullscreen_Card_View — click a `.crt-pixel-card` (a `role="dialog"`
+//       opener) and wait for the `.crt-fullscreen-card` modal, then screenshot it;
+//       also normally-clocked;
+//   (7) the Resurrection_Ritual open-book frame — navigate with `?ritual=force`
+//       (task 20's flag) so the Necronomicon ritual plays even under a Playwright
+//       run, with the virtual clock FROZEN on the `crossfade` step (the open book
+//       fading in over the closed one) via `page.clock.pauseAt`, mirroring how
+//       `bootLogoShot` freezes on the logo step so an otherwise ~600 ms window is
+//       deterministic;
+//   (8) the landing with the Seer_Image — the Seer mounts only while
+//       `state.boot.phase === "playing"` (Terminal.tsx renders
+//       `.crt-seer-region[data-boot-seer="playing"]` with `.crt-seer-portrait`
+//       during boot), so this reuses the boot-logo freeze technique: navigate
+//       WITHOUT `?boot=skip` and PAUSE the clock mid-boot so the boot phase holds
+//       "playing" and the Seer stays on screen for a stable capture.
+//
+// _Requirements: 9.1, 9.3, 13.7_
 
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -43,6 +66,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import {
   bootLogoShot,
+  bootTerminal,
   mockRoutes,
   runCommand,
   sel,
@@ -71,6 +95,29 @@ function shot(name: string): string {
 const cardSlots = (page: Page): Locator => page.locator(".crt-card-slot");
 /** Every rendered ASCII card element. */
 const asciiCards = (page: Page): Locator => page.locator(".crt-ascii-card");
+/** Every rendered pixel-art diagnosis card in the live Spread_View. */
+const pixelCards = (page: Page): Locator =>
+  page.locator(".crt-spread-pixel-region .crt-pixel-card");
+
+/**
+ * The virtual-clock instant (ms from the ritual's first frame) at which to
+ * FREEZE for the Necronomicon open-book shot. The ritual phases are
+ * `closed-glitch` 600 ms → `tremble` 300 ms → `crossfade` 600 ms →
+ * `rising-diff`, so the `crossfade` window (the open book fading in over the
+ * closed one) is `[~900, ~1500) ms`. 1200 ms sits mid-crossfade with enough
+ * margin that the ±60 ms seed jitter in `ritualTimeline` never pushes the frozen
+ * instant out of the window. See `ritual-timeline.ts` for the phase budget.
+ */
+const RITUAL_CROSSFADE_FREEZE_MS = 1200;
+
+/**
+ * The virtual-clock instant (ms) at which to FREEZE the boot so its phase holds
+ * `"playing"` and the Seer_Image stays mounted for the landing shot. Mirrors
+ * `BOOT_LOGO_FREEZE_MS` (2200 ms) — comfortably inside the ~3.4 s boot, before
+ * it settles to the ready prompt, so `state.boot.phase === "playing"` and the
+ * `.crt-seer-region[data-boot-seer="playing"]` is on screen.
+ */
+const SEER_BOOT_FREEZE_MS = 2200;
 
 test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", () => {
   // Capture-only: skipped unless CAPTURE_SCREENSHOTS is set. This keeps the
@@ -202,5 +249,156 @@ test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", (
     });
 
     expect(calls.resurrect).toBeGreaterThanOrEqual(1);
+  });
+
+  // --- (5) Spread_View with Pixel_Cards --------------------------------
+  // Its OWN test on a normally-clocked page. The `apps/web` Terminal_Route
+  // supplies the Arcana manifest, so a completed reading renders the pixel-art
+  // `SpreadPixelView` (`.crt-spread-pixel-region` → `.crt-spread-pixel` with a
+  // `.crt-pixel-card` per drawn card) rather than the Spec 05 ASCII reveal. A
+  // `fates` reading draws exactly three cards, so three pixel-card slots appear
+  // in spread order. No clock control is needed: the pixel spread is a static
+  // integer-scaled layout, deterministic from the demo reading alone.
+  test("captures the pixel-art Spread_View (3-card fates pixel spread)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+    await runCommand(page, "demo lich-py2");
+    await runCommand(page, "read fates");
+
+    // The pixel spread renders with exactly three Pixel_Cards (fates = 3).
+    const spread = page.locator(".crt-spread-pixel-region .crt-spread-pixel");
+    await expect(spread).toBeVisible();
+    await expect(pixelCards(page)).toHaveCount(3);
+    // Wait for each card's pixel image to be attached so the shot frames the
+    // art, not an empty slot (the three spread cards load eagerly, R11.1).
+    await expect(page.locator(".crt-pixel-card-img")).toHaveCount(3);
+
+    await page.screenshot({
+      path: shot("05-pixel-spread"),
+      animations: "allow",
+    });
+  });
+
+  // --- (6) Fullscreen_Card_View ----------------------------------------
+  // Its OWN test on a normally-clocked page. After the pixel spread renders,
+  // clicking a `.crt-pixel-card` (wired to open the Fullscreen_Card_View) opens
+  // the `role="dialog"` modal (`.crt-fullscreen-card`), which shows the single
+  // large Pixel_Card. Capture the dialog once it is visible.
+  test("captures the Fullscreen_Card_View (one card opened full screen)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+    await runCommand(page, "demo lich-py2");
+    await runCommand(page, "read fates");
+    await expect(pixelCards(page)).toHaveCount(3);
+
+    // Open the first card's fullscreen inspector by clicking it (the card root
+    // is a role="button"; a click activates it exactly like Enter/Space).
+    await pixelCards(page).first().click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveClass(/\bcrt-fullscreen-card\b/);
+    // The large card image inside the modal is up before the capture.
+    await expect(dialog.locator(".crt-pixel-card-img")).toBeVisible();
+
+    await page.screenshot({
+      path: shot("06-fullscreen-card"),
+      animations: "allow",
+    });
+  });
+
+  // --- (7) Resurrection_Ritual open-book frame -------------------------
+  // Its OWN test with the virtual clock installed and FROZEN on the `crossfade`
+  // step. The ritual's four phases (`closed-glitch` 600 ms → `tremble` 300 ms →
+  // `crossfade` 600 ms → `rising-diff`) are driven through the FramePort, i.e.
+  // `requestAnimationFrame` + `performance.now` — both controlled by
+  // `page.clock`. `ritualTimeline` normally SKIPS the ritual under a Playwright
+  // run, so we navigate with `?ritual=force` (task 20) to force the full ritual;
+  // `?boot=skip` lands us on the ready prompt without waiting out the boot while
+  // the force flag overrides the skip gate.
+  //
+  // Determinism: the clock is installed at time 0 BEFORE navigation (so the very
+  // first rAF reads virtual time), the offline flow brings a reading into scope
+  // and fires `resurrect`, then `pauseAt(RITUAL_CROSSFADE_FREEZE_MS)` fast-
+  // forwards virtual time — firing the ritual's rAF ticks up to that instant and
+  // then holding. The ritual anchors its timeline to its first rAF (≈ time 0
+  // under the paused clock), so freezing at 1200 ms lands squarely inside the
+  // crossfade window `[~900, ~1500) ms` (phase 3; the ±60 ms seed jitter keeps
+  // it comfortably mid-window), holding `data-ritual="crossfade"` with the open
+  // Necronomicon frame fading in. Isolating this in its own test keeps the fake
+  // clock from ever touching the normally-clocked shots above.
+  test("captures the Necronomicon open-book frame (clock frozen on crossfade)", async ({
+    page,
+  }) => {
+    // Fake timers must be installed BEFORE any script runs so the ritual's first
+    // rAF already reads virtual time. Origin at epoch 0 (pauseAt only moves the
+    // clock forward from here).
+    await page.clock.install({ time: 0 });
+    await mockRoutes(page);
+
+    // Land on the ready prompt with the ritual forced to play even under the
+    // Playwright run (?ritual=force overrides the ?boot=skip skip gate).
+    await page.goto("/?boot=skip&ritual=force");
+    await expect(sel.log(page)).toContainText("NECRO-ORACLE");
+    await expect(sel.input(page)).toBeFocused();
+
+    // Bring a live reading into scope, then resurrect. The mocked NDJSON stream
+    // resolves via promises (not clock timers), so the ritual mounts without the
+    // clock advancing.
+    await runCommand(page, "summon graveyard/green-garden");
+    const log = sel.log(page);
+    await expect(log).toContainText("graveyard/green-garden");
+    await runCommand(page, "read necropsy");
+    await expect(log).toContainText("THE STAR");
+    await runCommand(page, "resurrect");
+
+    // The ritual wrapper is mounted (the Necronomicon frames are layered).
+    const ritual = page.locator('.crt-ritual[data-ritual]');
+    await expect(ritual).toBeVisible();
+
+    // Fast-forward the virtual clock to mid-crossfade and HOLD it there, so the
+    // open book is fading in over the closed one and the frame is stable.
+    await page.clock.pauseAt(RITUAL_CROSSFADE_FREEZE_MS);
+    await expect(
+      page.locator('.crt-ritual[data-ritual="crossfade"]'),
+    ).toBeVisible();
+
+    await page.screenshot({
+      path: shot("07-necronomicon-open"),
+      animations: "allow",
+    });
+  });
+
+  // --- (8) Landing with the Seer_Image ---------------------------------
+  // Its OWN test with the virtual clock installed and FROZEN mid-boot. The Seer
+  // renders only while `state.boot.phase === "playing"` (Terminal.tsx mounts
+  // `.crt-seer-region[data-boot-seer="playing"]` holding the `.crt-seer-portrait`
+  // during the boot). In a live rAF-driven boot that window passes in a few
+  // seconds; freezing the clock mid-boot (same technique as `bootLogoShot`)
+  // holds the boot in "playing" indefinitely so the Seer stays on screen for a
+  // deterministic capture. Navigate WITHOUT `?boot=skip` so the boot actually
+  // plays (a skipped boot never enters "playing" and never shows the Seer).
+  test("captures the landing with the Seer image (clock frozen mid-boot)", async ({
+    page,
+  }) => {
+    await page.clock.install({ time: 0 });
+    await page.goto("/");
+    // Hold the boot mid-sequence (same freeze point the logo shot uses), well
+    // before the boot settles, so the boot phase stays "playing" and the Seer
+    // region is mounted.
+    await page.clock.pauseAt(SEER_BOOT_FREEZE_MS);
+
+    const seerRegion = page.locator('.crt-seer-region[data-boot-seer="playing"]');
+    await expect(seerRegion).toBeVisible();
+    // The Seer portrait (and its pixel image) is mounted inside the region.
+    await expect(seerRegion.locator(".crt-seer-portrait")).toBeVisible();
+    await expect(seerRegion.locator("img.crt-seer-img")).toBeVisible();
+
+    await page.screenshot({
+      path: shot("08-seer-landing"),
+      animations: "allow",
+    });
   });
 });
