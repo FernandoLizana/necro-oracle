@@ -142,7 +142,7 @@ columns).
     - **Validates: Requirements 15.1, 15.2, 15.3**
 
 - [ ] 8. Implement candidate selection
-  - [~] 8.1 Implement candidate selection from reading evidence
+  - [x] 8.1 Implement candidate selection from reading evidence
     - In `packages/coven/src/select.ts` derive `Candidate_File`s as the distinct `.py` paths referenced by Python-2-classified `reading.draws[].evidence[].path`; bare target ⇒ all such paths ascending by path capped at 50; card-id target ⇒ restricted to that card's evidence paths; file-path target ⇒ single exact match; exclude files > 1 MB with a skip-note; emit deferred-count skip-note when over the 50-file cap; reject repos > 50 MB or > 5,000 files with an `Error_Line`-mapped NecroError
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.5, 2.6, 2.7_
     - _Design: Candidate_File selection rule_

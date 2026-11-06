@@ -70,6 +70,18 @@ export {
 // changed files only (R7.3–R7.5, R7.7).
 export { lineDiff, buildPatch } from "./diff.js";
 
+// --- Candidate_File selection (select) -------------------------------------
+// Pure, adapter-free. `selectCandidates` derives the ascending-by-path
+// Candidate_Files a Ritual processes from a completed reading and a parsed
+// `ResurrectTarget`, applying the py2-evidence rule and the 1 MB / 50-file /
+// repo-size guards (R1.2-R1.5, R2.1-R2.2, R2.5-R2.7). It returns the candidate
+// set plus the oracle-voice skip-notes the runner streams.
+export {
+  selectCandidates,
+  MAX_CANDIDATES,
+  type SelectionResult,
+} from "./select.js";
+
 // --- Language_Pair_Registry (registry) -------------------------------------
 // The guarded, in-memory pair -> grimoire binding the runner resolves at SELECT
 // time, before any sandbox/LLM work. `createDefaultRegistry` is the documented
