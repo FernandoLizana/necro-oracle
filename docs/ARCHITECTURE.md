@@ -242,3 +242,95 @@ At runtime the browser loads the bundle through `demo/load-bundle.ts`: a literal
 ### Bundle budget
 
 `scripts/check-web-budget.mjs` runs after the web build and enforces three things on `apps/web/.next`. First, the gzipped size of the terminal's initial-route JavaScript — the deduped union of the app-build-manifest `pages["/page"]` + `pages["/layout"]`, the build-manifest `rootMainFiles` and `polyfillFiles`, `.js` only — must be at most `BUDGET_BYTES = 250_000` (the strict decimal-KB reading of the ≤ 250 KB budget); the last measured value was about 174 KB gzipped, so there is roughly 76 KB of headroom. Second, a forbidden-marker scan over every `.next/static/**/*.js` chunk fails on `api.github.com`, `codeload.github.com`, `GITHUB_TOKEN`, `tree-sitter-python.wasm` or `tar-stream`, catching any server-only leak into the client. Third, the demo bundle and the sound engine must each exist as a separate dynamic chunk, distinct from one another and from the initial route — Next lists neither in the initial-route manifests, and the gate confirms both are present (by chunk name, falling back to a content scan). The script's pure helpers are exported with no side effects so `apps/web/src/budget.test.ts` exercises them offline against synthetic manifests.
+
+## The Resurrection Engine
+
+The Resurrection Engine turns `resurrect <card-or-file>` in the CRT terminal into a two-pass, evidence-driven code-modernization Ritual. It is the project's first grimoire system: a pluggable `Grimoire` (first pair: Python 2 → Python 3) executed by a `CovenRunner` inside `@necro/coven`, with every side-effecting capability injected as a port (`LlmPort`, `SandboxPort`, `LedgerPort`, `ClockPort`). The engine reuses the completed, unmodified `@necro/oracle` (`runReading`, `computeVitality`, `computeVitalityDelta`, the tree-sitter parser, `maskSecret`, `NecroError`) for candidate selection, validation, and re-diagnosis, and reuses the existing web NDJSON protocol, limiter, redaction, and error-map from `apps/web` for the HTTP surface.
+
+### Dependency direction (enforced)
+
+The engine obeys and extends the project rule `oracle ← grimoires ← coven ← apps/web`.
+
+- `@necro/oracle` imports nothing from the engine and is unchanged.
+- `@necro/grimoires-py2to3` imports `@necro/oracle` (parser + snapshot/draw types) and `@necro/coven` (the `Grimoire`/`Fixer`/`LlmStep` contracts and the shared zod models) — but **no adapters**. A static import-ban test mirrors the oracle client-guard: fixers never import `@necro/llm` or `@necro/sandbox`.
+- `@necro/coven` depends on `grimoires` and defines the ports; the adapters (`@necro/llm`, `@necro/sandbox`) are injected into the runner, never imported by fixers. A grimoire arrives through the injected `LanguagePairRegistry`, so the runner source names no grimoire package.
+- `apps/web` depends on `coven`. Cross-package imports go only through each package's `src/index.ts` (plus the `@necro/coven/node` subpath for the Node-only demo fixture loader).
+
+### Package map
+
+| Package | Role | Barrel |
+| --- | --- | --- |
+| `@necro/oracle` | Reused pure core. **Unchanged.** | `src/index.ts`, `src/client.ts`, `src/node.ts` |
+| `@necro/grimoires-py2to3` | The py2→3 grimoire: pure fixers, declarative LLM step, `validate`, fixtures. | `src/index.ts` (`py2to3Grimoire`) |
+| `@necro/coven` | Ports, the `Grimoire` contract, zod models, registry, selection, diff/patch, re-diagnosis, cross-sink masking, the local + optional Inngest runners, demo wiring. | `src/index.ts` (browser-safe) + `src/node.ts` (Node-only demo loader) |
+| `@necro/llm` | `LlmPort` and the required deterministic Mock provider, completion cache, per-construct budget. | `src/index.ts` |
+| `@necro/sandbox` | `SandboxPort`, the command allowlist, the optional E2B parse-only provider. | `src/index.ts` |
+| `@necro/config` | Adds the server-only `NECRO_LLM_API_KEY` env key. | `src/index.ts` |
+| `apps/web` | `Resurrection_Route`, the resurrection NDJSON stream schema, demo wiring. | — |
+
+### Ports (`@necro/coven/src/ports.ts`)
+
+Ports are the only side-effecting surface the runner touches. Fixers receive them only as injected parameters; they never import them.
+
+| Port | Shape | Notes |
+| --- | --- | --- |
+| `LlmPort` | `complete(req: LlmRequest) => Promise<LlmResult>` | `providerId` is `"mock" \| "bedrock" \| "anthropic" \| "openai"`. Throws a typed `NecroError` on timeout/unavailable. The Mock provider is deterministic and network-free. An absent `LlmPort` ⇒ Degraded_Mode (the LLM_PASS is skipped). |
+| `SandboxPort` | `parseCheckPython3(source, { timeoutMs })`, `dispose()` | Optional, parse-only (compile-only) E2B check. Never executes repository code; the micro-VM is disposed in every terminal state. Absent ⇒ `Target_Parser` only. |
+| `LedgerPort` | `append(event: LedgerEvent)` | Append-only, strictly increasing `seq`; ritual state is derivable by folding events. |
+| `ClockPort` | `nowMs()` | Deterministic time; budgets and detectors never read the ambient clock. |
+
+`RitualPorts` bundles `{ clock, ledger, llm?, sandbox? }`. The absence of an optional port is read as an absent key (not an explicit `undefined`), so the runner degrades gracefully.
+
+### Grimoire contract and the py2to3 grimoire
+
+A `Grimoire` is adapter-free and declarative: `{ id, pair, inputSchema, outputSchema, fixers, llm, validate, divergenceAllowlist }`. `fixers` are pure `(source, ctx) => FixResult` functions run in a fixed order (Pre_Pass); `llm` is an `LlmStep<T>` (output zod schema + `buildRequest` + `apply` + a deterministic `mockFixture`) that the **runner** — not the grimoire — executes through the injected `LlmPort`; `validate(after)` runs the tree-sitter `Target_Parser` and treats zero error nodes as valid Python 3.
+
+`@necro/grimoires-py2to3` exports `py2to3Grimoire` (id `"py2to3"`, pair `python2->python3`). Its six deterministic Pre_Pass fixers — `print_statement`, `except_comma`, `dict_iter`, `unicode_str`, `long_literal`, `ne_operator` — parse once with the injected `parsePython`, rewrite spans right-to-left, and never touch string-literal or comment contents, which makes them idempotent and deterministic. A file tree-sitter cannot parse is left unchanged with a `parse_failed` residual.
+
+### Coven runner and the ritual pipeline
+
+`@necro/coven` exports `LocalCovenRunner` (the default) and the optional `InngestCovenRunner` (`createInngestCovenRunner` returns `undefined` unless the Inngest env is configured). `run(input, ports, emit)` drives one Ritual through a fixed phase order, emitting each phase through the monotonic reporter `emit`:
+
+`SELECT → PRE_PASS → LLM_PASS → VALIDATE → REDIAGNOSE → DIFF`
+
+- **SELECT** (`selectCandidates`, pure) derives the ascending-by-path `CandidateFile`s from the completed reading's Python-2-classified evidence, scoped by the target (bare ⇒ all py2 paths; card ⇒ that card's evidence paths; file ⇒ the single exact path), capped at `MAX_CANDIDATES` (50), excluding files over 1 MB with an oracle-voice skip-note.
+- **PRE_PASS** runs the grimoire's deterministic fixers.
+- **LLM_PASS** builds one request per residual through `LlmStep.buildRequest` — masking secrets first, then wrapping the code in fixed untrusted-data delimiters — validates the result with the step's zod schema (one retry on failure), and is skipped entirely in Degraded_Mode.
+- **VALIDATE** runs the `Target_Parser` (and the optional sandbox parse-check where a `SandboxPort` is injected, falling back with a skip-note on timeout/unavailability). Unparseable produced content is excluded and recorded as a residual, never presented as converted.
+- **REDIAGNOSE** (`rediagnose`, pure, oracle-only) overlays the validated `After_Content` into a copy of the summoned `RepoSnapshot`, re-runs `runReading` with the **same spread**, and reports `beforeVitality`/`afterVitality`, the signed `vitalityDelta`, and the changed-card set. A post-reading failure yields a typed `REDIAGNOSIS_FAILED` with after/delta nulled, preserving the produced files.
+- **DIFF** (`lineDiff`, `buildPatch`, pure) produces a per-file `DiffLine[]` and a single round-tripping unified-diff `Patch` over the validated, changed files only.
+
+The runner isolates failures into typed `NecroError`s, disposes any sandbox in every terminal state, routes every file's content, residual text, skip-note, and ledger entry through `maskSecretsInText`/`maskContentItem` before any sink, and enforces a 45 s wall-clock budget that ends the Ritual with partial `FileResult`s and a `BUDGET_EXHAUSTED` error rather than silently dropping work.
+
+The engine's coven-only error codes are `BUDGET_EXHAUSTED`, `PAIR_UNKNOWN`, `PAIR_DUPLICATE`, `REDIAGNOSIS_FAILED`, and `DEMO_FIXTURE_MISSING`.
+
+### Language_Pair_Registry
+
+`LanguagePairRegistry` (`@necro/coven/src/registry.ts`) is a pure in-memory `pair → grimoire` map. `register` throws a `VALIDATION_FAILED` `NecroError` on a duplicate id (leaving the existing binding untouched); `resolve` throws `PAIR_UNKNOWN` for an unknown id before any sandbox/LLM work. `createDefaultRegistry({ py2to3: py2to3Grimoire })` registers the shipped `PYTHON2_TO_PYTHON3` grimoire; adding a new pair means calling `register` with a new grimoire — no engine-core source change.
+
+### Resurrection_Route and NDJSON protocol
+
+`apps/web/src/server/handlers/resurrect.ts` (`handleResurrect`, bound at `app/api/resurrect`) mirrors `handleReading`: method guard → `checkLimit` → body guard → strict `ResurrectRequestSchema` parse (pre-stream `400` on failure) → commit to a `200 application/x-ndjson` stream → drive the local runner → write the single terminal line. `ResurrectRequestSchema` is `{ ref, target?, spread: "fates" | "necropsy", demo?: true }` with `ref` matching `owner/name@<40-hex-lowercase-sha>`.
+
+The stream (`apps/web/src/protocol/resurrect-stream.ts`, `ResurrectStreamLineSchema`, validated server-side before writing and client-side before rendering) reuses `SkipNoteLineSchema` and `ErrorLineSchema` verbatim and adds the resurrection phase enum and a result line:
+
+- Phase lines `{ phase }` for each of `SELECT`, `PRE_PASS`, `LLM_PASS`, `VALIDATE`, `REDIAGNOSE`, `DIFF`, in order.
+- Optional skip-note lines `{ skip: true, note }`.
+- Exactly one terminal line: `{ result }` wrapping a redaction-safe `RitualResult` (every leaf a string/number/boolean/enum — no `cause` or stack) on success, or `{ error: { code, userMessage } }` on any mid-stream failure or budget expiry. Because the handler commits to a `200` stream once the request schema passes, a post-stream failure is carried as the final `{ error }` line.
+
+Every outgoing line is run through `redactDeep` with both the GitHub token and the LLM key. A coven-only error code is translated onto the closest oracle `NecroErrorCode` by `mapEngineError` before `mapError`, so the emitted `{ error }` line always validates against the reused `ErrorLineSchema`. An Overall_Budget (48 s, below the route's `maxDuration = 50` and above the runner's 45 s budget) backstops a hung runner.
+
+Spend breakers decide port injection: an open LLM breaker runs the Ritual without an `LlmPort` (Degraded_Mode skip-note); an open sandbox breaker omits the `SandboxPort` and the route emits its own breaker skip-note.
+
+### Adapters
+
+- **`@necro/llm`** exports `createMockLlmPort` (required, deterministic, network-free; guarded by a no-network test), `createLlmCache`/`withCache` (keyed by `LlmRequest.cacheKey`), and `DEFAULT_LLM_BUDGET`/`makeBudget`/`withinBudget` for the per-construct token/timeout budget. Real providers (Bedrock/Anthropic/OpenAI) are optional.
+- **`@necro/sandbox`** exports the `SANDBOX_ALLOWLIST` (the only sanctioned commands — `py_compile`-style parse-only argv), `allowlistedArgv`/`isAllowlisted`, and the optional `createE2bSandboxPort`/`isE2bConfigured` built only where E2B is configured. The provider is parse-only and never executes repository code.
+
+### Config and Degraded_Mode
+
+`@necro/config` adds the server-only `NECRO_LLM_API_KEY` (optional; blank/whitespace treated as unset). It is read only in the composition root, never sent to the client, and never logged (it is in the redaction secret set). Absent/empty keeps startup alive in Degraded_Mode: the runner skips the LLM_PASS and emits exactly one oracle-voice skip-note, and `RitualResult.degraded` makes the state observable.
+
+### Demo mode
+
+`demo: true` loads the `lich-py2` graveyard fixtures through the Node-only `@necro/coven/node` loader (`loadDemoRitualInput`, `LICH_PY2_FIXTURE`), wires the Mock `LlmPort` with the sandbox omitted (`createDemoPorts`), and blocks outbound network for the run (`installNetworkBlockGuard`, which throws rather than reaching the wire). Every emitted line carries a single `[DEMO]` prefix applied at the one serialization choke point (`prefixDemoLine`/`DEMO_PREFIX`, `demoEmit`). A missing/unreadable fixture yields a `DEMO_FIXTURE_MISSING` error line. Because the Pre_Pass is deterministic and the Mock provider is fixed, repeated demo runs are byte-identical; the `lich-py2` fixtures are authored so the deterministic pass alone (no key) removes the legacy constructs driving the Judgement draw, producing `vitalityDelta > 0` and at least one improved card on every run.

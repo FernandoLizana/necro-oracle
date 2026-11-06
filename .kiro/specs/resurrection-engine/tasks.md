@@ -226,7 +226,7 @@ columns).
     - fast-check `numRuns: 200`
     - **Validates: Requirements 12.5**
 
-- [ ] 13. Wire the engine into apps/web
+- [x] 13. Wire the engine into apps/web
   - [x] 13.1 Add the resurrection NDJSON schemas
     - Create `apps/web/src/protocol/resurrect-stream.ts` with `ResurrectionPhaseSchema`, `ResurrectPhaseLineSchema`, `ResurrectResultLineSchema` (redaction-safe wire form of `RitualResult`), and `ResurrectStreamLineSchema` reusing `SkipNoteLineSchema` and `ErrorLineSchema` verbatim; add `ResurrectRequestSchema` to `apps/web/src/protocol/schemas.ts`
     - _Requirements: 9.1, 9.5_
@@ -238,17 +238,17 @@ columns).
     - _Requirements: 1.1, 1.6, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.3, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2_
     - _Design: Resurrection_Route, Error Handling_
 
-  - [~] 13.3 Write property test for stream termination and error envelope
+  - [x] 13.3 Write property test for stream termination and error envelope
     - **Property 11: Exactly one terminal line with a two-field error envelope** — the stream ends with exactly one terminal line; any `Error_Line` payload contains exactly `code` and `userMessage`, no `cause`/stack/other field
     - fast-check `numRuns: 200`
     - **Validates: Requirements 9.3, 12.1**
 
-  - [~] 13.4 Write unit tests for the route guard and breaker paths
+  - [x] 13.4 Write unit tests for the route guard and breaker paths
     - Cover no-reading-in-scope (R1.6), limiter reject with retry-after (R11.2), LLM/sandbox breaker skip-notes continuing the Ritual (R11.3/R11.4/R11.5), invalid-line termination (R9.6), time-bounded-phase skip-note (R9.4), and unknown-code fallback envelope (R12.2)
     - _Requirements: 1.6, 9.4, 9.6, 11.2, 11.3, 11.4, 11.5, 12.2_
 
 - [ ] 14. Implement the terminal Resurrect_Command client (@necro/ui-crt + apps/web)
-  - [~] 14.1 Parse `resurrect [<card-or-file>]` in the ui-crt command parser
+  - [x] 14.1 Parse `resurrect [<card-or-file>]` in the ui-crt command parser
     - Extend `packages/ui-crt/src/command/parse.ts` (and `types.ts`) to recognize the `resurrect` command with an optional single argument that is a card id or a file path; a bare `resurrect` is allowed; parse-level validation only (trim, reject extra arguments and empty-but-present tokens) while leaving semantic validation (card/file existence, py2 classification) to the server; add the `resurrect` entry (command + argument description) to the HELP text in `packages/ui-crt/src/render/help.ts`, ASCII-only and ≤ 72 columns in the oracle voice; expose the parsed `ResurrectTarget` shape (card id | file path | bare) to the terminal session reducer. ui-crt imports no node/github/oracle-main modules (browser-safe only)
     - _Requirements: 1.1, 1.4_
     - _Design: Browser/terminal rendering, Resurrect_Command_
@@ -330,7 +330,7 @@ columns).
     - Boot → summon a graveyard repo (Mock LLM) → run a reading → `resurrect` → phases stream → per-file diff visible → downloadable patch → re-diagnosis delta shown; include the axe accessibility check (CRT rendering, reduced-motion)
     - _Requirements: 1.1, 7.1, 7.3, 9.1_
 
-  - [~] 17.2 Update docs for the new grimoire and public API
+  - [x] 17.2 Update docs for the new grimoire and public API
     - Update `docs/DECK.md` and `docs/ARCHITECTURE.md` to document the `py2to3` grimoire, the `Language_Pair_Registry`, and the Resurrection_Route public surface; append a dated entry to `docs/KIRO_USAGE.md` for the spec-driven work
     - _Requirements: 15.4, 15.5_
     - _Design: Package map, Dependency direction_

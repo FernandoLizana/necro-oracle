@@ -24,6 +24,17 @@ export function printCommand(cmd: Exclude<Command, { kind: "unknown" }>): string
       return cmd.target.kind === "position"
         ? `explain ${cmd.target.position}`
         : `explain ${cmd.target.card}`;
+    case "resurrect": {
+      const { target } = cmd;
+      switch (target.kind) {
+        case "bare":
+          return "resurrect";
+        case "card":
+          return `resurrect ${target.card}`;
+        case "file":
+          return `resurrect ${target.path}`;
+      }
+    }
     case "motion":
       return cmd.arg === undefined ? "motion" : `motion ${cmd.arg}`;
     case "demo":

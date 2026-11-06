@@ -80,6 +80,7 @@ export type {
   CommandMotionArg,
   CommandSoundArg,
   ExplainTarget,
+  ResurrectTarget,
   SpreadArg,
 } from "./command/types.js";
 export { MAX_ENTRY_LENGTH } from "./command/types.js";

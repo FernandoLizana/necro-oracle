@@ -12,6 +12,7 @@ import type {
   Command,
   CommandMotionArg,
   CommandSoundArg,
+  ResurrectTarget,
   SpreadArg,
 } from "./types.js";
 
@@ -52,6 +53,25 @@ export function looksLikeRepoRef(token: string): boolean {
 
 function unknown(raw: string): Command {
   return { kind: "unknown", raw };
+}
+
+/**
+ * Discriminate a single `resurrect` argument token into a {@link
+ * ResurrectTarget} at the parse level only. A token containing a `/` or ending
+ * in `.py` is a file path (R1.3), its case preserved because paths are
+ * case-sensitive; any other token is a card id (R1.2), lowercased to match the
+ * canonical card-id casing (mirrors `explain`). Semantic validation —
+ * card/file existence and Python-2 classification — is the server's job, so no
+ * `CardIdSchema` check happens here. Returns `null` for an empty token so the
+ * caller can reject `resurrect ""`-style input; tokenization already strips
+ * surrounding whitespace, so a present-but-empty token cannot otherwise arise.
+ */
+export function parseResurrectTarget(token: string): ResurrectTarget | null {
+  if (token.length === 0) return null;
+  if (token.includes("/") || token.endsWith(".py")) {
+    return { kind: "file", path: token };
+  }
+  return { kind: "card", card: token.toLowerCase() };
 }
 
 /**
@@ -114,6 +134,17 @@ export function parseCommand(input: string): Command | null {
         };
       }
       return unknown(trimmed);
+    }
+
+    case "resurrect": {
+      // Bare `resurrect` resurrects every Python-2 candidate (R1.4).
+      if (args.length === 0) {
+        return { kind: "resurrect", target: { kind: "bare" } };
+      }
+      // Exactly one argument is allowed; extra tokens are rejected.
+      if (args.length !== 1) return unknown(trimmed);
+      const target = parseResurrectTarget(args[0]!);
+      return target === null ? unknown(trimmed) : { kind: "resurrect", target };
     }
 
     case "motion": {

@@ -17,6 +17,7 @@ const COMMAND_LINES: readonly string[] = [
   "summon <owner/repo[#ref|@sha]>  pin a public repository",
   "read <fates|necropsy>           lay a spread for the pinned repo",
   "explain <position|card>         show the evidence behind a card",
+  "resurrect [<card-or-file>]      raise the dead code the cards named",
   "help                            show this grimoire of commands",
   "clear                           clear the screen, keep the reading",
   "demo [name]                     replay a recorded reading",
