@@ -10,5 +10,13 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "tsc"
+  },
+  "dependencies": {
+    "@necro/oracle": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "fast-check": "^3.23.1"
   }
 }

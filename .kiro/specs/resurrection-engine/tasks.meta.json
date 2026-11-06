@@ -1,0 +1,456 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Define port interfaces in `@necro/coven`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931357907
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931367650
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931537860
+      }
+    ],
+    "1.2 Define zod data models and ritual types in `@necro/coven`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931357966
+      }
+    ],
+    "1.3 Write unit tests for the coven data-model schemas": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358002
+      }
+    ],
+    "2.1 Implement the Mock LlmPort provider in `@necro/llm`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358052
+      }
+    ],
+    "2.2 Write unit tests for the Mock provider and budget/cache": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358102
+      }
+    ],
+    "2.3 Implement the optional E2B SandboxPort (parse-only) in `@necro/sandbox`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358145
+      }
+    ],
+    "2.4 Add the server-only LLM API key to `@necro/config`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358179
+      }
+    ],
+    "2.5 Write unit tests for the env key parsing": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358217
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358260
+      }
+    ],
+    "4.1 Scaffold `packages/grimoires/py2to3` from `_template`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358288
+      }
+    ],
+    "4.2 Implement the six deterministic Pre_Pass fixers": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358328
+      }
+    ],
+    "4.3 Write property test for Pre_Pass idempotence": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358360
+      }
+    ],
+    "4.4 Write property test for Pre_Pass determinism": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358399
+      }
+    ],
+    "4.5 Write golden fixtures for the Pre_Pass transforms": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358434
+      }
+    ],
+    "5.1 Implement the declarative LlmStep (prompt, schema, mock fixture, apply)": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358496
+      }
+    ],
+    "5.2 Implement `validate()` Target_Parser check": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358534
+      }
+    ],
+    "5.3 Write property test for output-parses-or-reported (incl. delimiters)": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358571
+      }
+    ],
+    "5.4 Write unit tests for LLM retry/timeout/no-key paths and Residual completeness": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358605
+      }
+    ],
+    "5.5 Write import-ban static test for the grimoire fixers": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358638
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358680
+      }
+    ],
+    "7.1 Implement the registry in `@necro/coven`": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358714
+      }
+    ],
+    "7.2 Write property test for registry resolution and guards": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358754
+      }
+    ],
+    "8.1 Implement candidate selection from reading evidence": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358795
+      }
+    ],
+    "8.2 Write property test for candidate selection matching evidence": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358833
+      }
+    ],
+    "8.3 Write property test for selection ordering and the per-run cap": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358868
+      }
+    ],
+    "8.4 Write unit tests for selection guard cases": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358905
+      }
+    ],
+    "9.1 Implement per-file diff and unified Patch generation": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358939
+      }
+    ],
+    "9.2 Write property test for patch round-trip and unvalidated exclusion": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931358972
+      }
+    ],
+    "9.3 Implement vitality re-diagnosis via snapshot overlay": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359014
+      }
+    ],
+    "9.4 Write property test for Vitality_Delta consistency": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359049
+      }
+    ],
+    "9.5 Write property test for the changed-card set": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359082
+      }
+    ],
+    "10. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359116
+      }
+    ],
+    "11.1 Implement the local runner driving the phase pipeline": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359182
+      }
+    ],
+    "11.2 Write unit tests for runner orchestration edge paths": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359221
+      }
+    ],
+    "11.3 Write property test for ordered, once-each phase emission": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359264
+      }
+    ],
+    "11.4 Add the optional Inngest runner": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359297
+      }
+    ],
+    "12.1 Implement cross-sink secret masking and error typing in the runner path": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359330
+      }
+    ],
+    "12.2 Write property test for no-secret-in-any-output": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359362
+      }
+    ],
+    "12.3 Write property test for well-formed typed NecroError": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359395
+      }
+    ],
+    "13.1 Add the resurrection NDJSON schemas": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359423
+      }
+    ],
+    "13.2 Implement the Resurrection_Route handler": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359455
+      }
+    ],
+    "13.3 Write property test for stream termination and error envelope": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359496
+      }
+    ],
+    "13.4 Write unit tests for the route guard and breaker paths": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359534
+      }
+    ],
+    "14.1 Parse `resurrect [<card-or-file>]` in the ui-crt command parser": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359569
+      }
+    ],
+    "14.2 Write unit tests for the resurrect command parser and HELP entry": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359605
+      }
+    ],
+    "14.3 Extend the browser API client to POST to the Resurrection_Route and consume its NDJSON stream": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359638
+      }
+    ],
+    "14.4 Write unit tests for the resurrect stream client over a recorded NDJSON sequence": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359673
+      }
+    ],
+    "14.5 Render the per-file before/after diff and the Residual_List in the CRT terminal": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359724
+      }
+    ],
+    "14.6 Write unit tests for the diff and residual renderers": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359773
+      }
+    ],
+    "14.7 Offer the unified Patch as a client-side download": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359806
+      }
+    ],
+    "14.8 Write unit tests for the patch download-trigger builder": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359838
+      }
+    ],
+    "14.9 Show the Vitality_Delta and the changed-card set in the terminal": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359877
+      }
+    ],
+    "14.10 Write unit tests for the vitality/changed-card renderer": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359906
+      }
+    ],
+    "14.11 Respect reduced-motion and the web JS budget for the new terminal code": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359938
+      }
+    ],
+    "14.12 Extend the web budget test and add a reduced-motion unit test": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931359972
+      }
+    ],
+    "15. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360004
+      }
+    ],
+    "16.1 Author the lich-py2 demo fixtures Pre_Pass-sufficient": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360046
+      }
+    ],
+    "16.2 Wire Demo_Mode into the runner and route": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360085
+      }
+    ],
+    "16.3 Write property tests for demo labelling and determinism": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360121
+      }
+    ],
+    "16.4 Write the lich-py2 deterministic-improvement demo test": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360156
+      }
+    ],
+    "17.1 Add the Playwright end-to-end resurrection flow": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360224
+      }
+    ],
+    "17.2 Update docs for the new grimoire and public API": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360266
+      }
+    ],
+    "18. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793931360302
+      }
+    ]
+  }
+}
