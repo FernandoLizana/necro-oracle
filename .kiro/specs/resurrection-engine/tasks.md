@@ -339,7 +339,7 @@ columns).
   - Ensure all tests pass, ask the user if questions arise.
 
 
-- [ ] 19. Close execution gaps
+- [x] 19. Close execution gaps
   - [x] 19.1 Wire the `resurrect` command into the terminal session reducer and effect
     - Add a `resurrect` case to `dispatchCommand` in `packages/ui-crt/src/session/reducer.ts` that refuses with an oracle-voice block when no completed reading is in scope (no summary / no live or demo reading for the pinned ref), otherwise opens an in-flight `resurrect` request and emits an `api.resurrect` effect carrying the pinned ref, the parsed `ResurrectTarget`, and the in-scope spread
     - Add the `api.resurrect` effect to the session `Effect` union and the matching async resolution actions so stream `Phase_Line`/`Skip_Note_Line`s render as status blocks and the terminal `Result_Line` renders through the diff/residual renderer (`renderFileResults`), the vitality/changed-card renderer (`renderResurrectVitality`), and the patch-download affordance
@@ -354,7 +354,7 @@ columns).
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 16.1, 16.2, 16.3, 16.4_
     - _Design: Vitality re-diagnosis, Demo mode_
 
-  - [-] 19.3 Turn the Playwright resurrection e2e green
+  - [x] 19.3 Turn the Playwright resurrection e2e green
     - With 19.1 landed, make `apps/web/e2e/resurrect-flow.e2e.ts` pass against the recorded `/api/resurrect` NDJSON mock: boot then summon then read then `resurrect` streams the six phases, renders the diff/Residual_List and the Vitality_Delta/changed-card lines, and shows the DOWNLOAD PATCH affordance, with no network leak and a clean axe scan; remove the planned-red note once green
     - _Requirements: 1.1, 7.1, 7.3, 9.1_
 
@@ -362,7 +362,7 @@ columns).
     - Update the PostTaskExec auto-commit hook (`.kiro/hooks/*`) so the commit message derives the spec name/number from the hook `spec_name` path instead of the hard-coded "Spec 03", keeping the `<first id>-<last id>: <summary>` shape; leave the build/typecheck/test gate and the planned-red carve-out unchanged
     - _Requirements: n/a (tooling)_
 
-- [ ] 20. Checkpoint - Ensure all tests pass
+- [x] 20. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 ## Notes
 
