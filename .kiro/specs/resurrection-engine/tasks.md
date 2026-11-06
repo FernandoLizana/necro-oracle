@@ -190,17 +190,17 @@ columns).
 - [~] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement the local Coven_Runner orchestration
+- [x] 11. Implement the local Coven_Runner orchestration
   - [x] 11.1 Implement the local runner driving the phase pipeline
     - Create `packages/coven/src/runners/local.ts` implementing `CovenRunner.run` to drive SELECT → PRE_PASS → LLM_PASS → VALIDATE → REDIAGNOSE → DIFF through a monotonic `emit`, injecting `RitualPorts`; skip LLM_PASS when no `LlmPort` is injected (Degraded_Mode) emitting exactly one oracle-voice skip-note; call the optional `SandboxPort` parse-check when injected and fall back to the Target_Parser with a skip-note on timeout/unavailability; mark VALIDATE-budget files `validated: false` with a `not_validated` residual and exclude them from the Patch; enforce a wall-clock budget that ends the Ritual, disposes any sandbox, and returns partial File_Results with a `BUDGET_EXHAUSTED` error; append ledger events (append-only, increasing `seq`); wire registry, selection, diff, and rediagnose modules together
     - _Requirements: 4.6, 5.5, 5.6, 5.8, 9.7, 10.1, 10.4, 10.5, 13.3, 13.4_
     - _Design: Coven_Runner, Default vs optional runtime, Degraded mode_
 
-  - [~] 11.2 Write unit tests for runner orchestration edge paths
+  - [x] 11.2 Write unit tests for runner orchestration edge paths
     - Cover sandbox fallback skip-note (R5.6), VALIDATE-budget trigger (R5.8/R9.7), re-diagnosis failure preserving File_Results (R6.5), budget exhaustion returning partials and disposing sandbox (R10.4/R10.5), and Degraded_Mode selection + single skip-note (R13.3/R13.4)
     - _Requirements: 5.6, 5.8, 6.5, 9.7, 10.4, 10.5, 13.3, 13.4_
 
-  - [~] 11.3 Write property test for ordered, once-each phase emission
+  - [x] 11.3 Write property test for ordered, once-each phase emission
     - **Property 10: Phases are emitted in order, once each** — emitted `Phase_Line`s are a non-repeating prefix of `SELECT, PRE_PASS, LLM_PASS, VALIDATE, REDIAGNOSE, DIFF`
     - fast-check `numRuns: 200` over simulated progressions
     - **Validates: Requirements 9.2**
