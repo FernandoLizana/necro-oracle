@@ -15,6 +15,7 @@
     { "path": "packages/cli" },
     { "path": "packages/action" },
     { "path": "packages/config" },
-    { "path": "packages/grimoires/_template" }
+    { "path": "packages/grimoires/_template" },
+    { "path": "packages/grimoires/py2to3" }
   ]
 }

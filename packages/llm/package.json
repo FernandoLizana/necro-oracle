@@ -7,8 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "tsc"
+  },
+  "dependencies": {
+    "@necro/coven": "workspace:*"
   }
 }

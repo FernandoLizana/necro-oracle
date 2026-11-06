@@ -142,15 +142,32 @@ importers:
         specifier: ^3.23.1
         version: 3.23.2
 
+  packages/grimoires/_template: {}
+
+  packages/grimoires/py2to3:
+    dependencies:
+      '@necro/coven':
+        specifier: workspace:*
+        version: link:../../coven
+      '@necro/oracle':
+        specifier: workspace:*
+        version: link:../../oracle
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      fast-check:
+        specifier: ^3.23.1
+        version: 3.23.2
+
   packages/llm:
     dependencies:
       '@necro/coven':
         specifier: workspace:*
         version: link:../coven
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.5
-        version: 22.20.5
 
   packages/mcp-server: {}
 

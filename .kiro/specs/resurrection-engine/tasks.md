@@ -47,14 +47,14 @@ columns).
     - Assert `ResidualEntrySchema.reason` accepts each documented reason and rejects others; assert `RitualResultSchema` nullability of `afterVitality`/`vitalityDelta`
     - _Requirements: 6.5, 8.1, 8.3_
 
-- [ ] 2. Build the injectable adapters and server env key
+- [x] 2. Build the injectable adapters and server env key
   - [x] 2.1 Implement the Mock LlmPort provider in `@necro/llm`
     - Create `packages/llm/src/providers/mock.ts` implementing `LlmPort` with `providerId: "mock"`, returning deterministic text from the request with no network access; add `cache.ts` (cache by `cacheKey`) and `budget.ts` (token/timeout budget helpers)
     - Export the Mock provider and budget/cache helpers through `packages/llm/src/index.ts`
     - _Requirements: 4.1, 4.7, 4.8, 14.4_
     - _Design: Port interfaces, LLM_Pass_
 
-  - [~] 2.2 Write unit tests for the Mock provider and budget/cache
+  - [x] 2.2 Write unit tests for the Mock provider and budget/cache
     - Assert determinism (same request ⇒ byte-identical result), `cached` flag behavior on repeat `cacheKey`, and that no network module is imported
     - _Requirements: 4.7, 4.8, 14.4_
 
@@ -68,7 +68,7 @@ columns).
     - _Requirements: 13.1, 13.5_
     - _Design: Config / env_
 
-  - [~] 2.5 Write unit tests for the env key parsing
+  - [x] 2.5 Write unit tests for the env key parsing
     - Assert absent and empty/whitespace values parse to `undefined` (Degraded_Mode input) and a valid key parses through; assert the key value is never emitted by any config serializer
     - _Requirements: 13.1, 13.2, 13.5_
 
@@ -76,7 +76,7 @@ columns).
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Scaffold the py2to3 grimoire and its pure fixers
-  - [~] 4.1 Scaffold `packages/grimoires/py2to3` from `_template`
+  - [x] 4.1 Scaffold `packages/grimoires/py2to3` from `_template`
     - Create the package from the `_template` scaffold with `src/index.ts`, `fixers/`, `llm/`, `validate.ts`, `fixtures/`, `package.json` scoped `@necro/grimoires-py2to3` (or per existing convention); declare the `Grimoire` object shell with `id: "py2to3"`, `pair`, input/output schemas, empty `fixers`, and a placeholder `llm` step; import `@necro/oracle` only (no adapters)
     - _Requirements: 15.4, 15.5, 15.6_
     - _Design: Package map, Grimoire interface, Dependency direction_
@@ -130,13 +130,13 @@ columns).
 - [~] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement the Language_Pair_Registry
+- [x] 7. Implement the Language_Pair_Registry
   - [x] 7.1 Implement the registry in `@necro/coven`
     - Create `packages/coven/src/registry.ts` with `register` (duplicate id ⇒ `NecroError("PAIR_DUPLICATE", …)`, leaving the existing binding unchanged), `resolve` (unknown id ⇒ `NecroError("PAIR_UNKNOWN", …)` before any sandbox/LLM work), and `has`; register the `python2->python3` grimoire at runner construction; export through `src/index.ts`
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
     - _Design: Language_Pair_Registry_
 
-  - [~] 7.2 Write property test for registry resolution and guards
+  - [x] 7.2 Write property test for registry resolution and guards
     - **Property 14: Language_Pair_Registry resolution is a unique, guarded binding** — resolving a registered id returns its grimoire; unknown id throws the typed unknown-id error; re-registering throws the typed already-bound error and leaves the first binding intact
     - fast-check `numRuns: 1000` over sets of grimoire ids
     - **Validates: Requirements 15.1, 15.2, 15.3**
@@ -147,7 +147,7 @@ columns).
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.5, 2.6, 2.7_
     - _Design: Candidate_File selection rule_
 
-  - [~] 8.2 Write property test for candidate selection matching evidence
+  - [x] 8.2 Write property test for candidate selection matching evidence
     - **Property 1: Candidate selection matches the reading evidence** — selected files are exactly the distinct py2-classified `.py` paths the target scopes to, with no path appearing twice
     - fast-check `numRuns: 1000` over `arbRepoSnapshot` + reading arbitraries
     - **Validates: Requirements 1.2, 1.3, 1.4, 2.1, 2.2**
