@@ -72,7 +72,7 @@ columns).
     - Assert absent and empty/whitespace values parse to `undefined` (Degraded_Mode input) and a valid key parses through; assert the key value is never emitted by any config serializer
     - _Requirements: 13.1, 13.2, 13.5_
 
-- [~] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. Scaffold the py2to3 grimoire and its pure fixers
@@ -127,7 +127,7 @@ columns).
     - Assert the fixers and LLM step import no adapter modules and call no `eval`/`child_process` (mirrors oracle client-guard tests)
     - **Validates: Requirements 3.2, 3.3, 5.4, 15.6, 15.7**
 
-- [~] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Implement the Language_Pair_Registry
@@ -187,7 +187,7 @@ columns).
     - fast-check `numRuns: 200`
     - **Validates: Requirements 6.4**
 
-- [~] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Implement the local Coven_Runner orchestration
@@ -302,7 +302,7 @@ columns).
     - Extend `apps/web/src/budget.test.ts` so the terminal initial-route JS set still asserts under the 250 KB gzipped budget with the resurrection client included (any heavy diff/patch helper appears only as a separate dynamic chunk); add a reduced-motion unit test asserting the diff reveal emits no motion when `prefers-reduced-motion`/`quiet` is set
     - _Requirements: 14.1, 14.5_
 
-- [~] 15. Checkpoint - Ensure all tests pass
+- [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 16. Implement demo mode and the deterministic lich-py2 improvement
@@ -335,7 +335,7 @@ columns).
     - _Requirements: 15.4, 15.5_
     - _Design: Package map, Dependency direction_
 
-- [~] 18. Final checkpoint - Ensure all tests pass
+- [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
