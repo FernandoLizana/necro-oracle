@@ -12,17 +12,22 @@
 // escapes the policy (R14.9).
 //
 // The no-JS note (R1.5) is emitted HERE, from the root layout, as the first
-// direct child of `<body>` — BEFORE `{children}`. The page (`page.tsx`) is
-// wrapped by Next in a streaming Suspense boundary (the `<!--$--><!--/$-->`
-// markers), and a `<noscript>` rendered inside that boundary is not reliably
-// exposed as live DOM by a scripting-disabled browser. Rendering it in the
-// layout, outside and ahead of that boundary, guarantees the static no-JS
-// document carries the boot phrase and the requires-JavaScript statement as a
-// plain, non-streamed body child. The content is a single static text node, so
-// it needs no inline script or style and is unaffected by the per-request CSP
-// (R14.9). `BOOT_PHRASE` is imported from the lightweight
-// `@necro/ui-crt/phrases` subpath (pure Oracle_Voice copy, no React or CSS),
-// keeping a single source of truth with the live boot banner.
+// direct child of `<body>` — BEFORE `{children}` — and crucially as a PLAIN,
+// VISIBLE element (`<p id="no-js-note" class="crt-no-js">`), not only inside a
+// `<noscript>`. A scripting-disabled browser does not surface `<noscript>`
+// contents to text queries (Playwright `toContainText` reads rendered text),
+// so relying on `<noscript>` promotion was fragile. The visible element is
+// present and readable in the static document with no JavaScript at all. Once
+// the client terminal mounts it sets `document.documentElement.dataset.js =
+// "ready"`; the `html[data-js="ready"] .crt-no-js { display: none }` rule in
+// `crt.css` then hides the note for JS users so it never pollutes the live UI.
+// The element is a single static text node — no inline script or style — so it
+// is unaffected by the per-request CSP (R14.9); the toggle is a plain DOM
+// property write inside a React effect, also CSP-safe. A secondary `<noscript>`
+// carrying the same note is kept as an in-place fallback. `BOOT_PHRASE` is
+// imported from the lightweight `@necro/ui-crt/phrases` subpath (pure
+// Oracle_Voice copy, no React or CSS), keeping one source of truth with the
+// live boot banner.
 //
 // _Requirements: R1.5, R14.9_
 
@@ -53,10 +58,19 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         {/*
-          Authoritative no-JS note (R1.5): a direct, non-streamed child of
-          `<body>`, emitted before the Suspense-wrapped page content so a
-          scripting-disabled browser renders it as live DOM.
+          Authoritative no-JS note (R1.5): a static, visible-by-default element
+          rendered as the first direct, non-streamed child of `<body>`, before
+          the Suspense-wrapped page content. It is plain server-rendered text —
+          present and visible in the static document WITHOUT JavaScript, with no
+          reliance on `<noscript>` content being promoted to live DOM (which
+          Chromium does not surface to text queries). Once the client terminal
+          mounts it sets `document.documentElement.dataset.js = "ready"`, and
+          the `.crt-no-js` rule in `crt.css` hides this note for JS users. The
+          `<noscript>` below is kept as a secondary, in-place fallback.
         */}
+        <p id="no-js-note" className="crt-no-js" role="note">
+          {NOSCRIPT_NOTE}
+        </p>
         <noscript>{NOSCRIPT_NOTE}</noscript>
         {children}
       </body>

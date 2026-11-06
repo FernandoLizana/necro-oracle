@@ -61,9 +61,13 @@ export function Terminal({ ports }: TerminalProps): React.JSX.Element {
     state.lastRitual !== null && state.lastRitual.patch.length > 0;
 
   // The component owns the document shell attributes in environments where the
-  // framework layout has not already set them (R15.12).
+  // framework layout has not already set them (R15.12). It also flags that the
+  // client has mounted (`data-js="ready"`), which lets the CSS hide the static
+  // no-JS fallback note (R1.5) now that the live terminal is present — a plain
+  // DOM property write, no inline script, so it is CSP-safe (R14.9).
   useEffect(() => {
     document.documentElement.lang = "en";
+    document.documentElement.dataset.js = "ready";
     document.title = DOCUMENT_TITLE;
   }, []);
 

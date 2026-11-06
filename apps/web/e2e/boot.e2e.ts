@@ -38,27 +38,38 @@ test.describe("boot (R1.1, R1.2, R15.4)", () => {
 
 test.describe("no JavaScript (R1.5)", () => {
   // A browser context with scripting disabled: the page stays a static
-  // document. The `<noscript>` content becomes visible and must carry both the
-  // boot phrase and the statement that the terminal requires JavaScript.
+  // document. The authoritative no-JS note is a PLAIN, VISIBLE element the root
+  // layout server-renders in <body> (`#no-js-note.crt-no-js`), so it carries
+  // the boot phrase and the requires-JavaScript line with no JavaScript and no
+  // reliance on <noscript> content being promoted to live DOM (Chromium does
+  // not surface <noscript> text to these queries). The client only hides it —
+  // via `html[data-js="ready"]` — once the terminal mounts, which never happens
+  // here, so the note stays visible.
   test.use({ javaScriptEnabled: false });
 
   test("static document shows the phrase and the requires-JS note", async ({ page }) => {
     await page.goto("/");
 
-    // With scripting disabled Chromium renders the <noscript> CONTENTS as live
-    // DOM nodes, so the note is visible in the document body — but the
-    // <noscript> element's own `textContent` reads empty. So assert against the
-    // rendered body text (where the note actually appears), not the <noscript>
-    // element. The exact note the Terminal renders is `${BOOT_PHRASE} — The
-    // terminal requires JavaScript.` (NOSCRIPT_NOTE).
+    // The visible fallback element is present and rendered (not display:none),
+    // and carries the exact note `${BOOT_PHRASE} — The terminal requires
+    // JavaScript.` (NOSCRIPT_NOTE). Because the terminal never mounts with JS
+    // disabled, `html[data-js="ready"]` is never set and the note stays shown.
+    const note = page.locator("#no-js-note");
+    await expect(note).toBeVisible();
+    await expect(note).toHaveText(NOSCRIPT_NOTE);
+
+    // And it surfaces in the rendered body text (where the prior fragile
+    // <noscript>-only approach did not, offline).
     await expect(page.locator("body")).toContainText(NOSCRIPT_NOTE);
     await expect(page.locator("body")).toContainText(BOOT_PHRASE);
     await expect(page.locator("body")).toContainText("requires JavaScript");
 
-    // Belt and braces: the <noscript> element is present and its serialized
-    // innerHTML carries the note even though its textContent is empty.
+    // Belt and braces: the secondary <noscript> fallback is still present and
+    // its serialized innerHTML carries the note even though its textContent
+    // reads empty.
     const noscriptHtml = await page
       .locator("noscript")
+      .first()
       .evaluate((el) => (el as HTMLElement).innerHTML);
     expect(noscriptHtml).toContain("requires JavaScript");
   });

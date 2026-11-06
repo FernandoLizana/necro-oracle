@@ -68,6 +68,27 @@
   white-space: nowrap;
   border: 0;
 }
+/*
+ * No-JS fallback note (R1.5). Rendered by the root layout as a plain, visible
+ * element in <body> so the static document carries the boot phrase and the
+ * requires-JavaScript line WITHOUT any JavaScript — no reliance on <noscript>
+ * content being promoted to live DOM. The client terminal sets
+ * `document.documentElement.dataset.js = "ready"` on mount, and the rule below
+ * hides this note for JS users so it never shows alongside the live terminal.
+ */
+.crt-no-js {
+  margin: 0;
+  padding: 1rem;
+  background-color: #001a00;
+  color: #33ff66;
+  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+html[data-js="ready"] .crt-no-js {
+  display: none;
+}
 
 /* The output log is the ONE scroll container (R17.4, R17.5). */
 .crt-log {
