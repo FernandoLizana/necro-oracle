@@ -18,8 +18,12 @@
 //      `tree-sitter-python.wasm`, `tar-stream`. The oracle import-closure test
 //      is the primary guard; this scan catches leaks through any other path.
 //
-//   3. (R16.12) The demo bundle and the sound engine each exist as a separate
-//      dynamic chunk, distinct from one another and from the initial route.
+//   3. (R16.12) The demo bundle, the sound engine and the resurrection result
+//      view each exist as a separate dynamic chunk, distinct from one another
+//      and from the initial route. The resurrection view is lazy-loaded through
+//      `apps/web/src/terminal/load-resurrection-view.ts`
+//      (`import("../components/ResurrectionResult.js")`), so the heavy diff /
+//      vitality / patch renderers it pulls in never land in the initial route.
 //
 // The pure helpers (BUDGET_BYTES, FORBIDDEN_MARKERS, collectInitialRouteJs,
 // scanForbiddenMarkers, findSeparateChunks) are exported with NO side effects
@@ -116,14 +120,17 @@ export function scanForbiddenMarkers(fileText, markers = FORBIDDEN_MARKERS) {
 }
 
 /**
- * Locate the demo-bundle chunk and the sound-engine chunk among a list of
- * chunk file names, as distinct dynamic chunks. Matches by the stable source
- * fragment Next derives chunk names from when it can: the demo bundle comes
- * from `bundle.generated.json` and the sound engine from `engine.js`
- * (`import("./bundle.generated.json")` / `import("./engine.js")`), so a chunk
- * name containing `bundle.generated` is the demo chunk and one containing
- * `engine` is the sound chunk. Returns `null` for a chunk that is absent so the
- * CLI can fail loudly. (R16.12)
+ * Locate the demo-bundle chunk, the sound-engine chunk and the resurrection
+ * result-view chunk among a list of chunk file names, as distinct dynamic
+ * chunks. Matches by the stable source fragment Next derives chunk names from
+ * when it can: the demo bundle comes from `bundle.generated.json`, the sound
+ * engine from `engine.js` and the resurrection view from
+ * `ResurrectionResult.js` (`import("./bundle.generated.json")` /
+ * `import("./engine.js")` / `import("../components/ResurrectionResult.js")`), so
+ * a chunk name containing `bundle.generated` is the demo chunk, one containing
+ * `engine` is the sound chunk, and one containing `ResurrectionResult` is the
+ * resurrection chunk. Returns `null` for a chunk that is absent so the CLI can
+ * fail loudly. (R16.12)
  *
  * NOTE: Next does not always embed the source name in a lazy chunk's file name
  * (it may use a numeric module id), so the CLI runner falls back to a
@@ -131,7 +138,7 @@ export function scanForbiddenMarkers(fileText, markers = FORBIDDEN_MARKERS) {
  * helper is the pure, synchronous contract the test pins.
  *
  * @param {readonly string[]} chunkNames
- * @returns {{ demo: string | null; sound: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null }}
  */
 export function findSeparateChunks(chunkNames) {
   const names = Array.isArray(chunkNames) ? chunkNames : [];
@@ -139,7 +146,9 @@ export function findSeparateChunks(chunkNames) {
     names.find((n) => typeof n === "string" && /bundle\.generated/.test(n)) ?? null;
   const sound =
     names.find((n) => typeof n === "string" && /\bengine\b|engine\./.test(n)) ?? null;
-  return { demo, sound };
+  const resurrection =
+    names.find((n) => typeof n === "string" && /ResurrectionResult/i.test(n)) ?? null;
+  return { demo, sound, resurrection };
 }
 
 // ── CLI-only helpers (filesystem; not part of the pinned pure contract) ───────
@@ -148,6 +157,12 @@ export function findSeparateChunks(chunkNames) {
 const DEMO_CONTENT_MARKERS = ["lich-py2", "mixed-ruins", "green-garden"];
 /** Markers that uniquely identify the sound-engine chunk's *content*. */
 const SOUND_CONTENT_MARKERS = ["createOscillator", "OscillatorNode", "createGain"];
+/** Markers that uniquely identify the resurrection result-view chunk's *content*. */
+const RESURRECTION_CONTENT_MARKERS = [
+  "renderFileResults",
+  "renderResurrectVitality",
+  "Residual_List",
+];
 
 /**
  * Recursively collect every `.js` file under `dir`, returning absolute paths.
@@ -176,11 +191,12 @@ function collectJsFiles(dir) {
  * @param {readonly string[]} chunkAbsPaths — absolute paths of candidate chunk files
  * @param {ReadonlySet<string>} initialRouteSet — POSIX names already in the initial route
  * @param {string} staticDir — absolute `.next/static` dir for relativising names
- * @returns {{ demo: string | null; sound: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null }}
  */
 function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) {
   let demo = null;
   let sound = null;
+  let resurrection = null;
   for (const abs of chunkAbsPaths) {
     const rel = toPosix(join("static", relative(staticDir, abs)));
     if (initialRouteSet.has(rel)) continue; // skip initial-route files
@@ -191,9 +207,16 @@ function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) 
     }
     if (sound === null && SOUND_CONTENT_MARKERS.some((m) => text.includes(m))) {
       sound = rel;
+      continue;
+    }
+    if (
+      resurrection === null &&
+      RESURRECTION_CONTENT_MARKERS.some((m) => text.includes(m))
+    ) {
+      resurrection = rel;
     }
   }
-  return { demo, sound };
+  return { demo, sound, resurrection };
 }
 
 /** Normalise OS path separators to POSIX for stable manifest-style names. */
@@ -305,11 +328,12 @@ export function runBudgetGate(webDir) {
 
   // Try name-based first (covers builds that embed the source name), then fall
   // back to a content scan (Next may name lazy chunks by numeric module id).
-  let { demo, sound } = findSeparateChunks(chunkNames);
-  if (demo === null || sound === null) {
+  let { demo, sound, resurrection } = findSeparateChunks(chunkNames);
+  if (demo === null || sound === null || resurrection === null) {
     const byContent = findSeparateChunksByContent(staticJs, initialSet, staticDir);
     demo = demo ?? byContent.demo;
     sound = sound ?? byContent.sound;
+    resurrection = resurrection ?? byContent.resurrection;
   }
 
   if (demo === null) {
@@ -333,6 +357,21 @@ export function runBudgetGate(webDir) {
     failed = true;
   } else {
     console.log(`check-web-budget: OK — sound engine is a separate chunk (${sound}).`);
+  }
+
+  // The resurrection result view must also be a separate, non-initial chunk so
+  // its heavy diff/vitality/patch renderers never load at page open. (R16.12)
+  if (resurrection === null) {
+    console.error("check-web-budget: FAIL — resurrection result-view chunk not found as a separate chunk.");
+    failed = true;
+  } else if (initialSet.has(resurrection)) {
+    console.error(`check-web-budget: FAIL — resurrection view ${resurrection} is in the initial route, not a lazy chunk.`);
+    failed = true;
+  } else if (resurrection === demo || resurrection === sound) {
+    console.error("check-web-budget: FAIL — resurrection view resolved to the same chunk as the demo bundle or sound engine.");
+    failed = true;
+  } else {
+    console.log(`check-web-budget: OK — resurrection result view is a separate chunk (${resurrection}).`);
   }
 
   return failed ? 1 : 0;

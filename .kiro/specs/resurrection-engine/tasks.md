@@ -262,7 +262,7 @@ columns).
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 14.3_
     - _Design: Resurrection NDJSON additions, Browser/terminal rendering, Demo mode_
 
-  - [~] 14.4 Write unit tests for the resurrect stream client over a recorded NDJSON sequence
+  - [x] 14.4 Write unit tests for the resurrect stream client over a recorded NDJSON sequence
     - Drive the client with a recorded line sequence (phases in order → a skip-note → a Result_Line) asserting progress callbacks and the resolved `RitualResult`, plus an error-terminal case (an Error_Line raises a `NecroError` with only `code`/`userMessage`); no real network — use a mocked `fetch`/readable stream; assert a demo sequence is rendered with its server-applied `[DEMO]` prefix and never double-prefixed
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 14.3_
 
@@ -271,11 +271,11 @@ columns).
     - _Requirements: 7.1, 7.2, 8.1, 8.3_
     - _Design: Browser/terminal rendering, Diff and Patch_
 
-  - [~] 14.6 Write unit tests for the diff and residual renderers
+  - [x] 14.6 Write unit tests for the diff and residual renderers
     - Cover an added/removed/context mix (correct marks, column budget, ASCII-only), an unchanged file (no add/remove lines), a file with residuals (`path:line` + construct), and a zero-residual fully-converted file
     - _Requirements: 7.1, 7.2, 8.1, 8.3_
 
-  - [~] 14.7 Offer the unified Patch as a client-side download
+  - [x] 14.7 Offer the unified Patch as a client-side download
     - Add a browser download helper (in `apps/web/src/terminal` or `apps/web/src/components`) that builds a downloadable artifact from `RitualResult.patch` (a `Blob` + object URL with a `.patch`/`.diff` filename and `text/x-patch` mime), triggered from the terminal with no server round-trip; an empty patch is handled gracefully (either a disabled/absent download or an empty-but-valid artifact, no throw)
     - _Requirements: 7.3, 7.4_
     - _Design: Diff and Patch, Browser/terminal rendering_
@@ -289,7 +289,7 @@ columns).
     - _Requirements: 6.3, 6.4, 6.5, 9.3_
     - _Design: Vitality re-diagnosis, Browser/terminal rendering_
 
-  - [~] 14.10 Write unit tests for the vitality/changed-card renderer
+  - [x] 14.10 Write unit tests for the vitality/changed-card renderer
     - Cover a positive delta with at least one improved changed card, a zero/negative delta, and the null case (re-diagnosis incomplete) rendering the incomplete line rather than a delta
     - _Requirements: 6.3, 6.4, 6.5_
 
@@ -298,7 +298,7 @@ columns).
     - _Requirements: 14.1, 14.5_
     - _Design: Browser/terminal rendering, Default vs optional runtime_
 
-  - [~] 14.12 Extend the web budget test and add a reduced-motion unit test
+  - [x] 14.12 Extend the web budget test and add a reduced-motion unit test
     - Extend `apps/web/src/budget.test.ts` so the terminal initial-route JS set still asserts under the 250 KB gzipped budget with the resurrection client included (any heavy diff/patch helper appears only as a separate dynamic chunk); add a reduced-motion unit test asserting the diff reveal emits no motion when `prefers-reduced-motion`/`quiet` is set
     - _Requirements: 14.1, 14.5_
 

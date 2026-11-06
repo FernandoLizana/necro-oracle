@@ -22,10 +22,21 @@
 //     files, so the dynamic demo/sound chunks are excluded. (R16.1, R16.12)
 //   - scanForbiddenMarkers(fileText, markers?): string[] — the markers found in
 //     one chunk's text. (R16.2)
-//   - findSeparateChunks(chunkNames): { demo, sound } — locates the demo-bundle
-//     chunk and the sound-engine chunk as distinct dynamic chunks. (R16.12)
+//   - findSeparateChunks(chunkNames): { demo, sound, resurrection } — locates
+//     the demo-bundle chunk, the sound-engine chunk and the resurrection
+//     result-view chunk as distinct dynamic chunks. (R16.12)
 //
-// Validates: Requirements 16.1, 16.2, 16.12
+// The resurrection-engine terminal client (resurrection-engine task 14.11/14.12)
+// adds the diff / vitality / patch result view, lazy-loaded through
+// `apps/web/src/terminal/load-resurrection-view.ts`
+// (`import("../components/ResurrectionResult.js")`). That heavy renderer must
+// land in its OWN dynamic chunk — exactly like the demo bundle and the sound
+// engine — so it never enters the terminal initial route and the ≤ 250 KB
+// gzipped budget still holds (R14.1, R14.5). The additions below pin that:
+// the resurrection chunk is NOT part of `collectInitialRouteJs`, and
+// `findSeparateChunks` locates it as a distinct chunk.
+//
+// Validates: Requirements 16.1, 16.2, 16.12, 14.1, 14.5
 
 import { describe, expect, it } from "vitest";
 
@@ -142,34 +153,106 @@ describe("R16.2: forbidden-marker scan over browser chunks", () => {
   });
 });
 
-describe("R16.12: demo bundle and sound engine are separate chunks", () => {
-  it("locates the demo-bundle chunk and the sound-engine chunk as distinct chunks", async () => {
+type SeparateChunks = {
+  readonly demo: string | null;
+  readonly sound: string | null;
+  readonly resurrection: string | null;
+};
+
+describe("R16.12: demo bundle, sound engine and resurrection view are separate chunks", () => {
+  it("locates the demo-bundle, sound-engine and resurrection chunks as distinct chunks", async () => {
     const mod = await loadScript();
     const findSeparateChunks = mod["findSeparateChunks"] as (
       chunkNames: readonly string[],
-    ) => { readonly demo: string | null; readonly sound: string | null };
+    ) => SeparateChunks;
 
     const chunkNames = [
       "static/chunks/webpack-aaa.js",
       "static/chunks/app/page-eee.js",
       "static/chunks/bundle.generated.<hash>.js",
       "static/chunks/engine.<hash>.js",
+      "static/chunks/ResurrectionResult.<hash>.js",
     ];
-    const { demo, sound } = findSeparateChunks(chunkNames);
+    const { demo, sound, resurrection } = findSeparateChunks(chunkNames);
     expect(demo).not.toBeNull();
     expect(sound).not.toBeNull();
-    expect(demo).not.toBe(sound);
+    expect(resurrection).not.toBeNull();
+    // All three are distinct dynamic chunks.
+    expect(new Set([demo, sound, resurrection]).size).toBe(3);
   });
 
   it("returns null for a missing lazy chunk so the script can fail loudly", async () => {
     const mod = await loadScript();
     const findSeparateChunks = mod["findSeparateChunks"] as (
       chunkNames: readonly string[],
-    ) => { readonly demo: string | null; readonly sound: string | null };
+    ) => SeparateChunks;
 
     const onlyInitial = ["static/chunks/webpack-aaa.js", "static/chunks/app/page-eee.js"];
-    const { demo, sound } = findSeparateChunks(onlyInitial);
+    const { demo, sound, resurrection } = findSeparateChunks(onlyInitial);
     expect(demo).toBeNull();
     expect(sound).toBeNull();
+    expect(resurrection).toBeNull();
+  });
+});
+
+describe("R14.1/R14.5: resurrection client stays off the terminal initial route", () => {
+  it("never pulls the resurrection result-view chunk into collectInitialRouteJs", async () => {
+    const mod = await loadScript();
+    const collectInitialRouteJs = mod["collectInitialRouteJs"] as (
+      app: unknown,
+      build: unknown,
+    ) => readonly string[];
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunks;
+
+    // The lazy resurrection chunk is a real static JS file but — like the demo
+    // bundle and sound engine — Next never lists it in the app/build manifests,
+    // so it must be absent from the initial-route union no matter what.
+    const RESURRECTION_CHUNK = "static/chunks/ResurrectionResult.<hash>.js";
+    const initial = collectInitialRouteJs(APP_MANIFEST, BUILD_MANIFEST);
+    expect(initial).not.toContain(RESURRECTION_CHUNK);
+
+    // And it is positively identifiable as its own separate chunk, distinct
+    // from the initial-route files, keeping the gzipped budget honest (R14.5).
+    const allChunks = [...initial, RESURRECTION_CHUNK];
+    const { resurrection } = findSeparateChunks(allChunks);
+    expect(resurrection).toBe(RESURRECTION_CHUNK);
+    expect(new Set(initial).has(RESURRECTION_CHUNK)).toBe(false);
+  });
+
+  it("keeps the measured initial-route gzip set under BUDGET_BYTES with the resurrection chunk excluded", async () => {
+    const mod = await loadScript();
+    const { BUDGET_BYTES } = mod as { BUDGET_BYTES: number };
+    const collectInitialRouteJs = mod["collectInitialRouteJs"] as (
+      app: unknown,
+      build: unknown,
+    ) => readonly string[];
+
+    // Synthetic per-file gzip sizes for the initial route, plus a deliberately
+    // heavy resurrection chunk. The gate only sums the initial-route union; the
+    // resurrection chunk is a separate dynamic chunk and must NOT be counted.
+    const gzById: Record<string, number> = {
+      "static/chunks/webpack-aaa.js": 30_000,
+      "static/chunks/main-app-bbb.js": 80_000,
+      "static/chunks/app/layout-ccc.js": 20_000,
+      "static/chunks/app/page-eee.js": 40_000,
+      "static/chunks/681-ddd.js": 25_000,
+      "static/chunks/polyfills-fff.js": 15_000,
+      // Heavy diff/vitality/patch view — would blow the budget if eager.
+      "static/chunks/ResurrectionResult.<hash>.js": 120_000,
+    };
+
+    const initial = collectInitialRouteJs(APP_MANIFEST, BUILD_MANIFEST);
+    const measured = initial.reduce((sum, f) => sum + (gzById[f] ?? 0), 0);
+
+    // The resurrection chunk is NOT in the initial route, so its weight does
+    // not count against the budget and the route stays within 250 KB.
+    expect(measured).toBeLessThanOrEqual(BUDGET_BYTES);
+    // Sanity: counting the lazy chunk eagerly WOULD exceed the budget, which is
+    // exactly why it must stay a separate chunk.
+    expect(measured + gzById["static/chunks/ResurrectionResult.<hash>.js"]!).toBeGreaterThan(
+      BUDGET_BYTES,
+    );
   });
 });
