@@ -232,7 +232,7 @@ columns).
     - _Requirements: 9.1, 9.5_
     - _Design: Resurrection NDJSON additions, Request schema_
 
-  - [~] 13.2 Implement the Resurrection_Route handler
+  - [x] 13.2 Implement the Resurrection_Route handler
     - Create `apps/web/src/server/handlers/resurrect.ts` mirroring `handleReading`: method guard → `checkLimit` (per-IP + global) → body guard → strict `ResurrectRequestSchema` parse (pre-stream 400) → begin `application/x-ndjson` stream under an overall budget → drive the local runner, emitting monotonic Phase_Lines and per-phase time-bounded Skip_Note_Lines → write exactly one terminal Result_Line/Error_Line; validate every Stream_Line against `ResurrectStreamLineSchema` before writing (on failure, do not write and terminate with a redacted Error_Line); route all strings through `redactDeep` and errors through `mapError`; return control within 50 s; reject when no completed reading is in scope with a reading-required Error_Line; skip LLM_Pass when the LLM Spend_Breaker is open and the sandbox check when the sandbox Spend_Breaker is open, each with a skip-note, continuing with partial results
     - Register the route (e.g. `apps/web/src/app/api/resurrect`) so the terminal `resurrect` command can POST to it
     - _Requirements: 1.1, 1.6, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 10.3, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2_
@@ -305,7 +305,7 @@ columns).
 - [~] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. Implement demo mode and the deterministic lich-py2 improvement
+- [x] 16. Implement demo mode and the deterministic lich-py2 improvement
   - [x] 16.1 Author the lich-py2 demo fixtures Pre_Pass-sufficient
     - Ensure `fixtures/graveyard/lich-py2` contains legacy constructs (e.g. `print "…"`, `except Exception, e:`, `0L`, `<>`) authored so the deterministic Pre_Pass alone, with no LLM key, removes them and improves the Judgement draw; add the pinned golden `Vitality_Delta` and changed-card set
     - _Requirements: 16.4_
@@ -316,12 +316,12 @@ columns).
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.6_
     - _Design: Demo mode_
 
-  - [~] 16.3 Write property tests for demo labelling and determinism
+  - [x] 16.3 Write property tests for demo labelling and determinism
     - **Property 15: Demo output is fully `[DEMO]`-labelled** — every emitted stream line carries the `[DEMO]` prefix (`numRuns: 200`)
     - **Property 16: Demo output is deterministic across runs** — repeated `lich-py2` demo runs produce byte-identical serialized output including `Vitality_Delta` and changed-card set (`numRuns: 200`)
     - **Validates: Requirements 14.3, 14.5, 16.3**
 
-  - [~] 16.4 Write the lich-py2 deterministic-improvement demo test
+  - [x] 16.4 Write the lich-py2 deterministic-improvement demo test
     - Assert the Demo_Mode `lich-py2` Ritual reports `Vitality_Delta > 0` and at least one changed card including an improved draw (e.g. JUDGEMENT/THE TOWER → THE STAR), matching the pinned goldens, with no LLM key configured
     - _Requirements: 16.1, 16.2, 16.4_
 

@@ -41,9 +41,18 @@ importers:
       '@necro/github':
         specifier: workspace:*
         version: link:../../packages/github
+      '@necro/grimoires-py2to3':
+        specifier: workspace:*
+        version: link:../../packages/grimoires/py2to3
+      '@necro/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@necro/oracle':
         specifier: workspace:*
         version: link:../../packages/oracle
+      '@necro/sandbox':
+        specifier: workspace:*
+        version: link:../../packages/sandbox
       '@necro/ui-crt':
         specifier: workspace:*
         version: link:../../packages/ui-crt

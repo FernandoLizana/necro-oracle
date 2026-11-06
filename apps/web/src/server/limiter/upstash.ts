@@ -75,13 +75,22 @@ export function createUpstashLimiter(opts: {
     limiter: Ratelimit.slidingWindow(LIMITS.readings, "1 h"),
     prefix: "necro:rl:readings",
   });
+  const resurrect = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(LIMITS.resurrect, "1 h"),
+    prefix: "necro:rl:resurrect",
+  });
   const global = new Ratelimit({
     redis,
     limiter: Ratelimit.fixedWindow(dailyCeiling, "1 d"),
     prefix: "necro:rl:day",
   });
 
-  const perRoute: Record<RateLimitRequest["route"], Ratelimit> = { summon, readings };
+  const perRoute: Record<RateLimitRequest["route"], Ratelimit> = {
+    summon,
+    readings,
+    resurrect,
+  };
 
   function retryAfterSeconds(reset: number): number {
     return Math.max(1, Math.ceil((reset - clock.nowMs()) / 1000));

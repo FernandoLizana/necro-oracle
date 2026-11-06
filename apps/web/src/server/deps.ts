@@ -30,6 +30,13 @@ import {
   type ParsedRepoRef,
   type SummonResult,
 } from "@necro/github";
+import type {
+  CovenRunner,
+  LedgerPort,
+  LlmPort,
+  RitualInput,
+  SandboxPort,
+} from "@necro/coven";
 import type { Reading, ReadingOpts, RepoSnapshot } from "@necro/oracle";
 import { Redis } from "@upstash/redis";
 
@@ -45,6 +52,7 @@ import type { RateLimitPort } from "./limiter/port.js";
  */
 export interface RouteEnvPort extends EnvPort {
   get(key: "GITHUB_TOKEN"): string | undefined;
+  get(key: "NECRO_LLM_API_KEY"): string | undefined;
   get(key: "NECRO_DAILY_REQUEST_CEILING"): number;
   get(key: "NECRO_CLIENT_IP_HEADER"): string;
   get(key: "UPSTASH_REDIS_REST_URL"): string | undefined;
@@ -69,6 +77,57 @@ export interface RouteDeps {
   readonly limiter: RateLimitChain;
   readonly github: GithubGateway;
   readonly runReading: (snapshot: RepoSnapshot, opts: ReadingOpts) => Promise<Reading>;
+}
+
+/**
+ * The two spend circuit-breakers the Resurrection_Route consults before it
+ * drives the Ritual (R11.3-R11.5). Each reports, synchronously, whether its
+ * breaker is OPEN (tripped). An open LLM breaker makes the route run the Ritual
+ * WITHOUT an `LlmPort` (skipping the LLM_Pass with a skip-note); an open sandbox
+ * breaker makes it omit the `SandboxPort` (skipping the parse-check with a
+ * skip-note). The Ritual always continues with the remaining passes.
+ *
+ * The breakers are read-only here — the route never trips them; the global
+ * spend monitor (token / sandbox-minute budgets) owns that. The interface is
+ * deliberately tiny so a test can inject a fixed-state fake.
+ */
+export interface SpendBreakers {
+  /** True when the LLM spend breaker is open (skip the LLM_Pass). */
+  llmOpen(): boolean;
+  /** True when the sandbox spend breaker is open (skip the parse-check). */
+  sandboxOpen(): boolean;
+}
+
+/**
+ * Everything the Resurrection_Route needs beyond the shared `RouteDeps`. It
+ * reuses the `github`/`runReading`/`limiter`/`env`/`clock` of `RouteDeps` to
+ * source the in-scope reading exactly as the Reading_Route does, then adds the
+ * coven seams:
+ *
+ *   - `runner`      the `CovenRunner` (a `LocalCovenRunner` built once with the
+ *                   default registry) that drives SELECT -> ... -> DIFF;
+ *   - `makeLedger`  a per-Ritual `LedgerPort` factory (one append-only ledger
+ *                   per run);
+ *   - `llm`         the real/Mock `LlmPort`, or `undefined` in Degraded_Mode
+ *                   (no `NECRO_LLM_API_KEY`); omitted => runner skips LLM_Pass;
+ *   - `sandbox`     the optional E2B `SandboxPort`, or `undefined` when no E2B
+ *                   is configured; omitted => Target_Parser-only validation;
+ *   - `breakers`    the spend breakers above;
+ *   - `loadDemoInput` the Node fixture loader bound to the graveyard root, used
+ *                   when `demo: true`; `undefined` => demo unsupported;
+ *   - `demoLlm`     the Mock `LlmPort` a demo Ritual runs with (R14.4).
+ *
+ * All but the shared fields are optional so a test injects only what a case
+ * needs; the handler treats an absent `llm`/`sandbox` as "that pass is skipped".
+ */
+export interface ResurrectDeps extends RouteDeps {
+  readonly runner: CovenRunner;
+  readonly makeLedger: () => LedgerPort;
+  readonly llm?: LlmPort;
+  readonly sandbox?: SandboxPort;
+  readonly breakers: SpendBreakers;
+  readonly loadDemoInput?: (now: string) => Promise<RitualInput>;
+  readonly demoLlm?: LlmPort;
 }
 
 /**
