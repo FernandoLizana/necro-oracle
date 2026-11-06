@@ -29,7 +29,7 @@ columns).
 
 ## Tasks
 
-- [ ] 1. Establish coven port and data-model contracts
+- [x] 1. Establish coven port and data-model contracts
   - [x] 1.1 Define port interfaces in `@necro/coven`
     - Create `packages/coven/src/ports.ts` with `LlmRequest`, `LlmResult`, `LlmPort`, `SandboxPort`, `LedgerPort`, `ClockPort`, `RitualPorts`, plus the `Grimoire`/`Fixer`/`FixerContext`/`FixResult`/`LlmStep` interfaces from the design's Components section
     - Export all port types through `packages/coven/src/index.ts` (cross-package imports go only through `src/index.ts`)
@@ -43,12 +43,12 @@ columns).
     - _Requirements: 8.1, 8.2, 8.3, 7.7, 6.2, 6.3, 12.5, 13.5, 14.3_
     - _Design: Data Models, Error Handling_
 
-  - [~] 1.3 Write unit tests for the coven data-model schemas
+  - [x] 1.3 Write unit tests for the coven data-model schemas
     - Assert `ResidualEntrySchema.reason` accepts each documented reason and rejects others; assert `RitualResultSchema` nullability of `afterVitality`/`vitalityDelta`
     - _Requirements: 6.5, 8.1, 8.3_
 
 - [ ] 2. Build the injectable adapters and server env key
-  - [~] 2.1 Implement the Mock LlmPort provider in `@necro/llm`
+  - [x] 2.1 Implement the Mock LlmPort provider in `@necro/llm`
     - Create `packages/llm/src/providers/mock.ts` implementing `LlmPort` with `providerId: "mock"`, returning deterministic text from the request with no network access; add `cache.ts` (cache by `cacheKey`) and `budget.ts` (token/timeout budget helpers)
     - Export the Mock provider and budget/cache helpers through `packages/llm/src/index.ts`
     - _Requirements: 4.1, 4.7, 4.8, 14.4_
@@ -131,7 +131,7 @@ columns).
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Implement the Language_Pair_Registry
-  - [~] 7.1 Implement the registry in `@necro/coven`
+  - [x] 7.1 Implement the registry in `@necro/coven`
     - Create `packages/coven/src/registry.ts` with `register` (duplicate id ⇒ `NecroError("PAIR_DUPLICATE", …)`, leaving the existing binding unchanged), `resolve` (unknown id ⇒ `NecroError("PAIR_UNKNOWN", …)` before any sandbox/LLM work), and `has`; register the `python2->python3` grimoire at runner construction; export through `src/index.ts`
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
     - _Design: Language_Pair_Registry_
@@ -162,7 +162,7 @@ columns).
     - _Requirements: 1.7, 1.8, 2.3, 2.4, 2.7_
 
 - [ ] 9. Implement diff, patch, and vitality re-diagnosis
-  - [~] 9.1 Implement per-file diff and unified Patch generation
+  - [x] 9.1 Implement per-file diff and unified Patch generation
     - In `packages/coven/src/diff.ts` compute a line-oriented LCS diff into `DiffLine[]` (identical content ⇒ context-only, no add/remove), and generate a single unified-diff `Patch` over validated, changed files only (excluding not-validated files; zero changed ⇒ empty patch) such that applying the patch to `Before_Content` reproduces `After_Content` byte-for-byte
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.7_
     - _Design: Diff and Patch_
@@ -306,7 +306,7 @@ columns).
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 16. Implement demo mode and the deterministic lich-py2 improvement
-  - [~] 16.1 Author the lich-py2 demo fixtures Pre_Pass-sufficient
+  - [x] 16.1 Author the lich-py2 demo fixtures Pre_Pass-sufficient
     - Ensure `fixtures/graveyard/lich-py2` contains legacy constructs (e.g. `print "…"`, `except Exception, e:`, `0L`, `<>`) authored so the deterministic Pre_Pass alone, with no LLM key, removes them and improves the Judgement draw; add the pinned golden `Vitality_Delta` and changed-card set
     - _Requirements: 16.4_
     - _Design: Demo mode_

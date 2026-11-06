@@ -260,13 +260,6 @@
               {
                 "detail": "Python 2 print statement in crypt.py",
                 "kind": "print_statement",
-                "line": 4,
-                "path": "crypt.py",
-                "source": "static"
-              },
-              {
-                "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
-                "kind": "legacy_octal",
                 "line": 5,
                 "path": "crypt.py",
                 "source": "static"
@@ -274,28 +267,28 @@
               {
                 "detail": "Python 2 print statement in lich.py",
                 "kind": "print_statement",
-                "line": 8,
+                "line": 9,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
                 "kind": "except_comma",
-                "line": 7,
+                "line": 8,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 `<>` inequality operator in lich.py",
                 "kind": "ne_operator",
-                "line": 16,
+                "line": 18,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
                 "kind": "long_integer",
-                "line": 15,
+                "line": 17,
                 "path": "lich.py",
                 "source": "static"
               }
@@ -342,21 +335,15 @@
             "card": "death",
             "evidence": [
               {
-                "detail": "Module crypt.py is never imported by any other file and is not an entrypoint.",
-                "kind": "unreachable_module",
-                "path": "crypt.py",
-                "source": "static"
-              },
-              {
-                "detail": "Module lich.py is never imported by any other file and is not an entrypoint.",
-                "kind": "unreachable_module",
-                "path": "lich.py",
-                "source": "static"
-              },
-              {
                 "detail": "Module setup.py is never imported by any other file and is not an entrypoint.",
                 "kind": "unreachable_module",
                 "path": "setup.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module tests/test_crypt.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "tests/test_crypt.py",
                 "source": "static"
               }
             ],
@@ -366,89 +353,38 @@
             "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
           },
           {
-            "card": "wheel",
+            "card": "star",
             "evidence": [
               {
-                "detail": "0 test files found; the deck shows no tests at all.",
-                "kind": "test-coverage",
+                "detail": "license: contributed=true; observed licenseKey=MIT",
+                "kind": "strength:license",
                 "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "No test files found."
-          },
-          {
-            "card": "hermit",
-            "evidence": [
-              {
-                "detail": "No README lives at the repository root; the project keeps its silence.",
-                "kind": "no-readme",
-                "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "The Hermit walks alone: this repository has no README at its root, leaving every traveller to guess at its purpose."
-          },
-          {
-            "card": "hanged_man",
-            "evidence": [
-              {
-                "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
-                "kind": "last-push",
-                "source": "github"
               },
               {
-                "detail": "repository archived: archived (true)",
-                "kind": "archived-flag",
-                "source": "github"
+                "detail": "tests: contributed=true; observed test file count=1",
+                "kind": "strength:tests",
+                "source": "static"
               },
               {
-                "detail": "openIssueCount: 17",
-                "kind": "open-issues",
-                "source": "github"
+                "detail": "ci: contributed=true; observed CI config count=1",
+                "kind": "strength:ci",
+                "source": "static"
               },
               {
-                "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
-                "kind": "open-prs",
-                "source": "github"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
-          },
-          {
-            "card": "temperance",
-            "evidence": [
+                "detail": "readme: contributed=true; observed README byte length=550",
+                "kind": "strength:readme",
+                "source": "static"
+              },
               {
-                "detail": "no CI configuration detected",
-                "kind": "no-ci-found",
+                "detail": "recent push: contributed=true; observed pushedAt=2025-12-01T00:00:00.000Z",
+                "kind": "strength:push",
                 "source": "static"
               }
             ],
             "grimoires": [],
             "orientation": "upright",
             "severity": 2,
-            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
-          },
-          {
-            "card": "justice",
-            "evidence": [
-              {
-                "detail": "observed SPDX key: null",
-                "kind": "spdx-key",
-                "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "No law governs this code. The observed license key is absent (null), so the repository has no clear, usable license."
+            "summary": "The Star rises: 5 of five strengths endure in this repository."
           }
         ],
         "engineVersion": "0.0.0",
@@ -461,97 +397,6 @@
           "sha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c"
         },
         "spread": [
-          {
-            "draw": {
-              "card": "hanged_man",
-              "evidence": [
-                {
-                  "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
-                  "kind": "last-push",
-                  "source": "github"
-                },
-                {
-                  "detail": "repository archived: archived (true)",
-                  "kind": "archived-flag",
-                  "source": "github"
-                },
-                {
-                  "detail": "openIssueCount: 17",
-                  "kind": "open-issues",
-                  "source": "github"
-                },
-                {
-                  "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
-                  "kind": "open-prs",
-                  "source": "github"
-                }
-              ],
-              "grimoires": [],
-              "orientation": "upright",
-              "severity": 2,
-              "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
-            },
-            "label": "Past",
-            "position": 1
-          },
-          {
-            "draw": {
-              "card": "judgement",
-              "evidence": [
-                {
-                  "detail": "Python 2 print statement in crypt.py",
-                  "kind": "print_statement",
-                  "line": 4,
-                  "path": "crypt.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
-                  "kind": "legacy_octal",
-                  "line": 5,
-                  "path": "crypt.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 print statement in lich.py",
-                  "kind": "print_statement",
-                  "line": 8,
-                  "path": "lich.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
-                  "kind": "except_comma",
-                  "line": 7,
-                  "path": "lich.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 `<>` inequality operator in lich.py",
-                  "kind": "ne_operator",
-                  "line": 16,
-                  "path": "lich.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
-                  "kind": "long_integer",
-                  "line": 15,
-                  "path": "lich.py",
-                  "source": "static"
-                }
-              ],
-              "grimoires": [
-                "py2to3",
-                "pyproject"
-              ],
-              "orientation": "upright",
-              "severity": 3,
-              "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
-            },
-            "label": "Present",
-            "position": 2
-          },
           {
             "draw": {
               "card": "tower",
@@ -569,6 +414,75 @@
               "severity": 2,
               "summary": "1 broken or abandoned dependency"
             },
+            "label": "Past",
+            "position": 1
+          },
+          {
+            "draw": {
+              "card": "judgement",
+              "evidence": [
+                {
+                  "detail": "Python 2 print statement in crypt.py",
+                  "kind": "print_statement",
+                  "line": 5,
+                  "path": "crypt.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 print statement in lich.py",
+                  "kind": "print_statement",
+                  "line": 9,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
+                  "kind": "except_comma",
+                  "line": 8,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 `<>` inequality operator in lich.py",
+                  "kind": "ne_operator",
+                  "line": 18,
+                  "path": "lich.py",
+                  "source": "static"
+                },
+                {
+                  "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
+                  "kind": "long_integer",
+                  "line": 17,
+                  "path": "lich.py",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [
+                "py2to3",
+                "pyproject"
+              ],
+              "orientation": "upright",
+              "severity": 3,
+              "summary": "The runtime is dead: Python 2 syntax burns in the code and the manifests pin the package to Python 2 only."
+            },
+            "label": "Present",
+            "position": 2
+          },
+          {
+            "draw": {
+              "card": "devil",
+              "evidence": [
+                {
+                  "detail": "GHSA-fake-lich-0001 (HIGH) affects mysql-python >=0,<1.2.5",
+                  "kind": "osv",
+                  "source": "osv"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "Security sins found in 1 place(s); The Devil binds this code."
+            },
             "label": "Future",
             "position": 3
           }
@@ -579,8 +493,8 @@
         "cache": "miss",
         "degradedFields": [],
         "demo": true,
-        "fileCount": 3,
-        "hasWorkflowsDir": false,
+        "fileCount": 9,
+        "hasWorkflowsDir": true,
         "ref": {
           "defaultBranch": "master",
           "name": "lich-py2",
@@ -601,13 +515,6 @@
               {
                 "detail": "Python 2 print statement in crypt.py",
                 "kind": "print_statement",
-                "line": 4,
-                "path": "crypt.py",
-                "source": "static"
-              },
-              {
-                "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
-                "kind": "legacy_octal",
                 "line": 5,
                 "path": "crypt.py",
                 "source": "static"
@@ -615,28 +522,28 @@
               {
                 "detail": "Python 2 print statement in lich.py",
                 "kind": "print_statement",
-                "line": 8,
+                "line": 9,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
                 "kind": "except_comma",
-                "line": 7,
+                "line": 8,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 `<>` inequality operator in lich.py",
                 "kind": "ne_operator",
-                "line": 16,
+                "line": 18,
                 "path": "lich.py",
                 "source": "static"
               },
               {
                 "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
                 "kind": "long_integer",
-                "line": 15,
+                "line": 17,
                 "path": "lich.py",
                 "source": "static"
               }
@@ -683,21 +590,15 @@
             "card": "death",
             "evidence": [
               {
-                "detail": "Module crypt.py is never imported by any other file and is not an entrypoint.",
-                "kind": "unreachable_module",
-                "path": "crypt.py",
-                "source": "static"
-              },
-              {
-                "detail": "Module lich.py is never imported by any other file and is not an entrypoint.",
-                "kind": "unreachable_module",
-                "path": "lich.py",
-                "source": "static"
-              },
-              {
                 "detail": "Module setup.py is never imported by any other file and is not an entrypoint.",
                 "kind": "unreachable_module",
                 "path": "setup.py",
+                "source": "static"
+              },
+              {
+                "detail": "Module tests/test_crypt.py is never imported by any other file and is not an entrypoint.",
+                "kind": "unreachable_module",
+                "path": "tests/test_crypt.py",
                 "source": "static"
               }
             ],
@@ -707,89 +608,38 @@
             "summary": "Dead code festers in the repository: modules no living path reaches, or public symbols nothing ever calls. The corpse carries weight it no longer uses."
           },
           {
-            "card": "wheel",
+            "card": "star",
             "evidence": [
               {
-                "detail": "0 test files found; the deck shows no tests at all.",
-                "kind": "test-coverage",
+                "detail": "license: contributed=true; observed licenseKey=MIT",
+                "kind": "strength:license",
                 "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "No test files found."
-          },
-          {
-            "card": "hermit",
-            "evidence": [
-              {
-                "detail": "No README lives at the repository root; the project keeps its silence.",
-                "kind": "no-readme",
-                "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "The Hermit walks alone: this repository has no README at its root, leaving every traveller to guess at its purpose."
-          },
-          {
-            "card": "hanged_man",
-            "evidence": [
-              {
-                "detail": "last pushed at 2015-08-01T00:00:00.000Z (3820 whole days before the reading)",
-                "kind": "last-push",
-                "source": "github"
               },
               {
-                "detail": "repository archived: archived (true)",
-                "kind": "archived-flag",
-                "source": "github"
+                "detail": "tests: contributed=true; observed test file count=1",
+                "kind": "strength:tests",
+                "source": "static"
               },
               {
-                "detail": "openIssueCount: 17",
-                "kind": "open-issues",
-                "source": "github"
+                "detail": "ci: contributed=true; observed CI config count=1",
+                "kind": "strength:ci",
+                "source": "static"
               },
               {
-                "detail": "openPRCount: 4; oldestOpenPRAgeDays: 2200",
-                "kind": "open-prs",
-                "source": "github"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "The repository is archived; The Hanged Man hangs upright over abandoned work."
-          },
-          {
-            "card": "temperance",
-            "evidence": [
+                "detail": "readme: contributed=true; observed README byte length=550",
+                "kind": "strength:readme",
+                "source": "static"
+              },
               {
-                "detail": "no CI configuration detected",
-                "kind": "no-ci-found",
+                "detail": "recent push: contributed=true; observed pushedAt=2025-12-01T00:00:00.000Z",
+                "kind": "strength:push",
                 "source": "static"
               }
             ],
             "grimoires": [],
             "orientation": "upright",
             "severity": 2,
-            "summary": "No vessel tempers this code. No CI configuration was detected in the repository."
-          },
-          {
-            "card": "justice",
-            "evidence": [
-              {
-                "detail": "observed SPDX key: null",
-                "kind": "spdx-key",
-                "source": "static"
-              }
-            ],
-            "grimoires": [],
-            "orientation": "upright",
-            "severity": 2,
-            "summary": "No law governs this code. The observed license key is absent (null), so the repository has no clear, usable license."
+            "summary": "The Star rises: 5 of five strengths endure in this repository."
           }
         ],
         "engineVersion": "0.0.0",
@@ -809,13 +659,6 @@
                 {
                   "detail": "Python 2 print statement in crypt.py",
                   "kind": "print_statement",
-                  "line": 4,
-                  "path": "crypt.py",
-                  "source": "static"
-                },
-                {
-                  "detail": "Python 2 legacy octal literal (e.g. `0777`) in crypt.py",
-                  "kind": "legacy_octal",
                   "line": 5,
                   "path": "crypt.py",
                   "source": "static"
@@ -823,28 +666,28 @@
                 {
                   "detail": "Python 2 print statement in lich.py",
                   "kind": "print_statement",
-                  "line": 8,
+                  "line": 9,
                   "path": "lich.py",
                   "source": "static"
                 },
                 {
                   "detail": "Python 2 comma-style except clause (`except E, e:`) in lich.py",
                   "kind": "except_comma",
-                  "line": 7,
+                  "line": 8,
                   "path": "lich.py",
                   "source": "static"
                 },
                 {
                   "detail": "Python 2 `<>` inequality operator in lich.py",
                   "kind": "ne_operator",
-                  "line": 16,
+                  "line": 18,
                   "path": "lich.py",
                   "source": "static"
                 },
                 {
                   "detail": "Python 2 long-integer literal (e.g. `10L`) in lich.py",
                   "kind": "long_integer",
-                  "line": 15,
+                  "line": 17,
                   "path": "lich.py",
                   "source": "static"
                 }
@@ -899,8 +742,40 @@
             "position": 3
           },
           {
-            "description": "This position holds no card — the void is a sign.",
-            "draw": null,
+            "draw": {
+              "card": "star",
+              "evidence": [
+                {
+                  "detail": "license: contributed=true; observed licenseKey=MIT",
+                  "kind": "strength:license",
+                  "source": "static"
+                },
+                {
+                  "detail": "tests: contributed=true; observed test file count=1",
+                  "kind": "strength:tests",
+                  "source": "static"
+                },
+                {
+                  "detail": "ci: contributed=true; observed CI config count=1",
+                  "kind": "strength:ci",
+                  "source": "static"
+                },
+                {
+                  "detail": "readme: contributed=true; observed README byte length=550",
+                  "kind": "strength:readme",
+                  "source": "static"
+                },
+                {
+                  "detail": "recent push: contributed=true; observed pushedAt=2025-12-01T00:00:00.000Z",
+                  "kind": "strength:push",
+                  "source": "static"
+                }
+              ],
+              "grimoires": [],
+              "orientation": "upright",
+              "severity": 2,
+              "summary": "The Star rises: 5 of five strengths endure in this repository."
+            },
             "label": "The Hope",
             "position": 4
           },
@@ -917,8 +792,8 @@
         "cache": "miss",
         "degradedFields": [],
         "demo": true,
-        "fileCount": 3,
-        "hasWorkflowsDir": false,
+        "fileCount": 9,
+        "hasWorkflowsDir": true,
         "ref": {
           "defaultBranch": "master",
           "name": "lich-py2",

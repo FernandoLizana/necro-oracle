@@ -1,0 +1,21 @@
+{
+  "_comment": "Pinned golden for the lich-py2 deterministic Pre_Pass-only improvement (resurrection-engine task 16.1, R16.1-R16.4). Produced by running the real oracle (@necro/oracle runReading) over the before fixtures and over the deterministic Pre_Pass output with NO LLM key. The six Pre_Pass fixers (print_statement, except_comma, dict_iter, unicode_str, long_literal, ne_operator) alone remove every Python-2 construct the Judgement detector flags in lich.py and crypt.py, so the Judgement draw clears. Vitality clamps to 0 before (the runtime is dead) and rises to 14 after. Only the Judgement card changes. Regenerate with scripts: build the before snapshot from repo/, apply the Pre_Pass, re-run runReading with the fixture registry/osv and the spread seed ref.sha. Keep this file in sync with the fixtures: a fixture change that alters these values updates this golden in the same change.",
+  "spreadSeedSha": "1a2b3c4d5e6f70819a2b3c4d5e6f7081920a3b4c",
+  "beforeVitality": 0,
+  "afterVitality": 14,
+  "vitalityDelta": 14,
+  "changedCards": [
+    {
+      "card": "judgement",
+      "before": { "present": true, "severity": 3, "orientation": "upright" },
+      "after": { "present": false },
+      "improved": true
+    }
+  ],
+  "unchangedCardsPresentBeforeAndAfter": [
+    { "card": "death", "severity": 2, "orientation": "upright" },
+    { "card": "devil", "severity": 2, "orientation": "upright" },
+    { "card": "star", "severity": 2, "orientation": "upright" },
+    { "card": "tower", "severity": 2, "orientation": "upright" }
+  ]
+}

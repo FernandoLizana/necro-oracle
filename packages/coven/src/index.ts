@@ -63,3 +63,19 @@ export {
   type RitualResult,
   type RitualInput,
 } from "./models.js";
+
+// --- Per-file diff and unified-patch generation (diff) ---------------------
+// Pure, adapter-free. `lineDiff` produces a `DiffLine[]` per file (R7.1/R7.2);
+// `buildPatch` emits a single round-tripping unified-diff over the validated,
+// changed files only (R7.3–R7.5, R7.7).
+export { lineDiff, buildPatch } from "./diff.js";
+
+// --- Language_Pair_Registry (registry) -------------------------------------
+// The guarded, in-memory pair -> grimoire binding the runner resolves at SELECT
+// time, before any sandbox/LLM work. `createDefaultRegistry` is the documented
+// registration point for the shipped `python2->python3` grimoire.
+export {
+  LanguagePairRegistry,
+  createDefaultRegistry,
+  PYTHON2_TO_PYTHON3,
+} from "./registry.js";

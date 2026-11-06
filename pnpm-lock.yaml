@@ -142,7 +142,15 @@ importers:
         specifier: ^3.23.1
         version: 3.23.2
 
-  packages/llm: {}
+  packages/llm:
+    dependencies:
+      '@necro/coven':
+        specifier: workspace:*
+        version: link:../coven
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
 
   packages/mcp-server: {}
 
