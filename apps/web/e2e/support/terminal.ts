@@ -132,6 +132,79 @@ export async function bootTerminalFull(page: Page): Promise<void> {
   await expect(sel.input(page)).toBeFocused();
 }
 
+/**
+ * The elapsed boot time, in milliseconds, at which to FREEZE the virtual clock
+ * so the capture lands squarely on the ASCII-logo boot step.
+ *
+ * The Boot_Sequence (`@necro/ui-crt` `motion/boot-schedule.ts`) runs seven
+ * fixed 500 ms steps (`BOOT_STEP_MS = 500`, `BOOT_STEP_COUNT = 7`, total
+ * ~3.4 s). `bootStepAt` floors elapsed time into a step, so step 4 — the logo
+ * (`render/boot.ts`: four cumulative MEMORY-check steps 0-3, then the logo at
+ * step 4) — is on screen for elapsed ∈ [2000, 2500) ms. In a live, real-time,
+ * rAF-driven boot that window is only ~500 ms wide, which a plain
+ * `expect(locator).toBeVisible()` poll cannot reliably catch: by the time
+ * Playwright navigates and polls, the boot has already advanced past the logo
+ * to the ready frame and the overlay is gone.
+ *
+ * `bootLogoShot` makes the capture DETERMINISTIC by installing Playwright's
+ * fake clock and PAUSING it inside this window, so the overlay stays frozen on
+ * the logo frame indefinitely and the screenshot is stable run-to-run. 2200 ms
+ * sits comfortably mid-step (not on either 2000/2500 ms boundary). This touches
+ * no production code and does NOT change the real boot timing — it only
+ * controls the clock the browser reads during capture.
+ */
+export const BOOT_LOGO_FREEZE_MS = 2200;
+
+/**
+ * Navigate to the terminal in FULL motion (no `?boot=skip`) with the virtual
+ * clock FROZEN on the ASCII-logo boot step, and wait for the logo frame to be
+ * on screen. Deterministic capture of the otherwise ~500 ms logo window
+ * (visual-necromancy task 23.3).
+ *
+ * Installs Playwright's fake clock BEFORE navigating so the browser's
+ * `performance.now` / `requestAnimationFrame` (which `useBoot` drives the boot
+ * through) are controllable, navigates to `/`, then pins virtual time to
+ * {@link BOOT_LOGO_FREEZE_MS} via `page.clock.pauseAt`. Because the clock is
+ * paused there, the boot cannot advance past the logo, so the overlay holds the
+ * logo frame and the `.crt-boot-overlay[data-boot-frame="logo"]` assertion is
+ * stable. Resolves once that logo overlay is visible and carries the wordmark.
+ *
+ * The clock stays paused on return; a caller that needs the boot to proceed
+ * afterwards must resume it (`page.clock.resume()`). The screenshot spec does
+ * NOT — it captures the logo on its own frozen page and drives shots 2-4 on a
+ * separate, normally-clocked page, so no single test mixes fake and real time.
+ */
+export async function bootLogoShot(page: Page): Promise<Locator> {
+  // Fake timers must be installed BEFORE any script runs, so the boot's very
+  // first rAF tick already reads virtual time. Pin the clock's ORIGIN to epoch
+  // 0 so virtual time starts at 0 — `pauseAt` only ever moves the clock
+  // forward (it throws "cannot fast-forward to the past" otherwise), and the
+  // boot measures elapsed time from its first tick, so an origin of 0 makes
+  // `pauseAt(BOOT_LOGO_FREEZE_MS)` land exactly `BOOT_LOGO_FREEZE_MS` into the
+  // sequence.
+  await page.clock.install({ time: 0 });
+  await page.goto("/");
+  // Move the clock forward to the logo window and HOLD it there, freezing the
+  // boot on the logo step for a stable capture.
+  await page.clock.pauseAt(BOOT_LOGO_FREEZE_MS);
+
+  // The boot phrase is the first Output_Block in every path (R1.1).
+  await expect(sel.log(page)).toContainText(BOOT_PHRASE);
+
+  // Wait for the LOGO frame specifically (not merely any playing frame): the
+  // `crt-sr-only` wordmark is a constant sibling of every boot frame, so the
+  // `data-boot-frame="logo"` marker is the only stable anchor for the big ASCII
+  // logo step. With the clock frozen in-window this resolves immediately and
+  // stays true for the whole capture.
+  const logoFrame = page.locator('.crt-boot-overlay[data-boot-frame="logo"]');
+  await expect(logoFrame).toBeVisible();
+  // The visible ASCII glyph rows carry the wordmark on the logo frame.
+  await expect(logoFrame.locator(".crt-boot-frame")).toContainText(
+    "NECROMANTIC SYSTEMS 1986",
+  );
+  return logoFrame;
+}
+
 /** Type a command into the focused Command_Line and submit it with Enter. */
 export async function runCommand(page: Page, command: string): Promise<void> {
   const input = sel.input(page);

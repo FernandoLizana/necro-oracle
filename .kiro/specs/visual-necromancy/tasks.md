@@ -1,4 +1,4 @@
-# Implementation Plan: Visual Necromancy
+﻿# Implementation Plan: Visual Necromancy
 
 ## Overview
 
@@ -10,12 +10,12 @@ session-reducer slices, then the Terminal wiring and `apps/web` composition, and
 finally end-to-end, accessibility, bundle, and documentation checks.
 
 All unit and property tests use the existing fake ports (`FakeFramePort`,
-`FakeMediaPort`, fake sound loader) and a manual clock — no network, clock, DOM, or
-real randomness in unit/property tests. Property tests run fast-check at ≥ 100
+`FakeMediaPort`, fake sound loader) and a manual clock â€” no network, clock, DOM, or
+real randomness in unit/property tests. Property tests run fast-check at â‰¥ 100
 iterations and are named with their requirement IDs (e.g.
-`describe("P8 (R6.5): rot preserves length and line count", …)`). New pure modules
+`describe("P8 (R6.5): rot preserves length and line count", â€¦)`). New pure modules
 are barrelled through `packages/ui-crt/src/index.ts`; hooks stay `"use client"`.
-`apps/web/src/app/layout.tsx` is never modified — the `#no-js-note` contract is only
+`apps/web/src/app/layout.tsx` is never modified â€” the `#no-js-note` contract is only
 verified, not changed.
 
 ## Tasks
@@ -25,33 +25,33 @@ verified, not changed.
     - Add `packages/ui-crt/src/render/boot.ts`: `BOOT_STEP_COUNT`, `BootFrame`
       (`readonly lines: readonly OutputLine[]`), `bootFrame(stepIndex)`, and
       `BOOT_LOGO_TEXT_EQUIVALENT = "NECROMANTIC SYSTEMS 1986"`.
-    - Frames progress: memory-check readout (`MEMORY 0640K … OK`, dry Oracle_Voice,
+    - Frames progress: memory-check readout (`MEMORY 0640K â€¦ OK`, dry Oracle_Voice,
       one line per step), the ASCII logo, a phosphor warm-up line, ending at a ready
-      frame. Every line ≤ 72 columns (matches `wrapText` `LINE_WIDTH`).
-    - Any index ≥ the last step returns the ready frame; no clock/network/DOM/unseeded
+      frame. Every line â‰¤ 72 columns (matches `wrapText` `LINE_WIDTH`).
+    - Any index â‰¥ the last step returns the ready frame; no clock/network/DOM/unseeded
       randomness.
     - Add `motion/boot-schedule.ts`: `BOOT_TOTAL_MS = 3400` and
       `bootStepAt(elapsedMs)` clamped to `0..BOOT_STEP_COUNT-1`, with
-      `BOOT_STEP_COUNT * BOOT_STEP_MS ≤ 3500`.
+      `BOOT_STEP_COUNT * BOOT_STEP_MS â‰¤ 3500`.
     - Barrel both through `src/index.ts`.
     - _Requirements: 1.1, 2.1, 2.3_
 
   - [x] 1.2 Write property tests for boot frames
     - `render/boot.pbt.test.ts`.
-    - **Property 1: Boot frame determinism** — `describe("P1 (R2.2, R2.3): boot frame determinism", …)`: same index returns equal BootFrame; every line ≤ 72 columns.
-    - **Property 2: Boot index total and saturating** — `describe("P2 (R2.4): boot index total and saturating", …)`: any integer index (incl. negative and beyond last) returns a frame without throwing; index ≥ last returns the ready frame.
+    - **Property 1: Boot frame determinism** â€” `describe("P1 (R2.2, R2.3): boot frame determinism", â€¦)`: same index returns equal BootFrame; every line â‰¤ 72 columns.
+    - **Property 2: Boot index total and saturating** â€” `describe("P2 (R2.4): boot index total and saturating", â€¦)`: any integer index (incl. negative and beyond last) returns a frame without throwing; index â‰¥ last returns the ready frame.
     - **Validates: Requirements 2.2, 2.3, 2.4**
 
   - [x] 1.3 Write unit tests for boot frames and schedule
-    - Specific ready-frame contents; the real logo stays ≤ 72 columns;
+    - Specific ready-frame contents; the real logo stays â‰¤ 72 columns;
       `bootStepAt(0) === 0`, `bootStepAt(BOOT_TOTAL_MS) === BOOT_STEP_COUNT-1`,
-      total duration ≤ 3500 ms.
+      total duration â‰¤ 3500 ms.
     - _Requirements: 1.1, 2.3, 2.4_
 
 - [x] 2. ASCII card renderer and art table (pure)
   - [x] 2.1 Implement `render/ascii-card.ts` ASCII_Card_Renderer and Card_Back
     - Add `CARD_COLS = 24`, `CARD_ROWS = 13`, `AsciiCard` interface, and
-      `asciiCard(cardId, orientation)` returning exactly `CARD_ROWS × CARD_COLS`
+      `asciiCard(cardId, orientation)` returning exactly `CARD_ROWS Ã— CARD_COLS`
       glyphs for both orientations.
     - Box-drawing border enclosing roman numeral row, uppercase name row(s),
       illustration block, thin divider; numerals/names/verdict words uppercase; no
@@ -59,7 +59,7 @@ verified, not changed.
     - Pull numeral/name from `getCard(cardId)` (`@necro/oracle/client`). Unknown id
       raises a typed `NecroError` with `code: "CARD_UNKNOWN"` and an Oracle_Voice
       `userMessage` (`The deck holds no such card. (Unknown card id.)`).
-    - Add `asciiCardBack()`: the same `CARD_COLS × CARD_ROWS` box filled with a
+    - Add `asciiCardBack()`: the same `CARD_COLS Ã— CARD_ROWS` box filled with a
       repeating sigil glyph, identical for every position.
     - Accept the loaded art table as an argument (stays pure/synchronous). No
       clock/network/DOM/unseeded randomness. Barrel through `src/index.ts`.
@@ -77,9 +77,9 @@ verified, not changed.
 
   - [x] 2.3 Write property tests for ASCII cards
     - `render/ascii-card.pbt.test.ts` (generators draw from `CardIdSchema` members and from arbitrary non-member strings).
-    - **Property 3: ASCII card determinism** — `describe("P3 (R3.9): ascii card determinism", …)`: same id + orientation returns equal card.
-    - **Property 4: ASCII card frame-size invariance** — `describe("P4 (R3.3, R3.12): ascii card frame-size invariance", …)`: every card in both orientations is exactly `CARD_ROWS` rows × `CARD_COLS` columns.
-    - **Property 5: ASCII card set is complete and closed** — `describe("P5 (R3.2, R3.10): ascii card set complete and closed", …)`: every Deck_Card_Set member renders; any non-member throws a typed `NecroError`.
+    - **Property 3: ASCII card determinism** â€” `describe("P3 (R3.9): ascii card determinism", â€¦)`: same id + orientation returns equal card.
+    - **Property 4: ASCII card frame-size invariance** â€” `describe("P4 (R3.3, R3.12): ascii card frame-size invariance", â€¦)`: every card in both orientations is exactly `CARD_ROWS` rows Ã— `CARD_COLS` columns.
+    - **Property 5: ASCII card set is complete and closed** â€” `describe("P5 (R3.2, R3.10): ascii card set complete and closed", â€¦)`: every Deck_Card_Set member renders; any non-member throws a typed `NecroError`.
     - **Validates: Requirements 3.2, 3.3, 3.9, 3.10, 3.12**
 
   - [x] 2.4 Write unit tests for art motifs and error
@@ -94,20 +94,20 @@ verified, not changed.
       `corruptChars`, `durationMs`) and `glitchProfile(severity)`.
     - Clamp severity to `0..3`; map to bounded values (`offsetPx = severity*2`,
       `tearCount = severity`, `corruptChars = severity*3`,
-      `durationMs = min(300, severity*90)`). Severity 0 ⇒ all-zero params; each field
+      `durationMs = min(300, severity*90)`). Severity 0 â‡’ all-zero params; each field
       non-decreasing in severity; `intensity === severity`. No
-      clock/network/DOM/unseeded randomness. `durationMs ≤ 300` enforces Flash_Limit.
+      clock/network/DOM/unseeded randomness. `durationMs â‰¤ 300` enforces Flash_Limit.
     - Barrel through `src/index.ts`.
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
   - [x] 3.2 Write property tests for glitch profile
     - `motion/glitch.pbt.test.ts`.
-    - **Property 6: Glitch profile determinism and severity mapping** — `describe("P6 (R5.2, R5.6): glitch profile determinism and severity mapping", …)`: equal, finite, bounded params across two calls; `intensity === severity`.
-    - **Property 7: Glitch monotonicity and severity-0 emptiness** — `describe("P7 (R5.3, R5.4): glitch monotonicity and severity-0 emptiness", …)`: every param non-decreasing with severity; severity 0 ⇒ all zero.
+    - **Property 6: Glitch profile determinism and severity mapping** â€” `describe("P6 (R5.2, R5.6): glitch profile determinism and severity mapping", â€¦)`: equal, finite, bounded params across two calls; `intensity === severity`.
+    - **Property 7: Glitch monotonicity and severity-0 emptiness** â€” `describe("P7 (R5.3, R5.4): glitch monotonicity and severity-0 emptiness", â€¦)`: every param non-decreasing with severity; severity 0 â‡’ all zero.
     - **Validates: Requirements 5.2, 5.3, 5.4, 5.6**
 
   - [x] 3.3 Write unit tests for glitch profile bounds
-    - `glitchProfile(0)` all zeros; `glitchProfile(3).durationMs ≤ 300`; out-of-range
+    - `glitchProfile(0)` all zeros; `glitchProfile(3).durationMs â‰¤ 300`; out-of-range
       severity clamps.
     - _Requirements: 5.3, 5.5_
 
@@ -120,7 +120,7 @@ verified, not changed.
       source unchanged; replace glyphs only at existing non-newline positions so line
       count and total length are preserved for every decay (incl. 1); corrupted-count
       non-decreasing in decay via a seeded deterministic permutation of non-newline
-      positions (lower-decay set ⊆ higher-decay set); deterministic given
+      positions (lower-decay set âŠ† higher-decay set); deterministic given
       `(source, decay, seed)`; seed is the only randomness source. No
       clock/network/DOM/unseeded randomness. Barrel through `src/index.ts`.
     - _Requirements: 6.4, 6.5, 6.6, 6.7, 6.8, 6.12_
@@ -132,10 +132,10 @@ verified, not changed.
 
   - [x] 5.3 Write property tests for rot
     - `render/rot.pbt.test.ts`.
-    - **Property 8: Rot preserves length and line count** — `describe("P8 (R6.5): rot preserves length and line count", …)`.
-    - **Property 9: Rot determinism and decay-0 identity** — `describe("P9 (R6.4, R6.8): rot determinism and decay-0 identity", …)`.
-    - **Property 10: Rot corruption count is monotonic in decay** — `describe("P10 (R6.6): rot corruption count monotonic in decay", …)`.
-    - **Property 11: Rot clamps out-of-range decay** — `describe("P11 (R6.12): rot clamps out-of-range decay", …)`.
+    - **Property 8: Rot preserves length and line count** â€” `describe("P8 (R6.5): rot preserves length and line count", â€¦)`.
+    - **Property 9: Rot determinism and decay-0 identity** â€” `describe("P9 (R6.4, R6.8): rot determinism and decay-0 identity", â€¦)`.
+    - **Property 10: Rot corruption count is monotonic in decay** â€” `describe("P10 (R6.6): rot corruption count monotonic in decay", â€¦)`.
+    - **Property 11: Rot clamps out-of-range decay** â€” `describe("P11 (R6.12): rot clamps out-of-range decay", â€¦)`.
     - **Validates: Requirements 6.4, 6.5, 6.6, 6.8, 6.12**
 
   - [x] 5.4 Write unit tests for decay sequence
@@ -146,7 +146,7 @@ verified, not changed.
   - [x] 6.1 Implement `motion/card-reveal.ts` reveal schedule
     - Add `CardRevealStep` (`positionIndex`, `flipStartMs`, `flipDoneMs`) and
       `cardRevealSchedule(positions)`: one step per position in input order
-      (`positionIndex` increasing by 1 from 0), card *n* flips only after card *n−1*'s
+      (`positionIndex` increasing by 1 from 0), card *n* flips only after card *nâˆ’1*'s
       flip plus its full typewriter reveal (`revealDurationMs(diagnosisLength,
       "full")`); non-decreasing flip offsets; `[]` for empty spread. Barrel through
       `src/index.ts`.
@@ -154,7 +154,7 @@ verified, not changed.
 
   - [x] 6.2 Write property test for reveal schedule
     - `motion/card-reveal.pbt.test.ts`.
-    - **Property 13: Reveal schedule preserves spread order and shape** — `describe("P13 (R4.1, R4.6, R4.8): reveal schedule preserves order and shape", …)`: one step per position in order, `positionIndex` strictly increasing by 1 from 0, non-decreasing flip offsets, `[]` for empty spread.
+    - **Property 13: Reveal schedule preserves spread order and shape** â€” `describe("P13 (R4.1, R4.6, R4.8): reveal schedule preserves order and shape", â€¦)`: one step per position in order, `positionIndex` strictly increasing by 1 from 0, non-decreasing flip offsets, `[]` for empty spread.
     - **Validates: Requirements 4.1, 4.6, 4.8**
 
 - [x] 7. Session reducer and state extensions (pure)
@@ -181,10 +181,10 @@ verified, not changed.
     - _Requirements: 1.2, 1.5, 4.1, 4.4, 4.5, 4.6, 4.7, 4.8, 12.5_
 
   - [x] 7.3 Write unit tests for reducer slices
-    - `boot` with `bootSignal`/reduced ⇒ `phase:"done"` and boot phrase first block;
-      `boot.tick` advances to `done` at last step; `boot.skip` ⇒ `done`; `seen` set
+    - `boot` with `bootSignal`/reduced â‡’ `phase:"done"` and boot phrase first block;
+      `boot.tick` advances to `done` at last step; `boot.skip` â‡’ `done`; `seen` set
       once and not replayed; `api.read` seeds schedule in full motion, none in
-      reduced; extended `skip-reveal` reaches final state; empty spread ⇒ empty
+      reduced; extended `skip-reveal` reaches final state; empty spread â‡’ empty
       schedule, no error.
     - _Requirements: 1.5, 4.4, 4.5, 4.8, 12.5_
 
@@ -222,17 +222,17 @@ verified, not changed.
     - `"use client"`, presentational. Render `AsciiCard.rows` inside a
       `<pre aria-hidden="true">` with a sibling `<span class="crt-sr-only">
       {card.accessibleText}</span>` (card name + numeral + orientation). Apply
-      `data-orientation` so CSS rotates reversed cards 180° and counter-rotates the
+      `data-orientation` so CSS rotates reversed cards 180Â° and counter-rotates the
       upright text overlay (numeral/name/subtitle stay upright). Selectable DOM text,
       never canvas. Read `GlitchParams` and apply the glitch class/attributes only in
       full motion; set `data-burning` only for `tower`/`devil`; add the tower shake
-      class only at severity ≥ 2 in full motion; apply no glitch in reduced motion.
+      class only at severity â‰¥ 2 in full motion; apply no glitch in reduced motion.
     - _Requirements: 3.4, 3.6, 3.7, 5.1, 5.7, 5.8, 5.9, 5.10, 5.12, 10.2_
 
   - [x] 10.2 Write component tests for ASCII card view
     - Reversed sets `data-orientation` and keeps text upright; aria-hidden glyphs +
       sr-only equivalent present; glitch class/attributes reflect `glitchProfile`;
-      amber only on tower/devil; tower shake only at severity ≥ 2 in full motion; no
+      amber only on tower/devil; tower shake only at severity â‰¥ 2 in full motion; no
       glitch in reduced motion; severity integer still shown in the header.
     - _Requirements: 3.4, 3.7, 5.7, 5.8, 5.9, 5.10, 5.12_
 
@@ -242,11 +242,11 @@ verified, not changed.
       Decay_Sequence in full motion: render `rot(preRitualCode, decaySequence[i],
       seed)` per frame up to decay 1, then reveal the revived code, then render the
       unchanged diff (`renderFileResult` / `ResurrectDiffLine`) and the
-      Vitality_Delta (`renderResurrectVitality`) — never altering diff content or
+      Vitality_Delta (`renderResurrectVitality`) â€” never altering diff content or
       vitality delta. In reduced motion render revived code + diff + vitality delta in
       one synchronous render with zero rot/rebirth frames. Revived code, diff, and
       vitality delta are selectable DOM text appended to the existing `role="log"`
-      region. Cap rot frame cadence so luminance changes stay ≤ 2/sec (Flash_Limit).
+      region. Cap rot frame cadence so luminance changes stay â‰¤ 2/sec (Flash_Limit).
     - _Requirements: 6.1, 6.2, 6.3, 6.9, 6.10, 6.11_
 
   - [x] 11.2 Write component tests for rot reveal
@@ -272,21 +272,21 @@ verified, not changed.
 
   - [x] 13.2 Write property test for demo reproducibility
     - `demo/visual-demo.pbt.test.ts`.
-    - **Property 12: Demo reproducibility given Demo_Seed** — `describe("P12 (R9.2): demo reproducibility given Demo_Seed", …)`: deriving glitch params and rot outputs with `DEMO_SEED` twice yields the same glitch-parameter sequence and the same rot outputs.
+    - **Property 12: Demo reproducibility given Demo_Seed** â€” `describe("P12 (R9.2): demo reproducibility given Demo_Seed", â€¦)`: deriving glitch params and rot outputs with `DEMO_SEED` twice yields the same glitch-parameter sequence and the same rot outputs.
     - **Validates: Requirements 9.2**
 
 - [x] 14. CSS keyframes, tokens, and phosphor palette
   - [x] 14.1 Add glitch/flip/rot keyframes and tokens to `crt.css` and `tokens.ts`
     - Add new tokens in `tokens.ts` and mirror them in the single `crt.css`: glitch
-      (chromatic offset via duplicated `±offsetPx` text-shadow layers, `tearCount`
+      (chromatic offset via duplicated `Â±offsetPx` text-shadow layers, `tearCount`
       clip-path slices, transient seeded corruption that never changes selectable
-      text), flip, rot, tower shake, and reversed 180° rotation with counter-rotated
+      text), flip, rot, tower shake, and reversed 180Â° rotation with counter-rotated
       text overlay. Keep the tarot-ux palette (foreground `#33ff66`, background
       `#001a00`, dim `#1f9e45`); amber `#ffb000` only for `tower`/`devil` via
       `data-burning`; error red `#ff3355` only for STILL DEAD. VT323 for display,
       IBM Plex Mono for evidence. Reduced motion disables pulsing glow, flicker, and
       afterglow. All glitch animations use `animation-iteration-count: 1` and the rot
-      cadence stays ≤ 2 luminance changes/sec; document the Flash_Limit caps inline in
+      cadence stays â‰¤ 2 luminance changes/sec; document the Flash_Limit caps inline in
       `crt.css`. No new palette values.
     - _Requirements: 5.7, 5.8, 5.9, 5.11, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 10.3_
 
@@ -315,7 +315,7 @@ verified, not changed.
       in its mount effect (never deferred by boot). Keep `OutputLog` `role="log"`,
       `aria-live="polite"`, `aria-relevant="additions"` unchanged. Ensure every new
       pure module and component is barrelled through `src/index.ts`.
-    - `read` output: each drawn CardDraw renders through `AsciiCardView` — starting as
+    - `read` output: each drawn CardDraw renders through `AsciiCardView` â€” starting as
       the shared `Card_Back`, flipping to its `AsciiCard`, then typewriting its
       diagnosis via the reused `useReveal`, with `glitchProfile(severity)` applied to
       the card in full motion.
@@ -382,7 +382,7 @@ verified, not changed.
   - [x] 19.1 Verify terminal route stays within the 250 KB gzipped Bundle_Budget
     - Confirm the ASCII art table and sound engine load in their own lazy chunks
       outside the first terminal render; run the CI bundle check on the terminal route
-      and assert it stays ≤ 250 KB gzipped with the Visual_Layer added. The budget is
+      and assert it stays â‰¤ 250 KB gzipped with the Visual_Layer added. The budget is
       not raised.
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
@@ -397,7 +397,7 @@ verified, not changed.
 ## Optional polish (Requirement 13)
 
 Each optional task below MUST be dropped rather than shipped if it breaks the
-Bundle_Budget (250 KB gzipped), the Flash_Limit (≤ 3 flashes/sec), or the axe scan.
+Bundle_Budget (250 KB gzipped), the Flash_Limit (â‰¤ 3 flashes/sec), or the axe scan.
 
 - [x] 21. (Optional) Extra polish flourishes
   - [x] 21.1 (Optional) Ambient resurrection hum
@@ -418,7 +418,7 @@ Bundle_Budget (250 KB gzipped), the Flash_Limit (≤ 3 flashes/sec), or the axe 
     - _Requirements: 13.3, 13.4_
 
   - [x] 21.4 (Optional) Distinct reversed-art variants and extra sound cues
-    - Provide orientation-specific `reversed` art variants beyond the CSS 180° flip for
+    - Provide orientation-specific `reversed` art variants beyond the CSS 180Â° flip for
       cards where it improves recognisability, and any extra sound cues beyond the core
       four, each gated by Sound_State. Drop if it breaks Bundle_Budget, Flash_Limit, or
       axe.
@@ -432,22 +432,65 @@ Bundle_Budget (250 KB gzipped), the Flash_Limit (≤ 3 flashes/sec), or the axe 
       (2) a full 3-card reading showing the framed ASCII cards, (3) a THE TOWER glitch
       frame, and (4) the resurrection diff after rot-and-rebirth. Deterministic via
       `DEMO_SEED`; no network. These images feed the README and the Devpost write-up.
-      This task is for capturing assets only — it adds no production code and must not
+      This task is for capturing assets only â€” it adds no production code and must not
       alter the Visual_Layer. Drop or skip if it is not needed for submission.
     - _Requirements: 9.1, 9.3_
+
+- [x] 23. Visual review fixes
+  - [x] 23.1 Lay the spread out horizontally (CardReveal layout)
+    - Render the drawn ASCII cards side by side, not stacked in one column: the
+      `.crt-card-reveal` container lays its `.crt-card-slot` children in a
+      horizontal row (flexbox/grid), each card 24 monospace cols wide, so a 3-card
+      fates spread reads left-to-right (~72 cols). Wrap/stack to a single column
+      only on narrow viewports (a `max-width` media query). CSS-only in `crt.css`;
+      the slot order stays the Reading's spread order (no reorder/omit). Keep the
+      layer `aria-hidden`, the log authoritative (design D1). No new palette values.
+    - _Requirements: 4.6, 12.1, 12.2, 10.3_
+
+  - [x] 23.2 Show the position label and orientation in the card footer
+    - The ASCII card's bottom panel is an empty `framed("")` row
+      (`render/ascii-card.ts` row 11). Render the spread position label and the
+      orientation (UPRIGHT/REVERSED) in that footer. Thread the label from
+      `VisualCard.label` through `CardReveal` -> `AsciiCardView` ->
+      `asciiCard(cardId, orientation, art, footerLabel?)`. Footer text uppercased,
+      fits `INNER_COLS` (22, truncate/pad), no emoji; frame stays exactly
+      `CARD_ROWS x CARD_COLS`. Update ascii-card unit/property + art tests.
+    - _Requirements: 3.1, 3.3, 3.12, 4.6_
+
+  - [x] 23.3 Make the boot ASCII logo render and have the screenshot wait for it
+    - Ensure the boot logo frame (`NECROMANTIC SYSTEMS 1986` big ASCII) is reachable
+      and visible during the Boot_Sequence in full motion; hold it long enough to
+      paint without breaking `BOOT_STEP_COUNT * BOOT_STEP_MS <= 3500`. Update the
+      screenshot capture so shot (1) WAITS for the logo frame before capturing.
+    - _Requirements: 1.1, 2.1, 2.3, 9.1, 9.3_
+
+  - [x] 23.4 Apply the glitch only to severity > 0 and leave a clean resting state
+    - Gate the `crt-glitch` class/attrs on `glitch.intensity > 0` (severity 0 => no
+      glitch). Make the chromatic offset part of the ONE-SHOT animation, not a
+      static resting `text-shadow`, so every card's resting state is clean,
+      single-image, readable. Preserve Flash_Limit and reduced-motion suppression.
+      Update AsciiCardView tests (sev 0 => no glitch; sev > 0 => glitch; clean rest).
+    - _Requirements: 5.1, 5.3, 5.7, 5.11, 10.3_
+
+  - [x] 23.5 Style DOWNLOAD PATCH as a CRT phosphor button and capture the diff
+    - Style `.crt-patch-download` in `crt.css` to match the command buttons
+      (transparent bg, `--crt-fg-dim` border, phosphor text, hover/pressed parity),
+      keyboard-accessible and axe-clean. Fix screenshot shot (4) so it shows the
+      per-file diff block (`FILE ...` / `-`/`+` lines) and the styled button.
+    - _Requirements: 7.3, 8.1, 10.2, 10.3, 12.2_
 
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for a faster MVP; all tasks
   under section 21 are additionally gated by Requirement 13's drop-if-it-breaks rule.
-- Pure modules (sections 1–6) land first with their property + unit tests, then the
-  reducer slices (7), then hooks/components (9–11), then CSS/sound/demo seeding
-  (13–15), then Terminal and apps/web wiring (16), then e2e/axe/bundle/docs (18–20).
+- Pure modules (sections 1â€“6) land first with their property + unit tests, then the
+  reducer slices (7), then hooks/components (9â€“11), then CSS/sound/demo seeding
+  (13â€“15), then Terminal and apps/web wiring (16), then e2e/axe/bundle/docs (18â€“20).
 - Each task references specific requirement sub-clauses; property tasks reference the
-  design's Property IDs (P1–P13) and are named with requirement IDs in `describe`.
+  design's Property IDs (P1â€“P13) and are named with requirement IDs in `describe`.
 - Unit and property tests use `FakeFramePort`, `FakeMediaPort`, the fake sound loader,
-  and a manual clock — no network, clock, DOM, or real randomness.
-- Determinism (`DEMO_SEED`), Flash_Limit (`iteration-count: 1`, ≤ 2 luminance
+  and a manual clock â€” no network, clock, DOM, or real randomness.
+- Determinism (`DEMO_SEED`), Flash_Limit (`iteration-count: 1`, â‰¤ 2 luminance
   changes/sec for rot), and the 250 KB gzipped Bundle_Budget are called out in their
   relevant tasks.
 - `apps/web/src/app/layout.tsx` and the `#no-js-note` contract are only verified,

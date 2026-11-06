@@ -49,7 +49,12 @@ import type { SoundCue } from "../sound/sound-cue.js";
 import type { NecroErrorCode } from "@necro/oracle/client";
 import { blockText } from "../render/blocks.js";
 import { revealedChars } from "../motion/reveal.js";
-import { bootFrame, type BootFrame } from "../render/boot.js";
+import {
+  bootFrame,
+  bootFrameKind,
+  type BootFrame,
+  type BootFrameKind,
+} from "../render/boot.js";
 import { resolveSeed } from "../session/demo-seed.js";
 import { currentVisualReading } from "../session/visual-reading.js";
 
@@ -96,6 +101,13 @@ export interface TerminalController {
    * itself only renders while `state.boot.phase === "playing"`.
    */
   readonly bootFrameForRender: BootFrame;
+  /**
+   * Which kind of boot frame is on screen right now (`memory` | `logo` |
+   * `warmup` | `ready`), derived purely from `state.boot.stepIndex`. The
+   * overlay exposes it as `data-boot-frame` so a screenshot or test can wait
+   * for the logo frame specifically.
+   */
+  readonly bootFrameKindForRender: BootFrameKind;
   /**
    * The seed the Visual_Layer feeds to the Glitch_Effect corruption and the
    * Rot_Transform — `DEMO_SEED` in demo mode, a deterministic per-reading /
@@ -645,6 +657,7 @@ export function useTerminal(
   // The boot frame for the current step (pure; the overlay renders it only
   // while playing) and the resolved Visual_Layer seed (pure over the session).
   const bootFrameForRender = bootFrame(state.boot.stepIndex);
+  const bootFrameKindForRender = bootFrameKind(state.boot.stepIndex);
   const visualSeed = resolveSeed(state);
 
   return {
@@ -661,6 +674,7 @@ export function useTerminal(
     revealedCountFor,
     engineFailed,
     bootFrameForRender,
+    bootFrameKindForRender,
     visualSeed,
   };
 }

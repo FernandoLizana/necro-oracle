@@ -95,6 +95,39 @@ describe("R3.4 (accessible text): decorative glyphs are aria-hidden with a crt-s
 // Glitch in full motion reflects glitchProfile(severity) (R5.7, R5.12)
 // ---------------------------------------------------------------------------
 
+describe("R5.3 (calm card is steady): severity 0 in full motion carries no glitch", () => {
+  it("emits NO crt-glitch class, NO data-glitch-intensity, NO glitch custom-props, NO shake for a severity-0 card in full motion", () => {
+    // THE STAR is severity 0 in the demo necropsy reading. A calm card must be
+    // perfectly steady: no glitch hook at all, identical to reduced motion for
+    // that card, so it renders as a clean single-image card (no chromatic
+    // double-image). The glitch belongs only to severity > 0.
+    const el = renderCard({
+      card: asciiCard("star", "upright"),
+      glitch: glitchProfile(0),
+      motionMode: "full",
+    });
+
+    expect(el.classList.contains(GLITCH_CLASS)).toBe(false);
+    expect(el.classList.contains(SHAKE_CLASS)).toBe(false);
+    expect(el).not.toHaveAttribute("data-glitch-intensity");
+    expect(el.style.getPropertyValue("--glitch-offset")).toBe("");
+    expect(el.style.getPropertyValue("--glitch-tears")).toBe("");
+    expect(el.style.getPropertyValue("--glitch-corrupt")).toBe("");
+    expect(el.style.getPropertyValue("--glitch-duration")).toBe("");
+  });
+
+  it("does NOT add crt-shake for a severity-0 tower in full motion (a calm card is steady)", () => {
+    const el = renderCard({
+      card: asciiCard("tower", "upright"),
+      glitch: glitchProfile(0),
+      motionMode: "full",
+    });
+    expect(el.classList.contains(GLITCH_CLASS)).toBe(false);
+    expect(el.classList.contains(SHAKE_CLASS)).toBe(false);
+    expect(el).not.toHaveAttribute("data-glitch-intensity");
+  });
+});
+
 describe("R5.7 (glitch in full motion): glitch class and attributes reflect glitchProfile", () => {
   it("applies the crt-glitch class and glitch attributes/custom-properties for a severe card in full motion", () => {
     const glitch = glitchProfile(3);

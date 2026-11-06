@@ -21,6 +21,12 @@
 // `crt-sr-only` + `aria-hidden` decorative pattern used by `OutputBlockView`
 // and `AsciiCardView` (R1.8, R10.2).
 //
+// The overlay carries a `data-boot-frame` attribute (`memory` | `logo` |
+// `warmup` | `ready`) derived purely from the current boot step. It is a
+// presentational marker only — no behaviour depends on it — that lets a
+// screenshot or test wait for the logo frame specifically, since the
+// `crt-sr-only` wordmark is a constant sibling present in every playing frame.
+//
 // The overlay NEVER renders, references, moves, re-parents, or hides
 // `#no-js-note`; that element belongs to `layout.tsx` (which this feature never
 // modifies) and stays entirely outside this component (R10.4).
@@ -29,7 +35,7 @@
 
 "use client";
 
-import type { BootFrame } from "../render/boot.js";
+import type { BootFrame, BootFrameKind } from "../render/boot.js";
 import { BOOT_LOGO_TEXT_EQUIVALENT } from "../render/boot.js";
 import type { OutputLine } from "../render/blocks.js";
 import type { BootPhase } from "../hooks/use-boot.js";
@@ -43,6 +49,15 @@ export interface BootOverlayProps {
   readonly frame: BootFrame;
   /** The boot phase; the overlay renders nothing unless this is `"playing"`. */
   readonly bootPhase: BootPhase;
+  /**
+   * Which kind of frame is on screen (`memory` | `logo` | `warmup` | `ready`),
+   * derived purely from the boot step. Exposed as `data-boot-frame` so a
+   * screenshot or test can wait for the logo frame specifically — the
+   * `crt-sr-only` wordmark alone is present in every playing frame and so does
+   * not identify the logo step. Purely presentational; no behaviour depends on
+   * it.
+   */
+  readonly frameKind: BootFrameKind;
 }
 
 /** The plain text of one boot line (boot frames carry a single text segment). */
@@ -63,13 +78,18 @@ function lineText(line: OutputLine): string {
 export function BootOverlay({
   frame,
   bootPhase,
+  frameKind,
 }: BootOverlayProps): React.JSX.Element | null {
   if (bootPhase !== "playing") {
     return null;
   }
 
   return (
-    <div className="crt-boot-overlay" data-boot="playing">
+    <div
+      className="crt-boot-overlay"
+      data-boot="playing"
+      data-boot-frame={frameKind}
+    >
       {/* Decorative boot/wordmark glyphs: selectable text, out of the a11y tree. */}
       <div className="crt-boot-frame" aria-hidden="true">
         {frame.lines.map((line, index) => (

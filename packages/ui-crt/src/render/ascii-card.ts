@@ -75,7 +75,10 @@ export interface AsciiCard {
   readonly orientation: Orientation; // 'upright' | 'reversed'
   /** The framed glyph rows: exactly CARD_ROWS rows, each exactly CARD_COLS. */
   readonly rows: readonly string[];
-  /** Accessible text equivalent, e.g. "XVI THE TOWER, upright". */
+  /**
+   * Accessible text equivalent, e.g. "XVI THE TOWER, upright" — or, when a
+   * footer position label is supplied, "XVI THE TOWER, PAST, upright".
+   */
   readonly accessibleText: string;
 }
 
@@ -132,15 +135,44 @@ function illustrationRows(
   return rows;
 }
 
+/** The glyph separating the position label and orientation in the footer. */
+const FOOTER_SEPARATOR = " \u00b7 "; // " · " (middle dot, ASCII-safe)
+
+/**
+ * Build the footer row's inner text (before framing): the uppercased spread
+ * position label and the orientation word (`UPRIGHT`/`REVERSED`), centered in
+ * `INNER_COLS`. When the two together overrun the inner width the label is
+ * dropped in favour of the always-meaningful orientation; when no label is
+ * supplied the footer carries the orientation alone. The result is always
+ * exactly `INNER_COLS` columns (via `center`, which truncates), so the footer
+ * never changes the frame size (R3.3, R3.12).
+ */
+function footerInner(orientation: Orientation, footerLabel: string): string {
+  const orient = orientation.toUpperCase(); // UPRIGHT | REVERSED
+  const label = footerLabel.trim().toUpperCase();
+  if (label.length === 0) return center(orient, INNER_COLS);
+
+  const combined = label + FOOTER_SEPARATOR + orient;
+  // Prefer showing both label and orientation; if that overruns the inner
+  // width, fall back to the orientation alone rather than a truncated label.
+  if (combined.length <= INNER_COLS) return center(combined, INNER_COLS);
+  return center(orient, INNER_COLS);
+}
+
 /**
  * Render the framed ASCII card for a registered CardId and orientation.
  *
  * The frame, top to bottom: top border, the roman numeral row, the uppercase
  * card name row, a thin divider, `ART_ROWS` illustration rows, a thin divider,
- * and the bottom border — exactly `CARD_ROWS` rows of `CARD_COLS` glyphs.
+ * the footer panel (spread position label + orientation), and the bottom
+ * border — exactly `CARD_ROWS` rows of `CARD_COLS` glyphs.
  *
  * @param art The loaded illustration table (see `render/ascii-art.ts`). Pass an
  *   empty object for a frame with a blank illustration block.
+ * @param footerLabel The spread position label to show in the footer (e.g.
+ *   `"Past"`), uppercased and centered alongside the orientation word. When
+ *   omitted or empty the footer carries just the orientation, keeping existing
+ *   callers valid (R4.6).
  * @throws NecroError('CARD_UNKNOWN') when `cardId` is not a member of the
  *   Deck_Card_Set, rather than rendering a partial or blank card (R3.10).
  */
@@ -148,6 +180,7 @@ export function asciiCard(
   cardId: CardId,
   orientation: Orientation,
   art: CardArtTable = {},
+  footerLabel = "",
 ): AsciiCard {
   const def = lookupCard(cardId);
   const numeral = def.numeral.toUpperCase();
@@ -162,14 +195,20 @@ export function asciiCard(
     rows.push(framed(line)); // 4..9: illustration block (ART_ROWS)
   }
   rows.push(border(TEE_LEFT, TEE_RIGHT)); // 10: divider
-  rows.push(framed("")); // 11: footer spacer
+  rows.push(framed(footerInner(orientation, footerLabel))); // 11: footer panel
   rows.push(border(BOTTOM_LEFT, BOTTOM_RIGHT)); // 12: bottom border
+
+  const trimmedLabel = footerLabel.trim().toUpperCase();
+  const accessibleText =
+    trimmedLabel.length > 0
+      ? `${numeral} ${name}, ${trimmedLabel}, ${orientation}`
+      : `${numeral} ${name}, ${orientation}`;
 
   return {
     cardId,
     orientation,
     rows,
-    accessibleText: `${numeral} ${name}, ${orientation}`,
+    accessibleText,
   };
 }
 

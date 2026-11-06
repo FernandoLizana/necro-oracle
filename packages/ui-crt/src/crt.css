@@ -197,6 +197,39 @@ html[data-js="ready"] .crt-no-js {
   color: var(--crt-bg);
 }
 
+/*
+ * DOWNLOAD PATCH control (visual-necromancy task 23.5, R7.3, R10.2, R10.3).
+ * Styled as a CRT phosphor button matching the command-button look rather than
+ * the native full-width grey default: transparent background, a dim phosphor
+ * border, phosphor foreground, inherited font, and the same padding as
+ * `.crt-buttons button`. `align-self: flex-start` + `width: auto` keep it at
+ * its intrinsic text width (never spanning the Screen column it lives in), and
+ * `margin-top` drops it below the button row. It stays a native <button> with
+ * the discernible name "DOWNLOAD PATCH", so it is keyboard-operable and keeps
+ * the global `:focus-visible` ring (never overridden here). Phosphor text on
+ * the CRT background meets contrast via --crt-fg, so it is axe-clean. No new
+ * palette values.
+ */
+.crt-patch-download {
+  align-self: flex-start;
+  width: auto;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--crt-fg-dim);
+  color: var(--crt-fg);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0.1rem 0.6rem;
+  cursor: pointer;
+}
+
+/* Hover/active parity with the command buttons' pressed state. */
+.crt-patch-download:hover,
+.crt-patch-download:active {
+  background: var(--crt-fg-dim);
+  color: var(--crt-bg);
+}
+
 .crt a {
   color: var(--crt-fg);
   text-decoration: underline;
@@ -298,6 +331,48 @@ html[data-js="ready"] .crt-no-js {
 }
 
 /*
+ * The spread IS the layout (visual-necromancy task 23.1, R4.6, R12.1, R12.2).
+ * The card-reveal layer lays its per-position slots side by side in a single
+ * horizontal row instead of the default stacked block flow, so a 3-card fates
+ * spread reads left-to-right (3 x 24 monospace cols ~= 72 cols). `flex` keeps
+ * the slots in DOM order, which is the Reading's exact spread order — no
+ * reorder, add, or omit — and `flex-wrap: wrap` lets a wider spread (e.g.
+ * celtic's 10 cards) reflow onto the next line rather than clip. This is pure
+ * layout, not motion: it is NOT gated behind `data-motion`, so reduced motion
+ * is unaffected. The container stays `aria-hidden` (set in CardReveal.tsx); the
+ * role="log" region remains the authoritative, announced card text (design D1).
+ */
+.crt-card-reveal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/*
+ * Each slot keeps its natural width (one 24-col monospace card). `flex: 0 0
+ * auto` means never grow and never shrink, so the cards sit at their intrinsic
+ * width side by side instead of being squeezed into equal fractions. The card
+ * art inside is `white-space: pre`, so a slot is naturally exactly one card
+ * wide.
+ */
+.crt-card-slot {
+  flex: 0 0 auto;
+}
+
+/*
+ * Narrow-viewport fallback (R15.8): below 48rem a row of 24-col cards would
+ * overflow, so stack them into a single readable column. Still layout, not
+ * motion — reduced motion is untouched.
+ */
+@media (max-width: 48rem) {
+  .crt-card-reveal {
+    flex-direction: column;
+  }
+}
+
+/*
  * Reversed orientation (R3.4): the whole frame rotates 180deg, but a
  * counter-rotated overlay keeps the numeral / name / subtitle upright and
  * left-to-right. The glyph art carries the rotation; the sr-only equivalent is
@@ -313,16 +388,21 @@ html[data-js="ready"] .crt-no-js {
 }
 
 /*
- * Severity glitch (R5.1, R5.7). Chromatic offset is two duplicated phosphor
- * text-shadow layers nudged +/- `--glitch-offset` (set per-card by
- * AsciiCardView from GlitchParams.offsetPx). The duplicated layers are a
- * shadow, so they never alter the selectable text. `--glitch-tears` /
- * `--glitch-corrupt` are consumed by the tear + corruption layers; the
- * corruption is a transient decorative overlay that never changes the glyphs
- * in the DOM (R5.12 — severity is also shown as the integer header).
+ * Severity glitch (R5.1, R5.3, R5.7). The chromatic offset is two duplicated
+ * phosphor text-shadow layers nudged +/- `--glitch-offset` (set per-card by
+ * AsciiCardView from GlitchParams.offsetPx). Those duplicated layers belong to
+ * the ONE-SHOT `crt-glitch-kf` animation (see keyframes below), NOT to the
+ * resting state — so the chromatic double-image appears only during the
+ * <= 300 ms reveal and the card settles to a clean, single-image, readable
+ * resting state (R5.3). A calm severity-0 card never carries `crt-glitch` at
+ * all (gated in AsciiCardView), so it is steady from the first paint. The
+ * duplicated layers are a shadow, so they never alter the selectable text.
+ * `--glitch-tears` / `--glitch-corrupt` are consumed by the tear + corruption
+ * layers; the corruption is a transient decorative overlay that never changes
+ * the glyphs in the DOM (R5.12 — severity is also shown as the integer header).
  *
- * The element carries the class only in full motion; the keyframes still
- * declare `animation-iteration-count: 1` so the effect is one-shot.
+ * The element carries the class only in full motion at intensity > 0; the
+ * keyframes declare `animation-iteration-count: 1` so the effect is one-shot.
  */
 .crt-glitch {
   --glitch-offset: 0px;
@@ -331,21 +411,15 @@ html[data-js="ready"] .crt-no-js {
   --glitch-duration: 0ms;
 }
 
-.crt-glitch .crt-ascii-card-art {
-  text-shadow:
-    calc(-1 * var(--glitch-offset)) 0 rgba(51, 255, 102, 0.6),
-    var(--glitch-offset) 0 rgba(41, 204, 82, 0.6);
-}
-
 /*
- * Amber tint (R5.8): ONLY tower/devil, and ONLY on the decorative glow — the
- * glyphs stay phosphor-green, so no body text is recoloured and contrast is
- * untouched. Any card without `data-burning` keeps the green glitch shadow.
+ * Resting state of a glitch card art: the SAME steady single phosphor glow as
+ * any normal card — NO chromatic `+/- --glitch-offset` layers. The offset
+ * layers live inside `crt-glitch-kf` so they appear only during the one-shot
+ * animation; once it finishes the card is clean and single-image (R5.3).
  */
-.crt-glitch[data-burning="true"] .crt-ascii-card-art {
-  text-shadow:
-    calc(-1 * var(--glitch-offset)) 0 rgba(255, 176, 0, 0.6),
-    var(--glitch-offset) 0 var(--crt-burning-amber);
+.crt-glitch .crt-ascii-card-art {
+  text-shadow: 0 0 var(--crt-glow-radius)
+    rgba(51, 255, 102, var(--crt-glow-alpha));
 }
 
 /*
@@ -356,23 +430,75 @@ html[data-js="ready"] .crt-no-js {
   color: var(--crt-still-dead);
 }
 
-/* Chromatic-offset keyframes: 2 luminance changes max in the <= 300 ms window. */
+/*
+ * Chromatic-offset keyframes: 2 luminance changes max in the <= 300 ms window.
+ * The duplicated +/- `--glitch-offset` phosphor text-shadow layers (the
+ * chromatic double-image) live HERE, inside the one-shot animation — NOT in the
+ * resting rule — so they appear only during the reveal and vanish when the
+ * animation settles back to the clean single phosphor glow at 100% (R5.3). The
+ * glyphs themselves never move; only the decorative shadow does.
+ */
 @keyframes crt-glitch-kf {
   0% {
     transform: translateX(0);
     opacity: 1;
+    text-shadow: 0 0 var(--crt-glow-radius)
+      rgba(51, 255, 102, var(--crt-glow-alpha));
   }
   45% {
     transform: translateX(calc(-1 * var(--glitch-offset)));
     opacity: 0.86; /* luminance change #1 */
+    text-shadow:
+      calc(-1 * var(--glitch-offset)) 0 rgba(51, 255, 102, 0.6),
+      var(--glitch-offset) 0 rgba(41, 204, 82, 0.6);
   }
   55% {
     transform: translateX(var(--glitch-offset));
     opacity: 1; /* luminance change #2 */
+    text-shadow:
+      calc(-1 * var(--glitch-offset)) 0 rgba(51, 255, 102, 0.6),
+      var(--glitch-offset) 0 rgba(41, 204, 82, 0.6);
   }
   100% {
     transform: translateX(0);
     opacity: 1;
+    text-shadow: 0 0 var(--crt-glow-radius)
+      rgba(51, 255, 102, var(--crt-glow-alpha));
+  }
+}
+
+/*
+ * Amber chromatic-offset keyframes (R5.8): the tower/devil variant of
+ * `crt-glitch-kf`. Same one-shot chromatic double-image, but the +offset layer
+ * burns amber. Like the green variant it settles back to the clean single
+ * phosphor glow at rest, so there is no persistent amber double-image.
+ */
+@keyframes crt-glitch-burning-kf {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+    text-shadow: 0 0 var(--crt-glow-radius)
+      rgba(51, 255, 102, var(--crt-glow-alpha));
+  }
+  45% {
+    transform: translateX(calc(-1 * var(--glitch-offset)));
+    opacity: 0.86; /* luminance change #1 */
+    text-shadow:
+      calc(-1 * var(--glitch-offset)) 0 rgba(255, 176, 0, 0.6),
+      var(--glitch-offset) 0 var(--crt-burning-amber);
+  }
+  55% {
+    transform: translateX(var(--glitch-offset));
+    opacity: 1; /* luminance change #2 */
+    text-shadow:
+      calc(-1 * var(--glitch-offset)) 0 rgba(255, 176, 0, 0.6),
+      var(--glitch-offset) 0 var(--crt-burning-amber);
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+    text-shadow: 0 0 var(--crt-glow-radius)
+      rgba(51, 255, 102, var(--crt-glow-alpha));
   }
 }
 
@@ -485,6 +611,16 @@ html[data-js="ready"] .crt-no-js {
 .crt[data-motion="full"] .crt-glitch .crt-ascii-card-art {
   animation: crt-glitch-kf var(--glitch-duration, var(--crt-glitch-max-ms))
     steps(3, jump-none) 1;
+}
+
+/*
+ * Amber one-shot (R5.8): tower/devil run the burning chromatic animation so the
+ * amber double-image appears only during the <= 300 ms reveal, then settles to
+ * the clean single phosphor glow at rest (no persistent amber double-image).
+ */
+.crt[data-motion="full"] .crt-glitch[data-burning="true"] .crt-ascii-card-art {
+  animation: crt-glitch-burning-kf
+    var(--glitch-duration, var(--crt-glitch-max-ms)) steps(3, jump-none) 1;
 }
 
 /*

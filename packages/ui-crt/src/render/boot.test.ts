@@ -18,6 +18,7 @@ import {
   BOOT_LOGO_TEXT_EQUIVALENT,
   BOOT_STEP_COUNT,
   bootFrame,
+  bootFrameKind,
 } from "./boot.js";
 import { LINE_WIDTH } from "../text/wrap.js";
 
@@ -44,5 +45,41 @@ describe("bootFrame ready frame contents (R1.1, R2.3)", () => {
     for (const line of readyFrame.lines) {
       expect([...lineText(line)].length).toBeLessThanOrEqual(LINE_WIDTH);
     }
+  });
+});
+
+describe("bootFrameKind classifies the boot steps (R2.1)", () => {
+  it("reaches a reachable, in-range logo frame between the memory and ready steps", () => {
+    const kinds = Array.from({ length: BOOT_STEP_COUNT }, (_, step) =>
+      bootFrameKind(step),
+    );
+    const logoStep = kinds.indexOf("logo");
+
+    // The logo step exists, sits strictly between the first and last steps, and
+    // is held for a real step (so it is painted, not skipped).
+    expect(logoStep).toBeGreaterThan(0);
+    expect(logoStep).toBeLessThan(BOOT_STEP_COUNT - 1);
+    // Exactly one logo frame; the warm-up follows it; the final step is ready.
+    expect(kinds.filter((k) => k === "logo")).toHaveLength(1);
+    expect(kinds[logoStep + 1]).toBe("warmup");
+    expect(kinds[BOOT_STEP_COUNT - 1]).toBe("ready");
+    // The memory-check steps precede the logo.
+    expect(kinds.slice(0, logoStep).every((k) => k === "memory")).toBe(true);
+
+    // The logo frame's visible glyph rows carry the big ASCII wordmark.
+    const logoText = bootFrame(logoStep)
+      .lines.map((line) => lineText(line))
+      .join("\n");
+    expect(logoText).toContain(BOOT_LOGO_TEXT_EQUIVALENT);
+  });
+
+  it("is total and saturating, matching bootFrame's clamping", () => {
+    // Any index at or beyond the last step is the ready frame.
+    expect(bootFrameKind(BOOT_STEP_COUNT)).toBe("ready");
+    expect(bootFrameKind(BOOT_STEP_COUNT + 1000)).toBe("ready");
+    // Negative / fractional / NaN indices clamp to the first (memory) step.
+    expect(bootFrameKind(-5)).toBe("memory");
+    expect(bootFrameKind(Number.NaN)).toBe("memory");
+    expect(bootFrameKind(0)).toBe("memory");
   });
 });

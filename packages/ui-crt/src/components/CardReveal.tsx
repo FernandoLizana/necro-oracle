@@ -77,7 +77,10 @@ export function CardReveal({
   // shared constant. `asciiCard` is pure and falls back to the generic motif
   // for any CardId the (possibly not-yet-loaded) art table lacks.
   const faces = useMemo(
-    () => cards.map((card) => asciiCard(card.draw.card, card.draw.orientation, art)),
+    () =>
+      cards.map((card) =>
+        asciiCard(card.draw.card, card.draw.orientation, art, card.label),
+      ),
     [cards, art],
   );
 

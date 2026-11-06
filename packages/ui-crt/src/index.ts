@@ -160,7 +160,9 @@ export {
   BOOT_LOGO_TEXT_EQUIVALENT,
   BOOT_STEP_COUNT,
   bootFrame,
+  bootFrameKind,
   type BootFrame,
+  type BootFrameKind,
 } from "./render/boot.js";
 
 // ASCII tarot cards — the pure ASCII_Card_Renderer and the shared Card_Back.

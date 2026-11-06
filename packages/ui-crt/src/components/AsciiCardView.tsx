@@ -15,10 +15,13 @@
 // cards and the counter-rotated upright text overlay are handled entirely in
 // CSS (task 14.1), so this component only emits the attribute (R3.6, R3.7).
 //
-// The Glitch_Profile drives the severity glitch, but only in `full` motion: the
-// glitch class and its CSS custom properties are applied solely when
-// `motionMode === "full"`, and omitted entirely in reduced motion (R5.1, R5.7,
-// R5.12). `data-burning` is set only for the amber-burning cards `tower` and
+// The Glitch_Profile drives the severity glitch, but only in `full` motion AND
+// only when the severity actually glitches (`intensity > 0`): the glitch class
+// and its CSS custom properties are applied solely when `motionMode === "full"`
+// and `glitch.intensity > 0`, and omitted entirely in reduced motion or for a
+// calm severity-0 card (R5.1, R5.3, R5.7, R5.12). A severity-0 card therefore
+// renders in its steady single-image resting state — no chromatic doubling.
+// `data-burning` is set only for the amber-burning cards `tower` and
 // `devil` (R5.8). The Tower's shake class is added only for `tower` at
 // Glitch_Intensity ≥ 2 in full motion (R5.9, R5.10). The glitch animation never
 // alters the selectable text — the corrupted glyphs are a transient CSS layer,
@@ -86,14 +89,19 @@ export function AsciiCardView({
   glitch,
   motionMode,
 }: AsciiCardViewProps): React.JSX.Element {
-  const fullMotion = motionMode === "full";
+  // The glitch is applied only in full motion AND only when the severity
+  // actually produces a glitch (`intensity > 0`). A calm severity-0 card is
+  // perfectly steady: it gets no glitch class, no `data-glitch-intensity`, no
+  // glitch custom properties and no shake — identical to reduced motion for
+  // that card (R5.3: severity 0 ⇒ all-zero / steady).
+  const glitching = motionMode === "full" && glitch.intensity > 0;
   const burning = BURNING_CARDS.has(card.cardId);
   const shaking =
-    fullMotion && card.cardId === "tower" && glitch.intensity >= SHAKE_MIN_INTENSITY;
+    glitching && card.cardId === "tower" && glitch.intensity >= SHAKE_MIN_INTENSITY;
 
-  // The glitch class/attributes/custom-properties are full-motion-only.
+  // The glitch class/attributes/custom-properties are gated on `glitching`.
   const classes = ["crt-ascii-card"];
-  if (fullMotion) classes.push(GLITCH_CLASS);
+  if (glitching) classes.push(GLITCH_CLASS);
   if (shaking) classes.push(SHAKE_CLASS);
 
   return (
@@ -102,7 +110,7 @@ export function AsciiCardView({
       data-card={card.cardId}
       data-orientation={card.orientation}
       {...(burning ? { "data-burning": "true" } : {})}
-      {...(fullMotion
+      {...(glitching
         ? { "data-glitch-intensity": String(glitch.intensity), style: glitchStyle(glitch) }
         : {})}
     >

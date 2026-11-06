@@ -53,6 +53,13 @@ const arbOrientation: fc.Arbitrary<Orientation> = fc.constantFrom(
 );
 
 /**
+ * An arbitrary spread position label, including the empty string and labels far
+ * wider than the inner block, so frame-size invariance is exercised with the
+ * footer label present (task 23.2).
+ */
+const arbFooterLabel: fc.Arbitrary<string> = fc.string({ maxLength: 60 });
+
+/**
  * An arbitrary string that is NOT a member of the Deck_Card_Set, so it exercises
  * the closed-set error path. Empty strings are excluded so the id is always a
  * concrete non-member.
@@ -113,6 +120,28 @@ describe("P4 (R3.3, R3.12): ascii card frame-size invariance", () => {
           expect(rowWidth(row)).toBe(CARD_COLS);
         }
       }),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  it("keeps the frame size for any footer position label, however wide (R3.3, R4.6)", () => {
+    fc.assert(
+      fc.property(
+        arbCardId,
+        arbOrientation,
+        arbFooterLabel,
+        (cardId, orientation, footerLabel) => {
+          const card = asciiCard(cardId, orientation, {}, footerLabel);
+          expect(card.rows.length).toBe(CARD_ROWS);
+          for (const row of card.rows) {
+            expect(rowWidth(row)).toBe(CARD_COLS);
+          }
+          // The orientation word always remains in the footer panel.
+          expect(card.rows[CARD_ROWS - 2]).toContain(
+            orientation.toUpperCase(),
+          );
+        },
+      ),
       { numRuns: NUM_RUNS },
     );
   });

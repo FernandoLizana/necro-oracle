@@ -103,6 +103,48 @@ describe("R3.12: accessibleText names card + numeral + orientation", () => {
       `${def.numeral.toUpperCase()} ${def.name.toUpperCase()}, reversed`,
     );
   });
+
+  it("folds the uppercased position label into accessibleText when supplied", () => {
+    const def = getCard("hermit");
+    expect(asciiCard("hermit", "upright", {}, "Past").accessibleText).toBe(
+      `${def.numeral.toUpperCase()} ${def.name.toUpperCase()}, PAST, upright`,
+    );
+  });
+});
+
+describe("R3.3, R4.6: footer panel carries the orientation and position label", () => {
+  it("shows just the orientation word when no label is supplied", () => {
+    const footer = asciiCard("hermit", "upright").rows[CARD_ROWS - 2]!;
+    expect(footer).toContain("UPRIGHT");
+    expect(cols(footer)).toBe(CARD_COLS);
+    expect(asciiCard("hermit", "reversed").rows[CARD_ROWS - 2]!).toContain(
+      "REVERSED",
+    );
+  });
+
+  it("shows the uppercased label alongside the orientation when it fits", () => {
+    const footer = asciiCard("hermit", "upright", {}, "Past").rows[
+      CARD_ROWS - 2
+    ]!;
+    expect(footer).toContain("PAST");
+    expect(footer).toContain("UPRIGHT");
+    expect(cols(footer)).toBe(CARD_COLS);
+  });
+
+  it("keeps the frame exactly CARD_ROWS × CARD_COLS even with a very long label", () => {
+    const card = asciiCard(
+      "hermit",
+      "reversed",
+      {},
+      "An Extremely Long Spread Position Label",
+    );
+    expect(card.rows).toHaveLength(CARD_ROWS);
+    for (const row of card.rows) {
+      expect(cols(row)).toBe(CARD_COLS);
+    }
+    // Too wide for both: the orientation stays, a readable fallback (R4.6).
+    expect(card.rows[CARD_ROWS - 2]!).toContain("REVERSED");
+  });
 });
 
 describe("R3.12: illustration block consumes the passed art table", () => {

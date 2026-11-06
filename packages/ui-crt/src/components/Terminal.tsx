@@ -72,6 +72,7 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
     revealedCountFor,
     engineFailed,
     bootFrameForRender,
+    bootFrameKindForRender,
     visualSeed,
   } = terminal;
 
@@ -147,7 +148,11 @@ export function Terminal({ ports, bootSignal }: TerminalProps): React.JSX.Elemen
             terminal. It renders nothing once the boot phase settles to "done"
             (reduced motion / bootSignal / skipped / completed), so the ready
             terminal carries no leftover overlay (R1.1, R1.7, R10.4). */}
-        <BootOverlay frame={bootFrameForRender} bootPhase={state.boot.phase} />
+        <BootOverlay
+          frame={bootFrameForRender}
+          bootPhase={state.boot.phase}
+          frameKind={bootFrameKindForRender}
+        />
         <OutputLog
           ref={logRef}
           blocks={state.log}

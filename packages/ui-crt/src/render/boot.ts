@@ -29,6 +29,18 @@ export interface BootFrame {
   readonly lines: readonly OutputLine[];
 }
 
+/**
+ * The kind of a Boot_Sequence frame, derived purely from the step index. The
+ * memory-check steps are `"memory"`, then the ASCII logo frame is `"logo"`, the
+ * phosphor warm-up is `"warmup"`, and the final saturating frame is `"ready"`.
+ *
+ * This is a presentational classification only (no behaviour): the overlay
+ * exposes it as `data-boot-frame` so a screenshot or a test can wait for the
+ * logo frame specifically, rather than for the constant `crt-sr-only` wordmark
+ * that is present in every playing frame.
+ */
+export type BootFrameKind = "memory" | "logo" | "warmup" | "ready";
+
 /** The accessible text equivalent of the decorative ASCII logo (R10.4). */
 export const BOOT_LOGO_TEXT_EQUIVALENT = "NECROMANTIC SYSTEMS 1986";
 
@@ -122,4 +134,29 @@ export function bootFrame(stepIndex: number): BootFrame {
   const raw = Number.isFinite(stepIndex) ? Math.floor(stepIndex) : 0;
   const index = Math.min(BOOT_STEP_COUNT - 1, Math.max(0, raw));
   return toFrame(FRAME_SOURCES[index]!);
+}
+
+/**
+ * The step index of the ASCII logo frame in `FRAME_SOURCES`: it follows the
+ * cumulative memory-check steps. The warm-up frame follows it, and the ready
+ * frame is the final, saturating step.
+ */
+const LOGO_STEP = MEMORY_CHECK_LINES.length;
+const WARMUP_STEP = LOGO_STEP + 1;
+const READY_STEP = BOOT_STEP_COUNT - 1;
+
+/**
+ * Classify a Boot_Sequence step index into its {@link BootFrameKind}. Pure and
+ * total: clamps and floors the index exactly like {@link bootFrame}, so the
+ * kind always matches the frame the overlay draws for that step. Any index at
+ * or beyond the last step is `"ready"`; negative / fractional / `NaN` indices
+ * clamp to the first (`"memory"`) step.
+ */
+export function bootFrameKind(stepIndex: number): BootFrameKind {
+  const raw = Number.isFinite(stepIndex) ? Math.floor(stepIndex) : 0;
+  const index = Math.min(BOOT_STEP_COUNT - 1, Math.max(0, raw));
+  if (index >= READY_STEP) return "ready";
+  if (index === WARMUP_STEP) return "warmup";
+  if (index === LOGO_STEP) return "logo";
+  return "memory";
 }

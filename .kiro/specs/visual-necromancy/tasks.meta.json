@@ -904,6 +904,83 @@
         "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
         "timestamp": 1793981713466
       }
+    ],
+    "23.2 Show the position label and orientation in the card footer": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793982847220
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983155930
+      }
+    ],
+    "23.3 Make the boot ASCII logo render and have the screenshot wait for it": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793982848153
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983156843
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983742399
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793984013787
+      }
+    ],
+    "23.4 Apply the glitch only to severity > 0 and leave a clean resting state": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983163798
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983359627
+      }
+    ],
+    "23.1 Lay the spread out horizontally (CardReveal layout)": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983365459
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983482909
+      }
+    ],
+    "23.5 Style DOWNLOAD PATCH as a CRT phosphor button and capture the diff": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983484006
+      },
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983661330
+      }
+    ],
+    "23. Visual review fixes": [
+      {
+        "executionId": "c325a666-e483-4b42-9d85-cba91d0e680c",
+        "chatSessionId": "sess_98038f8e-92b8-444c-a9c0-9c2e448b3511",
+        "timestamp": 1793983661394
+      }
     ]
   }
 }

@@ -24,7 +24,9 @@
 //
 // The four shots:
 //   (1) boot logo frame — the `.crt-boot-overlay` while the NECROMANTIC
-//       SYSTEMS 1986 wordmark is on screen (navigated WITHOUT `?boot=skip`);
+//       SYSTEMS 1986 wordmark is on screen (navigated WITHOUT `?boot=skip`),
+//       captured with the virtual clock FROZEN on the logo step so the
+//       otherwise ~500 ms logo window is deterministic (see `bootLogoShot`);
 //   (2) a full 3-card reading — after `demo lich-py2` / `read fates`, with the
 //       reveal completed via Escape, showing the framed ASCII cards;
 //   (3) THE TOWER glitch frame — the burning Tower card element in full motion;
@@ -40,7 +42,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import {
-  bootTerminal,
+  bootLogoShot,
   mockRoutes,
   runCommand,
   sel,
@@ -78,30 +80,42 @@ test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", (
     "capture-only: set CAPTURE_SCREENSHOTS=1 to write docs/screenshots PNGs",
   );
 
-  // One browser context/page for all four shots keeps the capture fast and the
-  // boot overlay available for the very first shot.
   test.beforeAll(() => {
     mkdirSync(OUT_DIR, { recursive: true });
   });
 
-  test("captures boot logo, 3-card reading, Tower glitch, and resurrection diff", async ({
+  // --- (1) Boot logo frame ----------------------------------------------
+  // Its OWN test on a fresh page with the virtual clock installed and FROZEN on
+  // the logo step. The logo is step 4 of 7 in a ~500 ms/step schedule, so in a
+  // live rAF-driven boot it is on screen for only ~500 ms — too narrow for a
+  // plain `toBeVisible()` poll to catch reliably. `bootLogoShot` installs
+  // Playwright's fake clock before navigating and pauses it mid-logo-window, so
+  // the overlay holds the logo frame indefinitely and the capture is
+  // deterministic. Isolating it in its own test keeps fake and real time from
+  // ever mixing within a single test: shots 2-4 run on a separate,
+  // normally-clocked page (next test), where the reveal/rot FramePort ticks
+  // advance in real time exactly as in production.
+  test("captures the boot logo frame (clock frozen on the logo step)", async ({
     page,
   }) => {
-    // --- (1) Boot logo frame --------------------------------------------
-    // Navigate WITHOUT `?boot=skip` so the full-motion Boot_Sequence plays and
-    // the overlay is on screen. Grab the frame while the wordmark is up, before
-    // the boot resolves to the ready prompt.
-    await page.goto("/");
-    const overlay = page.locator(".crt-boot-overlay");
-    await expect(overlay).toBeVisible();
-    // The accessible wordmark equivalent confirms the logo frame is showing.
-    await expect(page.locator("span.crt-sr-only")).toContainText(
-      "NECROMANTIC SYSTEMS 1986",
-    );
+    // `bootLogoShot` freezes the clock on the logo step and asserts the logo
+    // overlay + wordmark are on screen; capture the whole CRT screen so the
+    // shot frames the big ASCII logo centred over the boot overlay.
+    await bootLogoShot(page);
     await page.screenshot({ path: shot("01-boot-logo"), animations: "allow" });
+  });
 
-    // Let the boot settle before driving commands.
-    await expect(overlay).toHaveCount(0, { timeout: 10_000 });
+  test("captures 3-card reading, Tower glitch, and resurrection diff", async ({
+    page,
+  }) => {
+    // Land on the ready prompt in full motion without waiting out the boot, so
+    // this test runs on a normally-clocked page: navigate WITHOUT `?boot=skip`
+    // and let the real-time boot resolve to the focused Command_Line.
+    await page.goto("/");
+    await expect(sel.log(page)).toContainText("NECRO-ORACLE");
+    await expect(page.locator(".crt-boot-overlay")).toHaveCount(0, {
+      timeout: 10_000,
+    });
     await expect(sel.input(page)).toBeFocused();
 
     // --- (2) Full 3-card reading ----------------------------------------
@@ -153,6 +167,34 @@ test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", (
     });
     await expect(log).toContainText("FILE src/legacy.py");
     await expect(log).toContainText("VITALITY 40/100 -> 55/100 (+15)");
+
+    // The previous capture framed only the revived line + vitality: the diff
+    // block is below the fold (the log auto-scrolls past it and the rot overlay
+    // sits above), so the PNG never actually showed the diff. Scroll the
+    // per-file diff block into view, then assert the `-`/`+` diff lines AND the
+    // now phosphor-styled DOWNLOAD PATCH button are visible, so the shot frames
+    // the whole diff + button rather than a cropped tail of the log.
+    const diffBlock = page
+      .locator("section.crt-block")
+      .filter({ hasText: "FILE src/legacy.py" });
+    await expect(diffBlock).toBeVisible();
+    await diffBlock.scrollIntoViewIfNeeded();
+    // The removed / added Python-2→3 diff lines from RESURRECT_RESULT.
+    await expect(diffBlock).toContainText('- print "hello"');
+    await expect(diffBlock).toContainText('+ print("hello")');
+
+    // The styled CRT phosphor DOWNLOAD PATCH button (task 23.5) is present and
+    // visible for the capture — it carries the `.crt-patch-download` class that
+    // the new crt.css rule styles.
+    const downloadButton = page.getByRole("button", {
+      name: "DOWNLOAD PATCH",
+      exact: true,
+    });
+    await expect(downloadButton).toBeVisible();
+    await expect(downloadButton).toHaveClass(/\bcrt-patch-download\b/);
+    await downloadButton.scrollIntoViewIfNeeded();
+
+    // Full page so the whole diff block and the button are framed together.
     await page.screenshot({
       path: shot("04-resurrection-diff"),
       fullPage: true,

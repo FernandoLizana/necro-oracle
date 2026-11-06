@@ -30,7 +30,7 @@ import { act, cleanup, render, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeFakeFrames } from "../testing/fake-ports.js";
-import { bootFrame } from "../render/boot.js";
+import { bootFrame, bootFrameKind, BOOT_STEP_COUNT } from "../render/boot.js";
 import { BOOT_LOGO_TEXT_EQUIVALENT } from "../render/boot.js";
 import { blockText } from "../render/blocks.js";
 import { BOOT_PHRASE } from "../voice/phrases.js";
@@ -277,7 +277,11 @@ describe("cleanup: the hook cancels its pending frame on unmount", () => {
 describe("R1.1 (overlay): BootOverlay renders nothing once done", () => {
   it("renders nothing when bootPhase is done", () => {
     const { container } = render(
-      <BootOverlay frame={bootFrame(0)} bootPhase="done" />,
+      <BootOverlay
+        frame={bootFrame(0)}
+        bootPhase="done"
+        frameKind={bootFrameKind(0)}
+      />,
     );
     expect(container.querySelector(".crt-boot-overlay")).toBeNull();
     expect(container.firstChild).toBeNull();
@@ -286,7 +290,11 @@ describe("R1.1 (overlay): BootOverlay renders nothing once done", () => {
   it("renders the skip hint, an aria-hidden frame, and the sr-only logo equivalent while playing", () => {
     const frame = bootFrame(0);
     const { container } = render(
-      <BootOverlay frame={frame} bootPhase="playing" />,
+      <BootOverlay
+        frame={frame}
+        bootPhase="playing"
+        frameKind={bootFrameKind(0)}
+      />,
     );
 
     const overlay = container.querySelector(".crt-boot-overlay");
@@ -315,6 +323,49 @@ describe("R1.1 (overlay): BootOverlay renders nothing once done", () => {
       .map((pre) => pre.textContent ?? "")
       .join("");
     expect(renderedText).toBe(expectedText);
+  });
+
+  it("marks each playing frame with its frame kind via data-boot-frame (R2.1)", () => {
+    // The memory-check steps are "memory", the ASCII logo step is "logo", the
+    // warm-up step is "warmup", and the final (saturating) step is "ready".
+    // A screenshot/test waits for `[data-boot-frame="logo"]` rather than the
+    // constant `crt-sr-only` wordmark, which is present in every playing frame.
+    const kinds = Array.from({ length: BOOT_STEP_COUNT }, (_, step) =>
+      bootFrameKind(step),
+    );
+    expect(kinds).toContain("logo");
+
+    for (let step = 0; step < BOOT_STEP_COUNT; step++) {
+      const { container, unmount } = render(
+        <BootOverlay
+          frame={bootFrame(step)}
+          bootPhase="playing"
+          frameKind={bootFrameKind(step)}
+        />,
+      );
+      const overlay = container.querySelector(".crt-boot-overlay");
+      expect(overlay).toHaveAttribute("data-boot-frame", bootFrameKind(step));
+      unmount();
+    }
+
+    // The logo step specifically carries the logo marker the screenshot waits
+    // for, and the overlay's visible glyph rows include the big ASCII wordmark.
+    const logoStep = kinds.indexOf("logo");
+    const { container } = render(
+      <BootOverlay
+        frame={bootFrame(logoStep)}
+        bootPhase="playing"
+        frameKind="logo"
+      />,
+    );
+    const overlay = container.querySelector(".crt-boot-overlay");
+    expect(overlay).toHaveAttribute("data-boot-frame", "logo");
+    const glyphText = [
+      ...container.querySelectorAll(".crt-boot-frame pre"),
+    ]
+      .map((pre) => pre.textContent ?? "")
+      .join("\n");
+    expect(glyphText).toContain("NECROMANTIC SYSTEMS 1986");
   });
 });
 
