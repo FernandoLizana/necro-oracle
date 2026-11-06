@@ -156,5 +156,11 @@ export async function loadDemoRitualInput(
     spread,
     now,
     demo: true,
+    // Carry the SAME external data the pre-reading was divined with so
+    // re-diagnosis re-runs the reading on the overlay snapshot with identical
+    // Devil (OSV) and Tower (dep freshness) context — only the Pre_Pass-fixed
+    // py2 constructs may change a draw, keeping the demo pinned to the golden.
+    registryData,
+    osvData: osv,
   };
 }

@@ -338,6 +338,32 @@ columns).
 - [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+
+- [ ] 19. Close execution gaps
+  - [-] 19.1 Wire the `resurrect` command into the terminal session reducer and effect
+    - Add a `resurrect` case to `dispatchCommand` in `packages/ui-crt/src/session/reducer.ts` that refuses with an oracle-voice block when no completed reading is in scope (no summary / no live or demo reading for the pinned ref), otherwise opens an in-flight `resurrect` request and emits an `api.resurrect` effect carrying the pinned ref, the parsed `ResurrectTarget`, and the in-scope spread
+    - Add the `api.resurrect` effect to the session `Effect` union and the matching async resolution actions so stream `Phase_Line`/`Skip_Note_Line`s render as status blocks and the terminal `Result_Line` renders through the diff/residual renderer (`renderFileResults`), the vitality/changed-card renderer (`renderResurrectVitality`), and the patch-download affordance
+    - Wire the effect in the `apps/web` terminal adapter (`use-terminal`/`browser-ports`/`api-client`) to call `createApiPort().resurrect(...)`, mount the lazy `ResurrectionResult` view via `loadResurrectionView`, and feed `onProgress` back into the reducer; demo mode renders the server `[DEMO]` prefix verbatim
+    - _Requirements: 1.1, 1.6, 9.1, 9.2, 9.3, 14.3_
+    - _Design: Browser/terminal rendering, Resurrect_Command_
+
+  - [-] 19.2 Thread registryData/osvData through re-diagnosis and match the lich-py2 golden
+    - Add optional `registryData`/`osvData` to `RitualInput` (`packages/coven/src/models.ts`) and pass them through `rediagnose` (`packages/coven/src/rediagnose.ts`) into the overlay `runReading`, so the post-resurrection reading keeps the same external-data context as the pre-reading and only the fixed constructs change the draws
+    - Wire the demo loader (`packages/coven/src/demo/load-fixture.ts`) and the Resurrection_Route to populate the new fields from the fixture external data (demo) and the summon external data (live)
+    - Restore the lich-py2 demo so the Ritual beforeVitality/afterVitality/vitalityDelta and changed-card set match `fixtures/graveyard/lich-py2/golden.json` byte for byte, and tighten the task-16.4 demo test to assert the full golden
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 16.1, 16.2, 16.3, 16.4_
+    - _Design: Vitality re-diagnosis, Demo mode_
+
+  - [ ] 19.3 Turn the Playwright resurrection e2e green
+    - With 19.1 landed, make `apps/web/e2e/resurrect-flow.e2e.ts` pass against the recorded `/api/resurrect` NDJSON mock: boot then summon then read then `resurrect` streams the six phases, renders the diff/Residual_List and the Vitality_Delta/changed-card lines, and shows the DOWNLOAD PATCH affordance, with no network leak and a clean axe scan; remove the planned-red note once green
+    - _Requirements: 1.1, 7.1, 7.3, 9.1_
+
+  - [-] 19.4 Fix the auto-commit hook to name the current spec
+    - Update the PostTaskExec auto-commit hook (`.kiro/hooks/*`) so the commit message derives the spec name/number from the hook `spec_name` path instead of the hard-coded "Spec 03", keeping the `<first id>-<last id>: <summary>` shape; leave the build/typecheck/test gate and the planned-red carve-out unchanged
+    - _Requirements: n/a (tooling)_
+
+- [ ] 20. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
 ## Notes
 
 - Tasks marked with `*` are optional (tests, e2e) and can be skipped for a faster MVP; core implementation tasks are never optional.
@@ -365,7 +391,10 @@ columns).
     { "id": 10, "tasks": ["13.3", "13.4", "14.1", "17.2"] },
     { "id": 11, "tasks": ["14.2", "14.3", "14.5", "14.9", "14.11"] },
     { "id": 12, "tasks": ["14.4", "14.6", "14.7", "14.10", "14.12"] },
-    { "id": 13, "tasks": ["14.8", "17.1"] }
+    { "id": 13, "tasks": ["14.8", "17.1"] },
+    { "id": 14, "tasks": ["19.1", "19.2", "19.4"] },
+    { "id": 15, "tasks": ["19.3"] },
+    { "id": 16, "tasks": ["20"] }
   ]
 }
 ```

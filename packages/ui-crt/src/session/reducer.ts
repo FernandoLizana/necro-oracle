@@ -18,7 +18,11 @@
 // R6.2, R6.3, R6.12, R6.13, R6.15, R10.5, R15.4, R15.5, R15.10, R15.13, R16.8,
 // R18.3-R18.7, R18.14, R18.15, R19.11_
 
-import type { PlayableSpread, ReadingResponse } from "../protocol.js";
+import type {
+  PlayableSpread,
+  ReadingResponse,
+  ResurrectionPhase,
+} from "../protocol.js";
 import type { BlockDraft, OutputBlock } from "../render/blocks.js";
 import { appendBlocks } from "./log.js";
 import { historyNext, historyPrev, historyPush } from "./history.js";
@@ -26,7 +30,11 @@ import { formatPinnedRef } from "./pinned-ref.js";
 import { withDemoLabel } from "../render/demo-label.js";
 
 import { parseCommand } from "../command/parse.js";
-import { MAX_ENTRY_LENGTH, type Command } from "../command/types.js";
+import {
+  MAX_ENTRY_LENGTH,
+  type Command,
+  type ResurrectTarget,
+} from "../command/types.js";
 
 import {
   renderEcho,
@@ -38,8 +46,15 @@ import { renderExplain } from "../render/explain.js";
 import { renderHelp } from "../render/help.js";
 import { renderSummary } from "../render/summary.js";
 import { renderError } from "../render/errors.js";
+import { renderFileResults } from "../render/resurrect-diff.js";
+import { renderResurrectVitality } from "../render/resurrect-vitality.js";
 
-import { BOOT_PHRASE, PRE_READING_PHRASE } from "../voice/phrases.js";
+import {
+  BOOT_PHRASE,
+  PRE_READING_PHRASE,
+  PRE_RESURRECTION_PHRASE,
+  RESURRECT_PHASE_VOICE,
+} from "../voice/phrases.js";
 import { DEMO_CATALOG } from "../demo/catalog.js";
 import { resolveMotionMode } from "../motion/motion-mode.js";
 import { soundActivity, soundReducer, type SoundEvent } from "../sound/sound-reducer.js";
@@ -237,6 +252,9 @@ function dispatchCommand(acc: Accumulator, command: Command): void {
     case "explain":
       doExplain(acc, command);
       return;
+    case "resurrect":
+      doResurrect(acc, command.target);
+      return;
     case "motion":
       doMotion(acc, command.arg);
       return;
@@ -392,6 +410,63 @@ function currentReading(state: SessionState, spread: PlayableSpread): ReadingRes
 }
 
 // ---------------------------------------------------------------------------
+// resurrect
+// ---------------------------------------------------------------------------
+
+/**
+ * The spread a `resurrect` scopes to: the last spread laid in this session, if
+ * a completed reading for it is in scope. A live session needs a held reading
+ * in `state.readings[lastSpread]`; a demo session needs the bundle entry for
+ * `lastSpread`. Returns `null` when no completed reading is in scope (R1.6),
+ * mirroring how `doExplain` resolves `currentReading`.
+ */
+function inScopeResurrectSpread(state: SessionState): PlayableSpread | null {
+  const spread = state.lastSpread;
+  if (spread === null) return null;
+  return currentReading(state, spread) === undefined ? null : spread;
+}
+
+/**
+ * Begin a resurrection for the parsed target (R1.1). Refuses with an
+ * oracle-voice block when no completed reading is in scope — no summary, or no
+ * live/demo reading for the pinned ref (R1.6). Otherwise guards the single
+ * in-flight slot, opens a `resurrect` request, pushes a pre-resurrection
+ * phrase, and emits one `api.resurrect` effect carrying the pinned ref, the
+ * parsed target, and the in-scope spread. The server owns all semantic
+ * validation (card/file existence, Python-2 classification).
+ */
+function doResurrect(acc: Accumulator, target: ResurrectTarget): void {
+  if (acc.state.inflight !== null) {
+    pushLabelled(acc, [ritualUnderwayBlock()]);
+    return;
+  }
+
+  // A resurrection needs a completed reading in scope (R1.6): a summary plus a
+  // held live reading, or the demo reading, for the in-scope spread.
+  const summary = acc.state.summary;
+  const spread = inScopeResurrectSpread(acc.state);
+  if (summary === null || spread === null) {
+    pushLabelled(acc, [
+      oracleBlock(
+        "There is no reading to raise. Lay a spread with read before you resurrect.",
+      ),
+    ]);
+    return;
+  }
+
+  const requestId = acc.state.nextRequestId;
+  const inflight: InflightRequest = { id: requestId, kind: "resurrect" };
+  acc.state = {
+    ...acc.state,
+    nextRequestId: requestId + 1,
+    inflight,
+  };
+  pushBlocks(acc, [oracleBlock(PRE_RESURRECTION_PHRASE)]);
+  const pinned = formatPinnedRef(summary.ref);
+  acc.effects.push({ type: "api.resurrect", requestId, pinned, target, spread });
+}
+
+// ---------------------------------------------------------------------------
 // motion (changes only the motion region — P27)
 // ---------------------------------------------------------------------------
 
@@ -497,6 +572,7 @@ function installDemo(
     lastSpread: null,
     demoBundle: bundle,
     pendingDemo: name,
+    lastRitual: null,
     inflight: null,
   };
   // Now a demo session: the summary block carries the demo label (R18.5).
@@ -542,6 +618,7 @@ function stepSummoned(
     lastSpread: null,
     demoBundle: null,
     pendingDemo: null,
+    lastRitual: null,
     inflight: null,
   };
   const acc: Accumulator = { state: resolved, effects: [] };
@@ -583,6 +660,47 @@ function stepRead(
   };
   const acc: Accumulator = { state: resolved, effects: [] };
   pushBlocks(acc, renderReading(action.response));
+  return result(acc);
+}
+
+function stepResurrectProgress(
+  state: SessionState,
+  action: Extract<Action, { type: "api.resurrect.progress" }>,
+): StepResult {
+  if (!matchesInflight(state, action.requestId)) return noop(state);
+
+  // Exactly one status block per phase/skip-note; inflight (aria-busy) stays
+  // set until the terminal result resolves (mirrors `stepProgress`, R9.2).
+  const block =
+    action.event.kind === "phase"
+      ? resurrectPhaseBlock(action.event.phase)
+      : resurrectSkipNoteBlock(action.event.note);
+  const acc: Accumulator = { state, effects: [] };
+  pushBlocks(acc, [block]);
+  return result(acc);
+}
+
+function stepResurrectResolved(
+  state: SessionState,
+  action: Extract<Action, { type: "api.resurrect.resolved" }>,
+): StepResult {
+  if (!matchesInflight(state, action.requestId)) return noop(state);
+
+  // Clear the in-flight marker and store the settled result so the view layer
+  // can mount the client-side patch-download affordance (R7.3).
+  const resolved: SessionState = {
+    ...state,
+    inflight: null,
+    lastRitual: action.result,
+  };
+  const acc: Accumulator = { state: resolved, effects: [] };
+  // Render the per-file diff / Residual_List (R7.1, R7.2, R8.1, R8.3) and the
+  // Vitality_Delta / changed-card blocks (R6.3, R6.4, R6.5), labelled for a
+  // demo session exactly as a reading is. The server already applies the
+  // `[DEMO]` prefix to its stream lines, but the terminal renders the result
+  // blocks from the decoded `RitualResult`, so the demo label is applied here.
+  pushLabelled(acc, renderFileResults(action.result.files));
+  pushLabelled(acc, [renderResurrectVitality(action.result)]);
   return result(acc);
 }
 
@@ -733,6 +851,29 @@ function catalogBlock(): BlockDraft {
   return oracleBlock(text);
 }
 
+/**
+ * One Progress_Line for a resurrection phase (R9.2), kind `status`. The two
+ * `RESURRECT_PHASE_VOICE` layers (mystical + technical) are rendered as one
+ * status block; the technical line carries the phase TOKEN verbatim so the
+ * client/e2e can key its progress display off it. Mirrors `renderProgress`.
+ */
+function resurrectPhaseBlock(phase: ResurrectionPhase): BlockDraft {
+  const voice = RESURRECT_PHASE_VOICE[phase];
+  const first = renderEcho(voice.mystical);
+  const second = renderEcho(voice.technical);
+  return {
+    kind: "status",
+    demo: false,
+    lines: [...first.lines, ...second.lines],
+  };
+}
+
+/** A resurrection skip-note as a status block (mirrors `renderSkipNote`). */
+function resurrectSkipNoteBlock(note: string): BlockDraft {
+  const echo = renderEcho(note);
+  return { kind: "status", demo: false, lines: echo.lines };
+}
+
 // ---------------------------------------------------------------------------
 // Accumulator plumbing
 // ---------------------------------------------------------------------------
@@ -780,6 +921,10 @@ export function step(state: SessionState, action: Action): StepResult {
       return stepProgress(state, action);
     case "api.read":
       return stepRead(state, action);
+    case "api.resurrect.progress":
+      return stepResurrectProgress(state, action);
+    case "api.resurrect.resolved":
+      return stepResurrectResolved(state, action);
     case "api.failed":
       return stepFailed(state, action);
     case "demo.loaded":

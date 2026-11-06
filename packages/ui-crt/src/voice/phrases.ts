@@ -23,6 +23,10 @@ export const BOOT_PHRASE =
 /** The canonical line printed just before a reading begins. */
 export const PRE_READING_PHRASE = "Shuffle. Cut. The repository speaks.";
 
+/** The canonical line printed just before a resurrection ritual begins (R1.1). */
+export const PRE_RESURRECTION_PHRASE =
+  "The coven gathers. The dead code is called back to life.";
+
 /**
  * Banner marking a reading replayed from the demo bundle rather than summoned
  * live, so judges can tell a fixture replay apart from a fresh ritual (R18.5).

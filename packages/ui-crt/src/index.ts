@@ -25,6 +25,7 @@ export type {
 export type {
   FramePort,
   MediaPort,
+  PatchDownloadPort,
   SoundEngine,
   SoundLoaderPort,
   StoragePort,
@@ -40,6 +41,7 @@ export {
   EXTERNAL_SKIP_NOTE,
   PHASE_VOICE,
   PRE_READING_PHRASE,
+  PRE_RESURRECTION_PHRASE,
   RESURRECT_PHASE_VOICE,
   vitalityVoice,
   type PhaseVoice,

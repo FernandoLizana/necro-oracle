@@ -38,6 +38,7 @@ import {
   type CardId,
   type FileEntry,
   type Reading,
+  type ReadingOpts,
   type RepoSnapshot,
 } from "@necro/oracle";
 
@@ -228,10 +229,18 @@ export async function rediagnose(
   let postReading: Reading;
   try {
     const overlay = overlaySnapshot(input.snapshot, files);
-    postReading = await runReading(overlay, {
-      spreadKind: input.spread,
-      now: input.now,
-    });
+    // Re-divine with the SAME external data the pre-reading used, so the only
+    // thing that can move a draw is the resurrected source — not a difference
+    // in what the two readings knew about dependencies (Tower) or
+    // vulnerabilities (Devil). Build the opts so the keys are ABSENT (not
+    // `undefined`) when the input omits them, honouring
+    // exactOptionalPropertyTypes exactly as runReading / handlers/readings.ts
+    // do; passing them through unconditionally would set the key to
+    // `undefined` and widen the type against `ReadingOpts`.
+    const readOpts: ReadingOpts = { spreadKind: input.spread, now: input.now };
+    if (input.registryData !== undefined) readOpts.registryData = input.registryData;
+    if (input.osvData !== undefined) readOpts.osvData = input.osvData;
+    postReading = await runReading(overlay, readOpts);
   } catch (cause) {
     // R6.5: preserve the pre-reading, null out after/delta, and surface a
     // typed REDIAGNOSIS_FAILED error for this step. File_Results are untouched

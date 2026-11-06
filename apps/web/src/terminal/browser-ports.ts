@@ -36,6 +36,8 @@ import type {
   VisibilityPort,
 } from "@necro/ui-crt";
 
+import type { PatchDownloadPort } from "@necro/ui-crt";
+
 import { loadDemoBundle } from "../demo/load-bundle.js";
 import { createApiPort } from "./api-client.js";
 
@@ -156,6 +158,29 @@ function createDemoPort(): DemoPort {
 }
 
 /**
+ * A `PatchDownloadPort` that offers a completed Ritual's unified Patch as a
+ * client-side `.patch` download (R7.3). The heavy `Blob`/`URL`/anchor helper is
+ * reached through a literal-path dynamic import so it lands in its OWN chunk,
+ * fetched only the first time a resurrection patch is downloaded and never at
+ * page load — keeping the terminal initial route within the <= 250 KB budget
+ * (R14.5), exactly like the Demo_Bundle and sound-engine loaders. An empty
+ * patch is a graceful no-op (`downloadRitualPatch` returns `false`, R7.4); any
+ * load/trigger failure is swallowed so the terminal never throws from a click.
+ */
+function createPatchDownloadPort(): PatchDownloadPort {
+  return async (patch, ritualId) => {
+    try {
+      const mod = await import("./patch-download.js");
+      mod.downloadRitualPatch({ patch, ritualId });
+    } catch {
+      // A failed chunk load or a DOM trigger error must never surface to the
+      // terminal; the patch also renders inline in the log, so the download is
+      // a best-effort convenience.
+    }
+  };
+}
+
+/**
  * Build the full `TerminalPorts` bundle from real browser globals. Called only
  * from the client `TerminalScreen` after mount, so every global reference is
  * live by the time it runs.
@@ -169,5 +194,6 @@ export function createBrowserPorts(): TerminalPorts {
     visibility: createVisibilityPort(),
     frames: createFramePort(),
     sound: loadEngine,
+    patchDownload: createPatchDownloadPort(),
   };
 }

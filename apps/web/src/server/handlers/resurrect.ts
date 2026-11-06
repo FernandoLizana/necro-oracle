@@ -397,12 +397,25 @@ async function runRitual(args: {
       });
     } else {
       // Live: source the in-scope reading the same way the Reading_Route does —
-      // summon the pinned ref, then run a reading with the requested spread.
+      // summon the pinned ref, fetch its external data, then run a reading with
+      // the requested spread. The external data (Tower dep freshness, Devil OSV
+      // vulnerabilities) must flow into BOTH the pre-reading AND the RitualInput
+      // so re-diagnosis re-runs the reading with identical external context —
+      // only the resurrected source may move a draw (apples-to-apples).
       const parsedRef = parseRepoRef(request.ref);
       const summonResult = await deps.github.summon(parsedRef);
       if (isFinished()) return;
 
+      const external = await deps.github.externalData(summonResult.snapshot);
+      if (isFinished()) return;
+
+      // Build the reading opts with the external data present; omit the keys
+      // entirely (exactOptionalPropertyTypes) when the gateway returned none,
+      // mirroring handlers/readings.ts so nothing is fabricated.
       const readOpts: ReadingOpts = { spreadKind: request.spread, now };
+      if (external.registryData.size > 0) readOpts.registryData = external.registryData;
+      if (external.osvData.length > 0) readOpts.osvData = external.osvData;
+
       const reading = await deps.runReading(summonResult.snapshot, readOpts);
       if (isFinished()) return;
 
@@ -413,7 +426,10 @@ async function runRitual(args: {
         return;
       }
 
-      input = {
+      // Carry the SAME external data onto the RitualInput so rediagnose re-runs
+      // the overlay reading with identical Tower/Devil context. Omit each key
+      // when empty so the re-run mirrors the pre-reading exactly.
+      const inputBase = {
         pairId: "python2->python3",
         snapshot: summonResult.snapshot,
         reading,
@@ -421,6 +437,13 @@ async function runRitual(args: {
         spread: request.spread,
         now,
         demo: false,
+      } satisfies RitualInput;
+      input = {
+        ...inputBase,
+        ...(external.registryData.size > 0
+          ? { registryData: external.registryData }
+          : {}),
+        ...(external.osvData.length > 0 ? { osvData: external.osvData } : {}),
       };
 
       // A route-level skip-note for an OPEN sandbox breaker (R11.4): the runner

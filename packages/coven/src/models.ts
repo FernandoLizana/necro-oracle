@@ -14,6 +14,8 @@
 import {
   NecroError,
   NecroErrorCodeSchema,
+  type OsvData,
+  type RegistryData,
   type RepoSnapshot,
   type Reading,
   type SpreadKind,
@@ -248,4 +250,26 @@ export interface RitualInput {
   readonly spread: SpreadKind; // same spread as the reading
   readonly now: string; // ISO; from ClockPort
   readonly demo: boolean;
+
+  /**
+   * The SAME external-data context the pre-resurrection reading was divined
+   * with — the Tower detector's dependency-freshness map (R6.*). It is carried
+   * here so re-diagnosis can re-run `runReading` on the overlay snapshot with
+   * identical external data, making the before/after comparison apples-to-
+   * apples: only the resurrected source changes the draws, not a difference in
+   * what the two readings knew about dependencies. `ReadingOpts.registryData`
+   * accepts this `Map`; omit the key entirely (not `undefined`) when the
+   * pre-reading had none, so re-diagnosis mirrors the original exactly.
+   */
+  readonly registryData?: RegistryData;
+
+  /**
+   * The SAME OSV vulnerability list the pre-resurrection reading was divined
+   * with — consumed by the Devil detector. Carried here for the same apples-to-
+   * apples reason as {@link registryData}: re-diagnosis re-runs the reading on
+   * the overlay snapshot with this identical list so the Devil draw only moves
+   * when the resurrected source moves it. `ReadingOpts.osvData` accepts this
+   * array; omit the key entirely when the pre-reading had none.
+   */
+  readonly osvData?: OsvData;
 }

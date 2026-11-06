@@ -29,26 +29,16 @@
 //     outbound-network guard throws rather than reaching the wire;
 //   - time is read only through an injected ClockPort pinned to the demo clock.
 //
-// DEFECT DISCOVERED WHILE WRITING THIS TEST (out of scope for task 16.4):
-//   The pinned golden (task 16.1) expects afterVitality 14 and exactly one
-//   changed card (Judgement). The real Ritual instead reports afterVitality 80
-//   and THREE changed cards (devil, judgement, tower). Root cause: `rediagnose`
-//   (packages/coven/src/rediagnose.ts, task 9.3) re-runs `runReading` on the
-//   overlay snapshot WITHOUT threading the fixture's `registryData` (Tower dep
-//   freshness) or `osvData` (Devil vulnerabilities) — and `RitualInput` carries
-//   no field to pass them. The BEFORE reading (built by the demo loader) sees
-//   that external data; the AFTER reading does not, so the Devil and Tower cards
-//   spuriously "change" and vitality diverges from the golden. The golden's own
-//   `_comment` says re-diagnosis should re-run "with the fixture registry/osv",
-//   confirming the engine, not the golden, is wrong.
-//
-//   This test therefore pins the TRUE task-16.4 acceptance criteria — R16.1
-//   (Vitality_Delta > 0) and R16.2 (at least one improved changed card, the
-//   Judgement clearing, matching the golden) — which the real engine already
-//   satisfies, and deliberately does NOT assert the exact afterVitality or the
-//   full changed-card set, which the upstream re-diagnosis defect makes
-//   unreachable until `RitualInput`/`rediagnose` thread the external data. Once
-//   that is fixed, tighten this test to the full byte-for-byte golden.
+// APPLES-TO-APPLES RE-DIAGNOSIS (task 19.2):
+//   `rediagnose` re-runs `runReading` on the overlay snapshot with the SAME
+//   external data the pre-reading was divined with — the demo loader now puts
+//   the fixture `registryData` (Tower dep freshness) and `osvData` (Devil
+//   vulnerabilities) onto the `RitualInput`, and `rediagnose` threads them into
+//   the overlay reading. So the Devil/Tower/Star/Death draws are identical in
+//   both readings and only the Pre_Pass-fixed Judgement draw changes, exactly
+//   as the pinned golden records. This test therefore asserts the FULL golden
+//   byte-for-byte: beforeVitality 0, afterVitality 14, vitalityDelta 14, and
+//   the single `judgement` changed card (present -> absent, improved).
 //
 // Validates: Requirements 16.1, 16.2
 
@@ -206,63 +196,63 @@ beforeAll(async () => {
 });
 
 describe("lich-py2 demo ritual (R16.1, R16.2): deterministic improvement", () => {
-  it("reports Vitality_Delta > 0 — the resurrection improves the body (R16.1)", async () => {
-    const result = await runDemoRitual();
+  it("matches the pinned golden vitality byte-for-byte (R16.1)", async () => {
+    const [result, golden] = await Promise.all([runDemoRitual(), readGolden()]);
 
-    // R16.1 — the resurrection improved the body: re-diagnosis settled (delta
-    // is a number, not null) and the signed delta is strictly positive.
+    // Re-diagnosis now runs apples-to-apples (same external data), so the
+    // engine reproduces the golden's pinned vitality exactly: the body is dead
+    // going in (0), rises to 14 after the Pre_Pass clears Judgement, for a
+    // signed delta of +14.
+    expect(result.beforeVitality).toBe(golden.beforeVitality);
+    expect(result.afterVitality).toBe(golden.afterVitality);
+    expect(result.vitalityDelta).toBe(golden.vitalityDelta);
+
+    // Internal consistency: the reported delta is exactly after - before.
     expect(result.vitalityDelta).not.toBeNull();
-    expect(result.vitalityDelta!).toBeGreaterThan(0);
     expect(result.afterVitality).not.toBeNull();
-
-    // Internal consistency: the delta the runner reports is exactly
-    // `afterVitality - beforeVitality` (the oracle's own definition).
     expect(result.vitalityDelta).toBe(
       result.afterVitality! - result.beforeVitality,
     );
-
-    // The pinned golden's before-vitality holds (the body is dead going in).
-    const golden = await readGolden();
-    expect(result.beforeVitality).toBe(golden.beforeVitality);
   });
 
-  it("reports at least one improved changed card — the Judgement clearing (R16.2)", async () => {
-    const result = await runDemoRitual();
-
-    // R16.2 — at least one changed card, and at least one of them improved.
-    expect(result.changedCards.length).toBeGreaterThan(0);
-    const improved = result.changedCards.filter((c) => c.improved);
-    expect(improved.length).toBeGreaterThan(0);
-
-    // The pinned improvement is the Judgement card clearing (present -> absent).
-    const judgement = result.changedCards.find((c) => c.card === "judgement");
-    expect(judgement).toBeDefined();
-    expect(judgement!.improved).toBe(true);
-    // Judgement was present before and absent after => a "removed" change.
-    expect(judgement!.change).toBe("removed");
-  });
-
-  it("clears exactly the Judgement card the golden pins as the improvement (R16.2)", async () => {
+  it("clears exactly the single Judgement card the golden pins (R16.2)", async () => {
     const [result, golden] = await Promise.all([runDemoRitual(), readGolden()]);
 
-    // Every card the golden pins as changed MUST appear in the result with the
-    // same `improved` flag and a change kind consistent with its before/after
-    // presence (present -> absent is "removed"). The golden pins exactly the
-    // Judgement clearing; that improvement is the heart of R16.2.
-    for (const gc of golden.changedCards) {
-      const actual = result.changedCards.find((c) => c.card === gc.card);
-      expect(actual, `golden changed card "${gc.card}" is reported`).toBeDefined();
-      expect(actual!.improved).toBe(gc.improved);
-      if (gc.before?.present === true && gc.after?.present === false) {
-        expect(actual!.change).toBe("removed");
-      }
-    }
+    // The golden pins exactly ONE changed card — Judgement, present -> absent,
+    // improved. With external data threaded through re-diagnosis, Devil, Tower,
+    // Star and Death are identical before and after, so the engine reports that
+    // single changed card and no other. Assert the set exactly.
+    const expected = golden.changedCards.map((gc) => {
+      const change =
+        gc.before?.present === true && gc.after?.present === false
+          ? "removed"
+          : gc.before?.present === false && gc.after?.present === true
+            ? "added"
+            : "severity";
+      return { card: gc.card, change, improved: gc.improved };
+    });
 
-    // No card the golden pins as changed is REGRESSED (improved === false) in
-    // the result — the demo only ever improves the pinned cards.
-    for (const gc of golden.changedCards) {
-      const actual = result.changedCards.find((c) => c.card === gc.card)!;
-      expect(actual.improved).toBe(true);
+    expect(result.changedCards).toEqual(expected);
+    // Guard the golden's own expectation: exactly one card, the Judgement.
+    expect(result.changedCards).toHaveLength(1);
+    expect(result.changedCards[0]!.card).toBe("judgement");
+    expect(result.changedCards[0]!.change).toBe("removed");
+    expect(result.changedCards[0]!.improved).toBe(true);
+  });
+
+  it("leaves every unchanged card out of the changed-card set (R16.2)", async () => {
+    const [result, golden] = await Promise.all([runDemoRitual(), readGolden()]);
+
+    // Every card the golden records as present-and-unchanged before AND after
+    // (death, devil, star, tower) must NOT appear in the changed-card set — the
+    // apples-to-apples re-diagnosis keeps their draws identical.
+    const unchanged = (golden as unknown as {
+      unchangedCardsPresentBeforeAndAfter?: readonly { card: string }[];
+    }).unchangedCardsPresentBeforeAndAfter;
+    expect(unchanged).toBeDefined();
+    const changedIds = new Set(result.changedCards.map((c) => c.card));
+    for (const uc of unchanged!) {
+      expect(changedIds.has(uc.card), `card "${uc.card}" stays unchanged`).toBe(false);
     }
   });
 

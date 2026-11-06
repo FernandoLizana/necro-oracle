@@ -18,8 +18,11 @@ import type {
   PlayableSpread,
   ProgressEvent,
   ReadingResponse,
+  ResurrectProgressEvent,
+  RitualResponse,
   SummonSummary,
 } from "../protocol.js";
+import type { ResurrectTarget } from "../command/types.js";
 import type { OutputBlock } from "../render/blocks.js";
 import type { History } from "./history.js";
 import type { MotionMode, MotionPreference } from "../motion/motion-mode.js";
@@ -28,7 +31,7 @@ import type { SoundEvent, SoundPreference, SoundState } from "../sound/sound-red
 /** A single outstanding request, tagged by the kind of work it performs. */
 export interface InflightRequest {
   readonly id: number;
-  readonly kind: "summon" | "read" | "demo-load";
+  readonly kind: "summon" | "read" | "demo-load" | "resurrect";
 }
 
 /** The reveal queue: the ids of blocks still animating, and the start clock. */
@@ -49,6 +52,14 @@ export interface SessionState {
   /** Which held reading `explain` renders from. */
   readonly lastSpread: PlayableSpread | null;
   readonly demoBundle: DemoBundle | null;
+  /**
+   * The most recent completed resurrection `RitualResult`, surfaced so the view
+   * layer can mount the client-side patch-download affordance (R7.3). The pure
+   * reducer renders the diff/residual and vitality blocks into the log itself;
+   * this field carries only the settled result the DOM download button reads.
+   * `null` until a `resurrect` command resolves.
+   */
+  readonly lastRitual: RitualResponse | null;
   readonly inflight: InflightRequest | null;
   /** A demo name waiting for the bundle to load. */
   readonly pendingDemo: string | null;
@@ -75,6 +86,16 @@ export type Action =
   | { readonly type: "api.progress"; readonly requestId: number; readonly event: ProgressEvent }
   | { readonly type: "api.read"; readonly requestId: number; readonly response: ReadingResponse }
   | {
+      readonly type: "api.resurrect.progress";
+      readonly requestId: number;
+      readonly event: ResurrectProgressEvent;
+    }
+  | {
+      readonly type: "api.resurrect.resolved";
+      readonly requestId: number;
+      readonly result: RitualResponse;
+    }
+  | {
       readonly type: "api.failed";
       readonly requestId: number;
       readonly error: { readonly code: NecroErrorCode; readonly userMessage: string };
@@ -96,7 +117,19 @@ export type Effect =
       readonly pinned: string;
       readonly spread: PlayableSpread;
     }
+  | {
+      readonly type: "api.resurrect";
+      readonly requestId: number;
+      readonly pinned: string;
+      readonly target: ResurrectTarget;
+      readonly spread: PlayableSpread;
+    }
   | { readonly type: "api.abort" }
+  | {
+      readonly type: "patch.download";
+      readonly patch: string;
+      readonly ritualId: string;
+    }
   | { readonly type: "demo.load"; readonly requestId: number }
   | { readonly type: "prefs.save"; readonly key: "motion" | "sound"; readonly value: string }
   | { readonly type: "sound.start" }
@@ -115,6 +148,7 @@ export function initialState(): SessionState {
     readings: {},
     lastSpread: null,
     demoBundle: null,
+    lastRitual: null,
     inflight: null,
     pendingDemo: null,
     motionPreference: "auto",

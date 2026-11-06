@@ -32,6 +32,7 @@ import type { ResurrectTarget } from "../command/types.js";
 import type {
   FramePort,
   MediaPort,
+  PatchDownloadPort,
   SoundEngine,
   SoundLoaderPort,
   StoragePort,
@@ -390,6 +391,27 @@ export function makeFakeSoundLoader(
 }
 
 // ---------------------------------------------------------------------------
+// PatchDownloadPort
+// ---------------------------------------------------------------------------
+
+/** A `PatchDownloadPort` that records each download request for assertions. */
+export interface FakePatchDownload {
+  readonly port: PatchDownloadPort;
+  /** Every `(patch, ritualId)` the terminal asked to download, in order. */
+  readonly calls: { patch: string; ritualId: string }[];
+}
+
+/** Build a fake patch-download port that records its calls and never throws. */
+export function makeFakePatchDownload(): FakePatchDownload {
+  const calls: FakePatchDownload["calls"] = [];
+  const port: PatchDownloadPort = (patch, ritualId) => {
+    calls.push({ patch, ritualId });
+    return Promise.resolve();
+  };
+  return { port, calls };
+}
+
+// ---------------------------------------------------------------------------
 // TerminalPorts
 // ---------------------------------------------------------------------------
 
@@ -403,6 +425,7 @@ export interface FakeTerminalPorts {
   readonly api: FakeApi;
   readonly demo: DemoPort;
   readonly sound: FakeSoundLoader;
+  readonly patchDownload: FakePatchDownload;
 }
 
 /** Options for assembling a full set of fake terminal ports. */
@@ -442,6 +465,8 @@ export function makeFakePorts(
       : {}),
   });
 
+  const patchDownload = makeFakePatchDownload();
+
   const ports: TerminalPorts = {
     api,
     demo,
@@ -450,7 +475,18 @@ export function makeFakePorts(
     visibility,
     frames,
     sound: sound.loader,
+    patchDownload: patchDownload.port,
   };
 
-  return { ports, storage, media, visibility, frames, api, demo, sound };
+  return {
+    ports,
+    storage,
+    media,
+    visibility,
+    frames,
+    api,
+    demo,
+    sound,
+    patchDownload,
+  };
 }

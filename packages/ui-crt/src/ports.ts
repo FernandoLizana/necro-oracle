@@ -52,6 +52,19 @@ export interface SoundEngine {
 /** Loads the sound engine from a separate bundler chunk. */
 export type SoundLoaderPort = () => Promise<SoundEngine>;
 
+/**
+ * Triggers a client-side download of a completed Ritual's unified Patch with no
+ * server round-trip (R7.3). The implementation reaches the heavy `Blob`/`URL`
+ * download helper through its own lazy chunk so the terminal initial route
+ * stays within budget (R14.5); an empty `patch` is a no-op (R7.4). Resolves
+ * once the download has been offered (or declined for an empty patch) and never
+ * rejects.
+ */
+export type PatchDownloadPort = (
+  patch: string,
+  ritualId: string,
+) => Promise<void>;
+
 /** The full set of ports the Terminal is constructed with. */
 export interface TerminalPorts {
   readonly api: ApiPort;
@@ -61,4 +74,5 @@ export interface TerminalPorts {
   readonly visibility: VisibilityPort;
   readonly frames: FramePort;
   readonly sound: SoundLoaderPort;
+  readonly patchDownload: PatchDownloadPort;
 }

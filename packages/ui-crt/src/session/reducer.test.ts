@@ -37,8 +37,17 @@ import { initialState } from "./state.js";
 import type { Action, Effect, SessionState } from "./state.js";
 import { step } from "./reducer.js";
 
-import type { ReadingResponse, SummonSummary } from "../protocol.js";
-import { BOOT_PHRASE, PRE_READING_PHRASE } from "../voice/phrases.js";
+import type {
+  ReadingResponse,
+  RitualResponse,
+  SummonSummary,
+} from "../protocol.js";
+import {
+  BOOT_PHRASE,
+  PRE_READING_PHRASE,
+  PRE_RESURRECTION_PHRASE,
+  RESURRECT_PHASE_VOICE,
+} from "../voice/phrases.js";
 import { MOTION_STORAGE_KEY, SOUND_STORAGE_KEY } from "../prefs/prefs.js";
 import { MAX_ENTRY_LENGTH } from "../command/types.js";
 import { blockText } from "../render/blocks.js";
@@ -535,6 +544,205 @@ describe("prefs.save", () => {
         }
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resurrect (R1.1, R1.6, R6.3, R6.4, R7.1, R8.3, R9.2)
+// ---------------------------------------------------------------------------
+
+/** Summon + read fates + resolve, so a completed reading is in scope. */
+function withReadingInScope(): SessionState {
+  let state = submit(bootState(), "summon o/n").state;
+  state = step(state, {
+    type: "api.summoned",
+    requestId: state.inflight!.id,
+    summary: makeSummary(),
+  }).state;
+  const read = submit(state, "read fates");
+  return step(read.state, {
+    type: "api.read",
+    requestId: read.state.inflight!.id,
+    response: makeReadingResponse(),
+  }).state;
+}
+
+/** A field-complete RitualResult: one changed, fully-converted file, +15. */
+function makeRitualResponse(
+  overrides: Partial<RitualResponse> = {},
+): RitualResponse {
+  return {
+    ritualId: "123e4567-e89b-42d3-a456-426614174000",
+    selectedCount: 1,
+    files: [
+      {
+        path: "src/legacy.py",
+        diff: [
+          { kind: "remove", text: 'print "hello"' },
+          { kind: "add", text: 'print("hello")' },
+        ],
+        residuals: [],
+        fullyConverted: true,
+      },
+    ],
+    patch:
+      '--- a/src/legacy.py\n+++ b/src/legacy.py\n@@ -1 +1 @@\n-print "hello"\n+print("hello")\n',
+    beforeVitality: 40,
+    afterVitality: 55,
+    vitalityDelta: 15,
+    changedCards: [{ card: "judgement", change: "severity", improved: true }],
+    degraded: false,
+    demo: false,
+    ...overrides,
+  };
+}
+
+describe("resurrect", () => {
+  it("refuses with an oracle-voice block and no effect when no reading is in scope (R1.6)", () => {
+    // No summon yet: nothing to raise.
+    const base = bootState();
+    const { state, effects } = submit(base, "resurrect");
+    expect(effects.filter((e) => e.type === "api.resurrect")).toHaveLength(0);
+    const text = appended(base.log, state.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toContain("no reading");
+  });
+
+  it("refuses when a summary exists but no spread has been read (R1.6)", () => {
+    // Summon only — no read — so no completed reading is in scope.
+    let state = submit(bootState(), "summon o/n").state;
+    state = step(state, {
+      type: "api.summoned",
+      requestId: state.inflight!.id,
+      summary: makeSummary(),
+    }).state;
+    const { state: after, effects } = submit(state, "resurrect");
+    expect(effects.filter((e) => e.type === "api.resurrect")).toHaveLength(0);
+    const text = appended(state.log, after.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toContain("no reading");
+  });
+
+  it("with a reading in scope pushes the pre-resurrection phrase and emits one api.resurrect effect (R1.1)", () => {
+    const base = withReadingInScope();
+    const { state, effects } = submit(base, "resurrect");
+    const emitted = effects.filter((e) => e.type === "api.resurrect");
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({
+      pinned: `o/n@${SHA}`,
+      spread: "fates",
+      target: { kind: "bare" },
+    });
+    // The single in-flight slot is now a resurrect request.
+    expect(state.inflight).toMatchObject({ kind: "resurrect" });
+    const text = appended(base.log, state.log).map(blockText).join("\n");
+    expect(text).toContain(PRE_RESURRECTION_PHRASE);
+  });
+
+  it("carries the parsed card/file target through to the effect (R1.1)", () => {
+    const base = withReadingInScope();
+    const card = submit(base, "resurrect judgement");
+    expect(
+      card.effects.find((e) => e.type === "api.resurrect"),
+    ).toMatchObject({ target: { kind: "card", card: "judgement" } });
+
+    const file = submit(base, "resurrect src/legacy.py");
+    expect(
+      file.effects.find((e) => e.type === "api.resurrect"),
+    ).toMatchObject({ target: { kind: "file", path: "src/legacy.py" } });
+  });
+
+  it("refuses to start a second resurrect while one is in flight (R3.11)", () => {
+    const base = withReadingInScope();
+    const first = submit(base, "resurrect").state;
+    expect(first.inflight).toMatchObject({ kind: "resurrect" });
+    const { state, effects } = submit(first, "resurrect");
+    expect(effects.filter((e) => e.type === "api.resurrect")).toHaveLength(0);
+    const text = appended(first.log, state.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toMatch(/already underway|ritual/);
+  });
+
+  it("renders exactly one status block per resurrection phase, keeping inflight (R9.2)", () => {
+    let state = submit(withReadingInScope(), "resurrect").state;
+    const requestId = state.inflight!.id;
+    const phases = [
+      "SELECT",
+      "PRE_PASS",
+      "LLM_PASS",
+      "VALIDATE",
+      "REDIAGNOSE",
+      "DIFF",
+    ] as const;
+    for (const phase of phases) {
+      const before = state.log.length;
+      state = step(state, {
+        type: "api.resurrect.progress",
+        requestId,
+        event: { kind: "phase", phase },
+      }).state;
+      const added = state.log.slice(before);
+      expect(added).toHaveLength(1);
+      expect(added[0]!.kind).toBe("status");
+      // The phase token is surfaced verbatim so the client can key off it.
+      expect(blockText(added[0]!)).toContain(
+        RESURRECT_PHASE_VOICE[phase].technical,
+      );
+      expect(state.inflight?.id).toBe(requestId);
+    }
+  });
+
+  it("resolving renders the diff/residual and vitality blocks and stores the ritual (R6.3, R7.1, R8.3)", () => {
+    const started = submit(withReadingInScope(), "resurrect").state;
+    const requestId = started.inflight!.id;
+    const before = started.log.length;
+    const resolved = step(started, {
+      type: "api.resurrect.resolved",
+      requestId,
+      result: makeRitualResponse(),
+    }).state;
+
+    expect(resolved.inflight).toBeNull();
+    expect(resolved.lastRitual).not.toBeNull();
+    expect(resolved.lastRitual?.patch.length).toBeGreaterThan(0);
+
+    const text = resolved.log.slice(before).map(blockText).join("\n");
+    // Diff header + both diff markers (R7.1), the fully-converted line (R8.3).
+    expect(text).toContain("FILE src/legacy.py");
+    expect(text).toContain('- print "hello"');
+    expect(text).toContain('+ print("hello")');
+    expect(text).toContain("Fully resurrected");
+    // The Vitality_Delta and the changed card (R6.3, R6.4).
+    expect(text).toContain("VITALITY 40/100 -> 55/100 (+15)");
+    expect(text.toUpperCase()).toContain("JUDGEMENT");
+  });
+
+  it("ignores a stale api.resurrect.resolved whose requestId does not match inflight", () => {
+    const started = submit(withReadingInScope(), "resurrect").state;
+    const requestId = started.inflight!.id;
+    const after = step(started, {
+      type: "api.resurrect.resolved",
+      requestId: requestId + 999,
+      result: makeRitualResponse(),
+    }).state;
+    // A stale result changes nothing: still in flight, no ritual stored.
+    expect(after.inflight?.id).toBe(requestId);
+    expect(after.lastRitual).toBeNull();
+  });
+
+  it("a new summon clears the last ritual (R5.4)", () => {
+    const started = submit(withReadingInScope(), "resurrect").state;
+    const resolved = step(started, {
+      type: "api.resurrect.resolved",
+      requestId: started.inflight!.id,
+      result: makeRitualResponse(),
+    }).state;
+    expect(resolved.lastRitual).not.toBeNull();
+    // A fresh summon resolution wipes the stale ritual result.
+    const next = submit(resolved, "summon o/n2").state;
+    const after = step(next, {
+      type: "api.summoned",
+      requestId: next.inflight!.id,
+      summary: makeSummary(),
+    }).state;
+    expect(after.lastRitual).toBeNull();
   });
 });
 

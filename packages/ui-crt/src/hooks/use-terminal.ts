@@ -68,6 +68,13 @@ export interface TerminalController {
   /** Toggle sound from the SOUND button (counts as a gesture). */
   readonly toggleSound: () => void;
   /**
+   * Download the last completed Ritual's unified Patch (the DOWNLOAD PATCH
+   * affordance, R7.3). A no-op when no Ritual with a non-empty patch is in
+   * scope; the view shows the control only while `state.lastRitual` carries a
+   * patch, so this performs the client-side download when clicked.
+   */
+  readonly downloadPatch: () => void;
+  /**
    * How many characters of the block with the given id are revealed right now,
    * or `null` when the block is not animating (show the full text).
    */
@@ -167,9 +174,53 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
           return;
         }
 
+        case "api.resurrect": {
+          const controller = new AbortController();
+          abortRef.current = controller;
+          const { requestId } = effect;
+          void ports.api
+            .resurrect(
+              effect.pinned,
+              effect.target,
+              effect.spread,
+              controller.signal,
+              (event) => {
+                dispatchRef.current({
+                  type: "api.resurrect.progress",
+                  requestId,
+                  event,
+                });
+              },
+            )
+            .then((result) => {
+              dispatchRef.current({
+                type: "api.resurrect.resolved",
+                requestId,
+                result,
+              });
+            })
+            .catch((error) => {
+              dispatchRef.current({
+                type: "api.failed",
+                requestId,
+                error: toErrorEnvelope(error),
+              });
+            });
+          return;
+        }
+
         case "api.abort":
           abortRef.current?.abort();
           abortRef.current = null;
+          return;
+
+        case "patch.download":
+          // The settled Ritual's unified diff is turned into a client-side
+          // `.patch` download with no server round-trip (R7.3). The DOM/URL work
+          // lives behind the injected `patchDownload` port so the heavy helper
+          // stays in its own lazy chunk and merely performing this effect never
+          // eagerly loads it (R14.5). An empty patch is a no-op in the port.
+          void ports.patchDownload(effect.patch, effect.ritualId);
           return;
 
         case "demo.load": {
@@ -374,6 +425,19 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     dispatch({ type: "submit", raw: `sound ${next}`, source: "button" });
   }, [dispatch]);
 
+  const downloadPatch = useCallback(() => {
+    // Build + trigger the patch download for the last completed Ritual, routed
+    // through the reducer as a `patch.download` effect so the one effect-seam
+    // owns every side effect (R7.3). A no-op when no patch is in scope.
+    const ritual = stateRef.current.lastRitual;
+    if (ritual === null || ritual.patch.length === 0) return;
+    for (const effect of [
+      { type: "patch.download", patch: ritual.patch, ritualId: ritual.ritualId } as const,
+    ]) {
+      performEffect(effect);
+    }
+  }, [performEffect]);
+
   const revealedCountFor = useCallback(
     (blockId: number, fullLength: number): number | null => {
       const s = stateRef.current;
@@ -404,6 +468,7 @@ export function useTerminal(ports: TerminalPorts): TerminalController {
     onInputKeyDown,
     prefillSummon,
     toggleSound,
+    downloadPatch,
     revealedCountFor,
     engineFailed,
   };

@@ -1179,6 +1179,27 @@
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793943985808
       }
+    ],
+    "19.4 Fix the auto-commit hook to name the current spec": [
+      {
+        "executionId": "fcb697a3-ec5f-45c6-9502-7125f9a4befc",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793945015502
+      }
+    ],
+    "19.1 Wire the `resurrect` command into the terminal session reducer and effect": [
+      {
+        "executionId": "fcb697a3-ec5f-45c6-9502-7125f9a4befc",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793945022434
+      }
+    ],
+    "19.2 Thread registryData/osvData through re-diagnosis and match the lich-py2 golden": [
+      {
+        "executionId": "fcb697a3-ec5f-45c6-9502-7125f9a4befc",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793945027972
+      }
     ]
   }
 }

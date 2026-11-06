@@ -48,9 +48,17 @@ export function Terminal({ ports }: TerminalProps): React.JSX.Element {
     onInputKeyDown,
     prefillSummon,
     toggleSound,
+    downloadPatch,
     revealedCountFor,
     engineFailed,
   } = terminal;
+
+  // The DOWNLOAD PATCH affordance is shown only once a resurrection Ritual has
+  // resolved with a non-empty patch (R7.3, R7.4): the diff/vitality blocks
+  // already render in the log; this control offers the inline patch as a
+  // client-side download with no server round-trip.
+  const hasPatch =
+    state.lastRitual !== null && state.lastRitual.patch.length > 0;
 
   // The component owns the document shell attributes in environments where the
   // framework layout has not already set them (R15.12).
@@ -86,6 +94,15 @@ export function Terminal({ ports }: TerminalProps): React.JSX.Element {
           toggleSound={toggleSound}
           soundOn={state.sound.preference === "on"}
         />
+        {hasPatch ? (
+          <button
+            type="button"
+            className="crt-patch-download"
+            onClick={downloadPatch}
+          >
+            DOWNLOAD PATCH
+          </button>
+        ) : null}
       </Screen>
       <noscript>{`${BOOT_PHRASE} — The terminal requires JavaScript.`}</noscript>
     </main>
