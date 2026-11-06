@@ -41,6 +41,26 @@ export const BOOT_PHRASE =
 export const PRE_READING_PHRASE = "Shuffle. Cut. The repository speaks.";
 export const DEMO_LABEL = "DEMO REPLAY · a recorded reading, no live summon.";
 
+// --- Resurrection stream copy (resurrection-engine, task 17.1) -------------
+//
+// The resurrect flow spec (`resurrect-flow.e2e.ts`) asserts the terminal
+// surfaces the six Resurrection_Phases in order. The client keys its progress
+// display off the phase TOKEN carried verbatim in each phase's technical line
+// (`@necro/ui-crt` RESURRECT_PHASE_VOICE), so these tokens are the stable DOM
+// anchor — a phase rename in the package flips the spec, never a stale literal.
+// They mirror `@necro/ui-crt`'s `protocol.ts` ResurrectionPhase enum VERBATIM;
+// like the phrases above they are duplicated here rather than imported because
+// the `@necro/ui-crt` barrel transitively imports `crt.css`, which Playwright's
+// TypeScript loader cannot parse.
+export const RESURRECT_PHASES = [
+  "SELECT",
+  "PRE_PASS",
+  "LLM_PASS",
+  "VALIDATE",
+  "REDIAGNOSE",
+  "DIFF",
+] as const;
+
 /**
  * The exact `<noscript>` note the Terminal renders (R1.5): the boot phrase, an
  * em-dash, then the requires-JavaScript statement (Terminal.tsx).
@@ -107,14 +127,55 @@ function liveReadingResponse(): DemoReading {
 }
 
 /**
- * Intercept `/api/summon` and `/api/readings` so the live summon→read→explain
- * path runs with ZERO real network. The summon returns a `SummonSummary`; the
- * readings route returns the NDJSON stream the client parses (phase lines then
- * a final `{ result }` line). A `calls` counter lets a spec assert no network
- * leaked past the mocks.
+ * A field-complete, redaction-safe `RitualResult` wire record (the shape of the
+ * Resurrection_Route's terminal `{ result }` line — `RitualResultWireSchema` in
+ * `src/protocol/resurrect-wire.ts`). One changed, validated, fully-converted
+ * file; a positive Vitality_Delta with one improved card. Mirrors the recorded
+ * fixture in `src/terminal/api-client.resurrect.test.ts` so the e2e stream and
+ * the unit stream speak the identical wire form. Kept as a plain literal (not
+ * imported from the coven barrel, which pulls node-only modules).
  */
-export async function mockRoutes(page: Page): Promise<{ summon: number; readings: number }> {
-  const calls = { summon: 0, readings: 0 };
+export const RESURRECT_RESULT = {
+  ritualId: "123e4567-e89b-42d3-a456-426614174000",
+  selectedCount: 1,
+  files: [
+    {
+      path: "src/legacy.py",
+      before: 'print "hello"\n',
+      after: 'print("hello")\n',
+      diff: [
+        { kind: "remove", text: 'print "hello"' },
+        { kind: "add", text: 'print("hello")' },
+        { kind: "context", text: "" },
+      ],
+      residuals: [],
+      fullyConverted: true,
+      validated: true,
+    },
+  ],
+  patch:
+    '--- a/src/legacy.py\n+++ b/src/legacy.py\n@@ -1 +1 @@\n-print "hello"\n+print("hello")\n',
+  beforeVitality: 40,
+  afterVitality: 55,
+  vitalityDelta: 15,
+  changedCards: [{ card: "judgement", change: "severity", improved: true }],
+  degraded: false,
+  demo: false,
+} as const;
+
+/**
+ * Intercept `/api/summon`, `/api/readings`, and `/api/resurrect` so the live
+ * summon→read→resurrect path runs with ZERO real network. The summon returns a
+ * `SummonSummary`; the readings route returns the reading NDJSON stream; the
+ * resurrect route returns the resurrection NDJSON stream the client parses —
+ * the six Resurrection_Phases in order, then a final `{ result }` line carrying
+ * `RESURRECT_RESULT` (R9.1-R9.3). A `calls` counter lets a spec assert each
+ * mock was hit and that nothing else leaked past the mocks.
+ */
+export async function mockRoutes(
+  page: Page,
+): Promise<{ summon: number; readings: number; resurrect: number }> {
+  const calls = { summon: 0, readings: 0, resurrect: 0 };
   const response = liveReadingResponse();
 
   await page.route("**/api/summon", async (route) => {
@@ -136,6 +197,23 @@ export async function mockRoutes(page: Page): Promise<{ summon: number; readings
       { phase: "EXTERNAL" },
       { phase: "READING" },
       { result: response },
+    ];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" },
+      body: lines.map((l) => JSON.stringify(l)).join("\n") + "\n",
+    });
+  });
+
+  await page.route("**/api/resurrect", async (route) => {
+    calls.resurrect += 1;
+    // One JSON object per line: the six resurrection phases in order, then the
+    // single terminal result line carrying a redaction-safe RitualResult. This
+    // is the whole offline resurrection stream — no LLM, no sandbox, no wire.
+    const lines = [
+      ...RESURRECT_PHASES.map((phase) => ({ phase })),
+      { result: RESURRECT_RESULT },
     ];
     await route.fulfill({
       status: 200,

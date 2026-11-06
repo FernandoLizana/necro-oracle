@@ -247,7 +247,7 @@ columns).
     - Cover no-reading-in-scope (R1.6), limiter reject with retry-after (R11.2), LLM/sandbox breaker skip-notes continuing the Ritual (R11.3/R11.4/R11.5), invalid-line termination (R9.6), time-bounded-phase skip-note (R9.4), and unknown-code fallback envelope (R12.2)
     - _Requirements: 1.6, 9.4, 9.6, 11.2, 11.3, 11.4, 11.5, 12.2_
 
-- [ ] 14. Implement the terminal Resurrect_Command client (@necro/ui-crt + apps/web)
+- [x] 14. Implement the terminal Resurrect_Command client (@necro/ui-crt + apps/web)
   - [x] 14.1 Parse `resurrect [<card-or-file>]` in the ui-crt command parser
     - Extend `packages/ui-crt/src/command/parse.ts` (and `types.ts`) to recognize the `resurrect` command with an optional single argument that is a card id or a file path; a bare `resurrect` is allowed; parse-level validation only (trim, reject extra arguments and empty-but-present tokens) while leaving semantic validation (card/file existence, py2 classification) to the server; add the `resurrect` entry (command + argument description) to the HELP text in `packages/ui-crt/src/render/help.ts`, ASCII-only and ≤ 72 columns in the oracle voice; expose the parsed `ResurrectTarget` shape (card id | file path | bare) to the terminal session reducer. ui-crt imports no node/github/oracle-main modules (browser-safe only)
     - _Requirements: 1.1, 1.4_
@@ -280,7 +280,7 @@ columns).
     - _Requirements: 7.3, 7.4_
     - _Design: Diff and Patch, Browser/terminal rendering_
 
-  - [~] 14.8 Write unit tests for the patch download-trigger builder
+  - [x] 14.8 Write unit tests for the patch download-trigger builder
     - Assert the builder produces the correct filename and mime for a non-empty patch and handles the empty-patch case gracefully, using a DOM/URL mock (`URL.createObjectURL`/`Blob`) — no real network and no real file write
     - _Requirements: 7.3, 7.4_
 
@@ -325,8 +325,8 @@ columns).
     - Assert the Demo_Mode `lich-py2` Ritual reports `Vitality_Delta > 0` and at least one changed card including an improved draw (e.g. JUDGEMENT/THE TOWER → THE STAR), matching the pinned goldens, with no LLM key configured
     - _Requirements: 16.1, 16.2, 16.4_
 
-- [ ] 17. End-to-end and docs
-  - [~] 17.1 Add the Playwright end-to-end resurrection flow
+- [x] 17. End-to-end and docs
+  - [x] 17.1 Add the Playwright end-to-end resurrection flow
     - Boot → summon a graveyard repo (Mock LLM) → run a reading → `resurrect` → phases stream → per-file diff visible → downloadable patch → re-diagnosis delta shown; include the axe accessibility check (CRT rendering, reduced-motion)
     - _Requirements: 1.1, 7.1, 7.3, 9.1_
 

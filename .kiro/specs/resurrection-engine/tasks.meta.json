@@ -843,6 +843,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931359838
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943736335
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943985764
       }
     ],
     "14.9 Show the Vitality_Delta and the changed-card set in the terminal": [
@@ -993,6 +1003,16 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793931360224
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943735232
+      },
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943985083
       }
     ],
     "17.2 Update docs for the new grimoire and public API": [
@@ -1094,6 +1114,20 @@
         "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
         "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
         "timestamp": 1793942446746
+      }
+    ],
+    "17. End-to-end and docs": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943985131
+      }
+    ],
+    "14. Implement the terminal Resurrect_Command client (@necro/ui-crt + apps/web)": [
+      {
+        "executionId": "d315145e-4aa6-41a3-a19c-933c11511bc1",
+        "chatSessionId": "sess_ee08d93b-ea68-4b5a-a440-5763f268d134",
+        "timestamp": 1793943985808
       }
     ]
   }
