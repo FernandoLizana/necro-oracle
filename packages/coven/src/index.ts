@@ -91,3 +91,12 @@ export {
   createDefaultRegistry,
   PYTHON2_TO_PYTHON3,
 } from "./registry.js";
+
+// --- Vitality re-diagnosis via snapshot overlay (rediagnose) ---------------
+// Pure, adapter-free (imports @necro/oracle only). `rediagnose` overlays the
+// validated+changed After_Content into a copy of the summoned RepoSnapshot,
+// re-divines it with the same spread via `runReading`, and reports
+// before/after vitality, the signed delta, and the changed-card set. On
+// post-reading failure it returns a typed REDIAGNOSIS_FAILED error with
+// after/delta nulled, never discarding the produced File_Results (R6.1–R6.5).
+export { rediagnose, type RediagnoseResult } from "./rediagnose.js";

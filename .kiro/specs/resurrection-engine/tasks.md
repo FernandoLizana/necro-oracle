@@ -81,7 +81,7 @@ columns).
     - _Requirements: 15.4, 15.5, 15.6_
     - _Design: Package map, Grimoire interface, Dependency direction_
 
-  - [~] 4.2 Implement the six deterministic Pre_Pass fixers
+  - [x] 4.2 Implement the six deterministic Pre_Pass fixers
     - In `packages/grimoires/py2to3/fixers/` implement `print_statement`, `except_comma`, `dict_iter`, `unicode_str`, `long_literal`, and `ne_operator` as pure `(source, ctx) => FixResult` functions that parse once via the injected `parsePython`, collect spans in document order, apply non-overlapping edits right-to-left, never alter string-literal/comment contents, and record unconverted constructs as `ResidualEntry`s; on tree-sitter parse failure leave content unchanged and record a `parse_failed` residual
     - Wire the fixers, in fixed order, into the grimoire's `fixers` array in `src/index.ts`
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.7, 3.8_
@@ -172,7 +172,7 @@ columns).
     - fast-check `numRuns: 1000` over `arbFileResult`
     - **Validates: Requirements 7.4, 7.5, 7.7**
 
-  - [~] 9.3 Implement vitality re-diagnosis via snapshot overlay
+  - [x] 9.3 Implement vitality re-diagnosis via snapshot overlay
     - In `packages/coven/src/rediagnose.ts` overlay validated `After_Content` into a copy of the `RepoSnapshot` (updating `contents` and `files` size/sha for changed paths), call `runReading` with the same spread, compute `beforeVitality`/`afterVitality` via `computeVitality` and `vitalityDelta` via `computeVitalityDelta`, and compute the changed-card set as the `(presence, severity, orientation)` difference with an `improved` flag; on post-reading failure preserve the pre-reading, set `afterVitality`/`vitalityDelta` to null, and surface a `REDIAGNOSIS_FAILED` error for that step without discarding File_Results
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
     - _Design: Vitality re-diagnosis_
