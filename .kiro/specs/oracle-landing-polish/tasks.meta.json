@@ -1,0 +1,853 @@
+{
+  "pbtResults": {
+    "4.2 Write property test for key bindings": {
+      "status": "passed",
+      "lastRunTimestamp": 1794019169530
+    },
+    "3.3 Write property test for `activate` semantics": {
+      "status": "passed",
+      "lastRunTimestamp": 1794019289255
+    },
+    "5.2 Write property tests for landing visibility and the round-trip": {
+      "status": "passed",
+      "lastRunTimestamp": 1794019797281
+    }
+  },
+  "executionHistory": {
+    "1.1 Add additive `landingDismissed` field to `SessionState`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018746921
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018757641
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018833472
+      }
+    ],
+    "1.2 Add the `home` command to the parser": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018746957
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018845336
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019039593
+      }
+    ],
+    "1.3 Add reducer transitions for first-command dismiss, `home`, and `clear`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018746995
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019075579
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019205946
+      }
+    ],
+    "2.1 Create `landing/repos.ts`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747037
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018758808
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018834674
+      }
+    ],
+    "3.1 Create `landing/selection.ts`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747066
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019076495
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019206895
+      }
+    ],
+    "4.1 Create `landing/key-binding.ts`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747100
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018759662
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018835454
+      }
+    ],
+    "5.1 Create `landing/landing-model.ts`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747133
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019215608
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019372558
+      }
+    ],
+    "6. Checkpoint - pure core complete": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747175
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019825213
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019886220
+      }
+    ],
+    "7.1 Create `landing/landing.css`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747217
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018846012
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019040314
+      }
+    ],
+    "8.1 Implement `HudBar` and `HintBar`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747239
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019908760
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020107243
+      }
+    ],
+    "8.2 Implement `LegacyRepoList`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747265
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019909643
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020106259
+      }
+    ],
+    "8.3 Implement `PreviewWindow`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747290
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019910607
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020105342
+      }
+    ],
+    "9.1 Implement the `Landing` component": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747331
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020119288
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020552030
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022267502
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022770177
+      }
+    ],
+    "9.2 Mount `Landing` inside `<Terminal>` and keep the shell operable": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747353
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020557851
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020652644
+      }
+    ],
+    "10. Checkpoint - Part A landing renders and is operable": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747376
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020846724
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020852519
+      }
+    ],
+    "11.1 Add the `ResurrectViewPort` type and live port": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747400
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020660643
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020841127
+      }
+    ],
+    "11.2 Wire the port into `createBrowserPorts` and mount the result view through it": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747422
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020853971
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021366678
+      }
+    ],
+    "12.1 Implement DMG-styled error and empty-state copy and routing": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747448
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020854772
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021367976
+      }
+    ],
+    "14.1 Run the full suite, typecheck, lint, and the web-budget gate": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747476
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022771008
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023161454
+      }
+    ],
+    "14.2 Update docs per docs-discipline": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747516
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023166679
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023325797
+      }
+    ],
+    "15. Final checkpoint - full suite green and no regression": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018747542
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023331228
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023336034
+      }
+    ],
+    "2. Implement the LEGACY REPOS table (pure)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018834719
+      }
+    ],
+    "4. Implement the key-binding handler (pure)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794018835489
+      }
+    ],
+    "7. Author the DMG landing stylesheet": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019040379
+      }
+    ],
+    "2.2 Write unit tests for the repos table": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019077907
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019208291
+      }
+    ],
+    "4.2 Write property test for key bindings": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019078684
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019209030
+      }
+    ],
+    "1. Add the `landingDismissed` state field and the `home` command (pure core foundation)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019206013
+      }
+    ],
+    "3. Implement the selection model (pure)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019206945
+      }
+    ],
+    "1.4 Write unit tests for parse `home` and reducer transitions": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019217059
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019373507
+      }
+    ],
+    "3.2 Write property test for selection index range (clamp, no wrap)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019218456
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019374567
+      }
+    ],
+    "3.3 Write property test for `activate` semantics": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019219146
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019371157
+      }
+    ],
+    "5. Implement the landing visibility + HUD/preview model (pure)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019372603
+      }
+    ],
+    "5.2 Write property tests for landing visibility and the round-trip": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019384219
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794019824301
+      }
+    ],
+    "8. Implement the screen-only landing components": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020107291
+      }
+    ],
+    "8.4 Write property + style tests for palette, scaling, motion": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020117293
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020549811
+      }
+    ],
+    "8.5 Write style/a11y example tests for the visual audit": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020118701
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020551231
+      }
+    ],
+    "9. Wire the `Landing` component into the Terminal shell (Part A integration)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020652708
+      }
+    ],
+    "9.3 Write Seer-visibility unit test (Part B bug 1, RED→GREEN)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020659804
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794020840472
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021656620
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021701181
+      }
+    ],
+    "11. Resurrection chunk split (Part B bug 2)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021366747
+      }
+    ],
+    "12. In-world oracle-voice error and empty states (Part B bug 4)": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021368014
+      }
+    ],
+    "11.3 Write unit test for the resurrection view port": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021400891
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021654604
+      }
+    ],
+    "12.2 Write property + example tests for error/empty copy": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021401676
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021655491
+      }
+    ],
+    "13.1 Write the landing end-to-end suite": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021712151
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022257556
+      }
+    ],
+    "13.2 Add Landing_State screenshot baselines and preserve `?ritual=force`": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794021713034
+      },
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022258937
+      }
+    ],
+    "13. End-to-end and screenshot coverage": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794022257656
+      }
+    ],
+    "14. No-regression gate and documentation": [
+      {
+        "executionId": "f31a02e4-6ff6-4d74-850a-d1858dffac9e",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794023325845
+      }
+    ],
+    "16.1 Bundle the bitmap pixel font (VT323 OFL)": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024007872
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024601956
+      }
+    ],
+    "16.2 Fix the focus ring to a DMG_Palette color on landing controls": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024009258
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024603298
+      }
+    ],
+    "16.3 Make the selected row a solid inverted row": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024010206
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024604247
+      }
+    ],
+    "16.4 Scale the Seer and card backs to fill the PREVIEW panel": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024011613
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024605682
+      }
+    ],
+    "16.5 Add the ` · ` separator between tag and file count": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024012580
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024606626
+      }
+    ],
+    "16.6 Fix the boot-banner layout": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024013590
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024607609
+      }
+    ],
+    "16. Fix landing visual-fidelity defects (22–27)": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024607664
+      }
+    ],
+    "17.1 Add the terminal-wide off-palette computed-color guard test": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024613836
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024923919
+      }
+    ],
+    "17. Palette-guard test + regenerate landing screenshots": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024923989
+      }
+    ],
+    "17.2 Regenerate landing screenshots and re-run the gate": [
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794024924670
+      },
+      {
+        "executionId": "c73d8bd4-3c6e-4c7a-ae24-297a706ec851",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794026463510
+      }
+    ],
+    "18.1 Height-bound the Preview_Window scale": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029234825
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029867387
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030295734
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030487992
+      }
+    ],
+    "18.2 Fit the whole landing within the viewport with no vertical scroll": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029242139
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029862578
+      }
+    ],
+    "18.3 Add single spaces on both sides of the separator": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029243564
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029864009
+      }
+    ],
+    "18.4 Replace the amber-brown `--crt-focus` with an in-palette composed focus indicator": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029244509
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029865397
+      }
+    ],
+    "18.5 Remove `#a85c30` from the palette-guard allowed set": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029245613
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029866371
+      }
+    ],
+    "18. Fix landing viewport fit and the smaller review items (29–32)": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029867422
+      }
+    ],
+    "19.1 Add the no-vertical-scroll + all-parts-in-viewport e2e": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794029957639
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030488901
+      }
+    ],
+    "19. Viewport e2e + regenerate screenshots": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030489006
+      }
+    ],
+    "19.2 Regenerate landing screenshots and re-run the gate": [
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030497767
+      },
+      {
+        "executionId": "0cdc3d68-f556-4618-ad25-b96fb95c71a2",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794030741601
+      }
+    ]
+  }
+}

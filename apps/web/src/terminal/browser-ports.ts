@@ -19,13 +19,19 @@
 //   - `backgroundTheme` — `loadBackgroundTheme` (the lazy Web Audio chiptune
 //                     engine chunk) + an `isTest` signal so the theme stays
 //                     silent in a Playwright / CI run (Arcana_Visions, R8.10).
+//   - `resurrectView` — `createResurrectViewPort()` (the lazy resurrection
+//                     result-view chunk), whose single live reference keeps
+//                     `load-resurrection-view.ts` in the module graph so the
+//                     heavy `ResurrectionResult` view is emitted as its own
+//                     non-initial chunk (oracle-landing-polish, Part B bug 2,
+//                     R9.1-R9.5).
 //
 // Every adapter is built INSIDE the factory, so merely importing this module
 // touches no browser global — it is safe to import from a client component
 // without a module-scope `window` access. The client boundary (R16.4) is
 // respected: this file imports only `@necro/ui-crt` and sibling browser modules
-// (`api-client`, `../demo/load-bundle`), never `@necro/github`, the oracle main
-// entry, or `node:*`.
+// (`api-client`, `../demo/load-bundle`, `./resurrect-view-port`), never
+// `@necro/github`, the oracle main entry, or `node:*`.
 //
 // _Requirements: R12.8, R16.4_
 
@@ -43,6 +49,7 @@ import type { PatchDownloadPort } from "@necro/ui-crt";
 
 import { loadDemoBundle } from "../demo/load-bundle.js";
 import { createApiPort } from "./api-client.js";
+import { createResurrectViewPort } from "./resurrect-view-port.js";
 
 /** The reduced-motion media query used by the `media` port. */
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -220,5 +227,13 @@ export function createBrowserPorts(): TerminalPorts {
     // silent (R8.10).
     backgroundTheme: loadBackgroundTheme,
     isTest: detectTestRun(),
+    // The lazy resurrection result-view port (oracle-landing-polish, Part B bug
+    // 2). This single live reference keeps `load-resurrection-view.ts` reachable
+    // from the module graph, so the bundler emits the heavy `ResurrectionResult`
+    // diff/vitality/patch view as its OWN chunk — fetched only the first time a
+    // `resurrect` result is mounted, never at page load — keeping the terminal
+    // initial route within the <= 250 KB gzipped budget (R9.1-R9.5, R14.5),
+    // exactly like the demo / sound / background-theme / patch-download seams.
+    resurrectView: createResurrectViewPort(),
   };
 }

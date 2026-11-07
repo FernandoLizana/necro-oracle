@@ -56,6 +56,7 @@ export type ResurrectTarget =
 export type Command =
   | { readonly kind: "help" }
   | { readonly kind: "clear" }
+  | { readonly kind: "home" }
   | { readonly kind: "summon"; readonly repo: string }
   | { readonly kind: "read"; readonly spread: SpreadArg }
   | { readonly kind: "explain"; readonly target: ExplainTarget }

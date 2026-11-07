@@ -132,6 +132,30 @@ component map lives in `docs/ARCHITECTURE.md` → "Arcana_Visions — the pixel-
 presentation layer"; the art and audio provenance is recorded in
 `docs/ASSETS.md`.
 
+## Landing surface (Oracle_Landing_Polish)
+
+Before any card is drawn, the empty idle terminal shows a Game Boy DMG-styled
+**Landing** menu (an additive region inside the existing `<Terminal>` shell, not
+a new deck). It carries three panels drawn in the strict 4-shade asset palette
+(`#001a00 / #0b4f1a / #2fa84a / #8cff9e`):
+
+- a **HUD** bar — `NECRO-ORACLE`, the SOUL hearts, and `PY2 CURSE: ACTIVE`;
+- a keyboard- and mouse-selectable **LEGACY REPOS** list of curated dead repos,
+  each with a DMG tag, a file count and an ORACLE SAYS line, plus a final
+  `ENTER ANY REPO...` row that focuses the `NECRO>` input;
+- a **PREVIEW** window showing the pixel Seer portrait and three **face-down
+  card backs** — the same shared eye/moon sigil as `asciiCardBack()` /
+  `PixelCard`'s back, explicitly **never a pentagram** (product + tarot-ux rule
+  V4) — above the selected repo's ORACLE SAYS line.
+
+Selecting a concrete repo runs `summon <ref>` then `read fates`, which draws the
+real spread; the landing is shown until the first command and is reachable again
+by the new **`home`** command (a superset of `clear` that empties the log and
+returns to the landing). The landing is a presentational surface only — it
+decides no draw and renders no card face, so the deck's detector↔card semantics
+above are unchanged. The full module and component map lives in
+`docs/ARCHITECTURE.md` → "Landing_State — the DMG idle menu".
+
 ## Card ↔ grimoire links
 
 A grimoire is a migration plugin unlocked by the card whose diagnosis it heals. A

@@ -97,6 +97,9 @@ export function parseCommand(input: string): Command | null {
     case "clear":
       return args.length === 0 ? { kind: "clear" } : unknown(trimmed);
 
+    case "home":
+      return args.length === 0 ? { kind: "home" } : unknown(trimmed);
+
     case "summon": {
       // The repo argument is the raw second token, unchanged. Exactly one
       // argument is allowed.

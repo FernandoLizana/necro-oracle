@@ -140,7 +140,7 @@ export {
   renderSkipNote,
   type RenderContext,
 } from "./render/reading.js";
-export { renderSummary } from "./render/summary.js";
+export { renderNoPython, renderSummary } from "./render/summary.js";
 export { renderHelp } from "./render/help.js";
 export { renderExplain } from "./render/explain.js";
 export {
@@ -189,6 +189,54 @@ export type {
 // table ships in its own lazy chunk, outside the first terminal render (R11.4).
 export { loadCardArt } from "./render/load-card-art.js";
 export type { LoadedCardArt } from "./render/load-card-art.js";
+
+// Landing (oracle-landing-polish) — the strict 4-shade DMG Asset_Palette, the
+// single source of truth that `landing/landing.css` mirrors on `--dmg-0..3` and
+// the palette-purity property test asserts against. Distinct from the Spec 03
+// phosphor chrome tokens above.
+export { DMG_PALETTE, type DmgShade } from "./landing/palette.js";
+
+// Landing (oracle-landing-polish) — the pure LEGACY REPOS table and the pure
+// selection model the DMG `Landing` list is driven by. The three authored
+// rows + the ENTER affordance, plus the cursor model (`move`/`selectedRow`/
+// `activate`) that maps a row to its summon-read / focus-input effect.
+export {
+  ENTER_ANY_LABEL,
+  LEGACY_REPOS,
+  LANDING_ROWS,
+  LegacyRepoSchema,
+  type LandingRow,
+  type LegacyRepo,
+} from "./landing/repos.js";
+export { activate, move, selectedRow } from "./landing/selection.js";
+export type { ActivateResult, SelectionState } from "./landing/selection.js";
+
+// Oracle-voice copy for the LEGACY REPOS list's empty / fetch-failure states
+// (R19.5, R19.6, R19.7): a legitimate zero-repo result shows the empty-state
+// message; a fetch failure routes to the matching in-world error copy.
+export {
+  LANDING_EMPTY_COPY,
+  LANDING_FETCH_NETWORK_COPY,
+  LANDING_FETCH_RATE_LIMIT_COPY,
+  MAX_COLUMNS,
+  MAX_MYSTICAL_WORDS,
+  emptyListCopy,
+} from "./landing/oracle-copy.js";
+export type { EmptyReason, OracleCopy } from "./landing/oracle-copy.js";
+
+// Landing (oracle-landing-polish) — the pure visibility predicate that gates
+// the whole Landing region plus the HUD / preview view-models the screen-only
+// `HudBar` / `PreviewWindow` render (label + SOUL hearts + PY2 curse; Seer
+// availability + 3 card backs + the selected ORACLE SAYS line).
+export {
+  ENTER_ORACLE_SAYS,
+  PREVIEW_CARD_BACKS,
+  SOUL_HEARTS,
+  hudModel,
+  landingVisible,
+  previewModel,
+} from "./landing/landing-model.js";
+export type { HudModel, PreviewModel } from "./landing/landing-model.js";
 
 // Session — command history, the bounded output log, and the pinned reference.
 export {
@@ -265,6 +313,14 @@ export {
 // React components — the CRT design system. `Terminal` is the live terminal;
 // the rest are the screen chrome and the block/spread/evidence renderers.
 export { Terminal, type TerminalProps } from "./components/Terminal.js";
+// The port-driven resurrection result-view mount (oracle-landing-polish, Part B
+// bug 2). It mounts the concrete `apps/web` `ResurrectionResult` lazily through
+// the `resurrectView` port so that chunk stays live and off the initial route,
+// falling back to the plain inline DOWNLOAD PATCH button when no port is wired.
+export {
+  ResurrectResultView,
+  type ResurrectResultViewProps,
+} from "./components/ResurrectResultView.js";
 export { Screen, type ScreenProps } from "./components/Screen.js";
 export {
   OutputLog,
@@ -456,3 +512,35 @@ export {
   SeerPortrait,
   type SeerPortraitProps,
 } from "./components/SeerPortrait.js";
+
+// Landing (oracle-landing-polish) — the screen-only DMG LEGACY REPOS list: a
+// `role="listbox"` of `role="option"` rows reflecting the parent's
+// `selectedIndex`, with the decorative ▶ cursor kept out of the accessible
+// name and hover/click selection + activation.
+export {
+  LegacyRepoList,
+  type LegacyRepoListProps,
+} from "./components/LegacyRepoList.js";
+
+// Landing (oracle-landing-polish) — the screen-only DMG HUD bar and hint bar.
+// Both are presentational: `HudBar` renders the fixed label + SOUL hearts (one
+// text accessible label, decorative glyphs) + PY2 curse from `hudModel`;
+// `HintBar` renders the fixed key-binding hint strip.
+export { HudBar, type HudBarProps } from "./components/HudBar.js";
+export { HINT_BAR_TEXT, HintBar } from "./components/HintBar.js";
+
+// Landing (oracle-landing-polish) — the screen-only DMG PREVIEW window: the
+// reused pixel `SeerPortrait` (shown whenever the landing is visible — the
+// Part B bug-1 fix), three face-down eye/moon Card_Backs (never a pentagram),
+// and the ORACLE SAYS line, all in the strict 4-shade DMG palette.
+export {
+  PreviewWindow,
+  type PreviewWindowProps,
+} from "./components/PreviewWindow.js";
+
+// Landing (oracle-landing-polish) — the screen-only DMG Landing region that
+// composes the HUD, the LEGACY REPOS list, the PREVIEW window and the hint bar.
+// Gated by `landingVisible(state)` (returns `null` otherwise); owns the local
+// selection cursor and the root-scoped keydown handler that never steals the
+// NECRO> input's keys. Mounted inside `<Terminal>` in task 9.2.
+export { Landing, type LandingProps } from "./components/Landing.js";

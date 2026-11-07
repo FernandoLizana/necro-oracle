@@ -35,7 +35,7 @@ const CATALOG: ReadonlyArray<{
     ctx: REPO,
     mystical: "No grave lies at this address.",
     technical:
-      "GitHub shows no repository octo/grave visible to this token. Check the spelling, or the repository moved or was renamed.",
+      "GitHub returned 404 for octo/grave. Check the spelling, or the repository moved, was renamed, or is private.",
   },
   {
     code: "REPO_PRIVATE",
@@ -139,6 +139,14 @@ describe("summonerError (R7.1, R7.10)", () => {
     expect(big.details.limit).toBe("entries");
     const ref = summonerError("REF_NOT_FOUND", { ...REPO, ref: "dev" });
     expect(ref.details.ref).toBe("dev");
+  });
+
+  it("REPO_NOT_FOUND cites the 404, the repo and the ref (R19.1)", () => {
+    const { userMessage } = summonerError("REPO_NOT_FOUND", {
+      ...REPO,
+      ref: "abc1234",
+    });
+    expect(userMessage).toContain("GitHub returned 404 for octo/grave@abc1234");
   });
 
   it("REF_NOT_FOUND names the ref (R7.7)", () => {

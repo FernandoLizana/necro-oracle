@@ -43,8 +43,10 @@ import type { ArcanaAsset } from "../arcana/manifest.js";
 import type { Size } from "../arcana/integer-scale.js";
 import type { ExplainTarget } from "../command/types.js";
 import type { VisualCard } from "../session/visual-reading.js";
+import { landingVisible } from "../landing/landing-model.js";
 import { Screen } from "./Screen.js";
 import { OutputLog } from "./OutputLog.js";
+import { Landing } from "./Landing.js";
 import { CommandLine } from "./CommandLine.js";
 import { ButtonRow } from "./ButtonRow.js";
 import { BootOverlay } from "./BootOverlay.js";
@@ -54,6 +56,7 @@ import { SpreadPixelView } from "./SpreadPixelView.js";
 import { FullscreenCardView } from "./FullscreenCardView.js";
 import { NecronomiconRitual } from "./NecronomiconRitual.js";
 import { RotOverlay } from "./RotOverlay.js";
+import { ResurrectResultView } from "./ResurrectResultView.js";
 import { VitalityCounter } from "./VitalityCounter.js";
 import { ritualTimeline } from "../arcana/ritual-timeline.js";
 import type { ResurrectFileResult } from "../protocol.js";
@@ -237,12 +240,13 @@ export function Terminal({
     ritualForce: ritualForceSignal,
   } = terminal;
 
-  // The DOWNLOAD PATCH affordance is shown only once a resurrection Ritual has
-  // resolved with a non-empty patch (R7.3, R7.4): the diff/vitality blocks
-  // already render in the log; this control offers the inline patch as a
-  // client-side download with no server round-trip.
-  const hasPatch =
-    state.lastRitual !== null && state.lastRitual.patch.length > 0;
+  // The DOWNLOAD PATCH affordance is mounted through `ResurrectResultView`
+  // below (gated on a settled `ritual`): once a resurrection Ritual has resolved
+  // with a non-empty patch (R7.3, R7.4), it renders the patch-download control —
+  // lazily via the `resurrectView` port when one is wired, or the plain inline
+  // button otherwise. The diff/vitality blocks already render in the log; this
+  // control offers the inline patch as a client-side download with no server
+  // round-trip.
 
   // The per-CardId illustration table ships in its own lazy chunk, fetched
   // once after mount so it stays outside the first terminal render (R11.4).
@@ -346,6 +350,65 @@ export function Terminal({
     }
   }, [cards.length, fullscreen.open, fullscreen.index]);
 
+  // ── Landing activation: summon a concrete repo, THEN read fates (R5.1) ────
+  //
+  // The DMG Landing's concrete-repo activation must `summon <ref>` and then
+  // `read fates`, with the read actually happening against the summoned repo.
+  // The reducer allows only ONE in-flight request: `doSummon` sets
+  // `state.inflight`, so a synchronous second `submit("read fates")` would hit
+  // the `inflight !== null` guard in `doRead` and be rejected. So the read is
+  // CHAINED after the summon RESOLVES rather than fired in the same tick.
+  //
+  // `onSummonAndRead` dispatches the summon and records a "pending auto-read"
+  // intent in a ref; the effect below watches for that summon settling and
+  // dispatches `read fates` exactly once. This is ONLY the landing path — typed
+  // commands (`summon x` then `read fates`) are untouched and still hit the
+  // reducer exactly as before.
+  const pendingReadAfterSummonRef = useRef(false);
+  // The in-flight value on the previous render, so the effect can see the
+  // summon transition from non-null back to null (the settle edge).
+  const prevInflightRef = useRef(state.inflight);
+
+  const onSummonAndRead = useCallback(
+    (ref: string) => {
+      // Arm the auto-read BEFORE dispatching so the settle edge below is never
+      // missed, then run the summon exactly as a button submit would.
+      pendingReadAfterSummonRef.current = true;
+      submit(`summon ${ref}`, "button");
+    },
+    [submit],
+  );
+
+  // Watch for the armed summon settling and chain `read fates` once. The summon
+  // settles when `inflight` goes from non-null back to `null`. On SUCCESS the
+  // reducer has set `state.summary` to the summoned repo, so we read against it
+  // (R5.1). On FAILURE (`api.failed`) `inflight` also returns to null but
+  // `summary` stays null — the landing path only ever arms this while
+  // `summary === null`, so a null summary at the settle edge means the summon
+  // did not land and we clear the flag WITHOUT reading (no stray `read fates`
+  // against nothing). The flag is cleared in BOTH branches so this fires at
+  // most once per activation and never loops.
+  useEffect(() => {
+    const prevInflight = prevInflightRef.current;
+    prevInflightRef.current = state.inflight;
+
+    if (!pendingReadAfterSummonRef.current) return;
+    // Still summoning (or the summon has not been dispatched yet): wait.
+    if (state.inflight !== null) return;
+    // No settle edge this render (inflight was already null): wait for the
+    // summon we armed to actually start and then settle.
+    if (prevInflight === null) return;
+    // Only react to the summon we armed, not a read/resurrect/demo settle.
+    if (prevInflight.kind !== "summon") return;
+
+    // The armed summon has settled. Clear the flag first so we fire exactly
+    // once, then read fates only if the summon actually produced a summary.
+    pendingReadAfterSummonRef.current = false;
+    if (state.summary !== null) {
+      submit("read fates", "button");
+    }
+  }, [state.inflight, state.summary, submit]);
+
   // A settled resurrection: the decorative rot-then-rebirth overlay plays over
   // the terminal while the diff / Vitality_Delta live in the log (R6.1, R6.10).
   const ritual = state.lastRitual;
@@ -408,6 +471,13 @@ export function Terminal({
       ref={rootRef as React.Ref<HTMLElement>}
       className="crt"
       data-motion={state.motionMode}
+      // The global `.crt :focus-visible` ring is now the in-palette COMPOSED
+      // indicator (`#8cff9e` outline + `#001a00` offset, oracle-landing-polish
+      // R32), so every control — including the `NECRO>` input while the landing
+      // is visible — already gets a DMG_Palette focus ring from the global rule.
+      // The former `data-landing="visible"` marker, which only existed to scope
+      // a landing-only `--dmg-3` ring override onto the input, is therefore no
+      // longer needed and has been removed.
       aria-label={TERMINAL_LABEL}
     >
       <h1 className="crt-sr-only">Necro-Oracle terminal</h1>
@@ -453,6 +523,30 @@ export function Terminal({
             frameKind={bootFrameKindForRender}
           />
         )}
+        {/* The DMG Landing_State region (oracle-landing-polish, Part A). It
+            sits where the empty idle screen is — a sibling ABOVE the OutputLog,
+            next to the boot/seer region — and renders only on the fresh,
+            post-boot, pre-command idle screen. `Landing` returns `null` unless
+            `landingVisible(state)`, so it never coexists with a reading spread,
+            the ritual, or a populated log; the gate here mirrors that predicate
+            so the region is additive and never double-counts. The command line,
+            the command chips, and the `NECRO>` input stay mounted and operable
+            throughout — the landing is a presentational region, not a modal, and
+            traps no focus (R1.1, R1.3, R1.6, R7.8, R7.9). `focusInput` is the
+            Spec 03 `prefillSummon` (it focuses — and prefills `summon ` on — the
+            NECRO> input), which is the focus-input effect the ENTER row needs. */}
+        {landingVisible(state) ? (
+          <Landing
+            state={state}
+            manifest={manifest}
+            motionMode={state.motionMode}
+            seerSrc={SEER_SRC}
+            available={seerRegion}
+            submit={submit}
+            onSummonAndRead={onSummonAndRead}
+            focusInput={prefillSummon}
+          />
+        ) : null}
         <OutputLog
           ref={logRef}
           blocks={state.log}
@@ -560,14 +654,23 @@ export function Terminal({
           toggleSound={toggleSound}
           soundOn={state.sound.preference === "on"}
         />
-        {hasPatch ? (
-          <button
-            type="button"
-            className="crt-patch-download"
-            onClick={downloadPatch}
-          >
-            DOWNLOAD PATCH
-          </button>
+        {/* The resurrection result view's patch-download control. Mounted
+            through the `resurrectView` port (oracle-landing-polish, Part B bug
+            2): once a Ritual settles with a non-empty patch and a host wired the
+            port, the concrete `ResurrectionResult` is lazily loaded from its own
+            bundler chunk and renders its own download control here — the piece
+            not already in the authoritative log — keeping that chunk live and
+            off the initial route (R9.2-R9.5). Until it resolves (and whenever no
+            port is wired) the plain inline `DOWNLOAD PATCH` button renders, so
+            the download is always reachable and a port-less host behaves exactly
+            as before. The authoritative diff / Vitality_Delta stay in the log. */}
+        {ritual !== null ? (
+          <ResurrectResultView
+            port={ports.resurrectView}
+            patch={ritual.patch}
+            ritualId={ritual.ritualId}
+            onDownload={downloadPatch}
+          />
         ) : null}
       </Screen>
       <noscript>{`${BOOT_PHRASE} — The terminal requires JavaScript.`}</noscript>

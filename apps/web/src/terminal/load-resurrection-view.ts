@@ -60,8 +60,18 @@ export function loadResurrectionView(): Promise<ResurrectionResultComponent> {
   if (memo !== undefined) return memo;
 
   const attempt = (async (): Promise<ResurrectionResultComponent> => {
-    // Literal-path dynamic import -> the bundler emits a separate chunk.
-    const mod = await import("../components/ResurrectionResult.js");
+    // Literal-path dynamic import -> the bundler emits a separate chunk. The
+    // `webpackChunkName` magic comment names that chunk `ResurrectionResult.*`
+    // so the budget gate (`scripts/check-web-budget.mjs` `findSeparateChunks`,
+    // which matches `/ResurrectionResult/i`) can locate it by name: the diff /
+    // vitality renderer identifiers it would otherwise match on are minified
+    // away in a production build, and the component filename is otherwise
+    // replaced by a numeric module id, so without the name the already-emitted
+    // chunk is undetectable. The import target stays a string literal, so the
+    // separate-chunk emission is unchanged (R14.5, R9.3-R9.5).
+    const mod = await import(
+      /* webpackChunkName: "ResurrectionResult" */ "../components/ResurrectionResult.js"
+    );
     return mod.ResurrectionResult;
   })();
 

@@ -1298,7 +1298,7 @@ The factory is the only place a `SummonerError` is constructed. It builds the `u
 | Code | Mystical line | Technical line (template) |
 |---|---|---|
 | `INVALID_REPO_URL` | `The sigil is malformed. The oracle cannot trace it.` | `Expected owner/repo or https://github.com/owner/repo. Rejected: <reason>.` |
-| `REPO_NOT_FOUND` | `No grave lies at this address.` | `GitHub shows no repository <owner>/<name> visible to this token. Check the spelling, or the repository moved or was renamed.` |
+| `REPO_NOT_FOUND` | `No grave lies at this address.` | `GitHub returned 404 for <owner>/<name>[@<ref>]. Check the spelling, or the repository moved, was renamed, or is private.` (ref cited when known; oracle-landing-polish R19.1) |
 | `REPO_PRIVATE` | `A sealed crypt. The oracle reads only open graves.` | `<owner>/<name> is private or cannot be shown to be public. Only public repositories are supported.` |
 | `RATE_LIMITED` | `The spirits are silent. GitHub bars the door.` | `GitHub API rate limit reached. Retry in <n> min.` (`<n>` is whole minutes, at least 1) |
 | `NETWORK_TIMEOUT` | `The ether does not answer.` | `<service> did not respond in time or was unreachable. Retry shortly.` |

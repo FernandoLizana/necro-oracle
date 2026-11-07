@@ -56,7 +56,29 @@
 //       WITHOUT `?boot=skip` and PAUSE the clock mid-boot so the boot phase holds
 //       "playing" and the Seer stays on screen for a stable capture.
 //
-// _Requirements: 9.1, 9.3, 13.7_
+// Oracle_Landing_Polish (task 13.2) adds two MORE deterministic frames for the
+// DMG Landing_State (R21.5), each in its OWN normally-clocked test (the landing
+// is a static screen — no clock control needed):
+//   (9) the idle DMG landing (mockup concept3) — navigate WITH `?boot=skip`
+//       (`bootTerminal`) so the boot is already done and the landing IS visible
+//       on the idle screen (the Part B fix mounts the Seer on the idle landing
+//       now, independent of boot phase, so no mid-boot freeze is needed unlike
+//       shot 08). Waits for `.crt-landing` (role=region "Legacy repository
+//       landing"), its listbox + options, the HUD, the PREVIEW (Seer
+//       `.crt-seer-portrait` + three `.crt-landing-cardback`), and the hint bar;
+//  (10) the landing AFTER selecting a repo (mockup concept3-summon) — from the
+//       idle landing, move the selection to a concrete repo so that row is
+//       inverted (`aria-selected="true"`) and the PREVIEW's ORACLE SAYS line
+//       reflects it, and capture that selected-preview frame BEFORE activating
+//       (so the shot shows the "after selecting a repo" preview, NOT the
+//       dismissed-landing reading — the summon is deliberately NOT dispatched).
+//       Selection is moved by HOVERING the target option (`onMouseEnter` →
+//       `onSelect` in `LegacyRepoList`): the landing's keydown handler is scoped
+//       to the landing subtree, but the idle screen focuses the sibling `NECRO>`
+//       input, so a page-level ArrowDown never reaches the landing — hover is the
+//       deterministic, in-contract way to move the cursor without activating.
+//
+// _Requirements: 9.1, 9.3, 13.7, 21.5, 21.6_
 
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -98,6 +120,15 @@ const asciiCards = (page: Page): Locator => page.locator(".crt-ascii-card");
 /** Every rendered pixel-art diagnosis card in the live Spread_View. */
 const pixelCards = (page: Page): Locator =>
   page.locator(".crt-spread-pixel-region .crt-pixel-card");
+
+/** The DMG Landing_State region (role=region "Legacy repository landing"). */
+const landing = (page: Page): Locator =>
+  page.getByRole("region", { name: "Legacy repository landing" });
+/** The LEGACY REPOS listbox inside the landing. */
+const repoList = (page: Page): Locator =>
+  page.getByRole("listbox", { name: "Legacy repositories" });
+/** Every selectable option row in the LEGACY REPOS listbox. */
+const repoOptions = (page: Page): Locator => repoList(page).getByRole("option");
 
 /**
  * The virtual-clock instant (ms from the ritual's first frame) at which to
@@ -398,6 +429,130 @@ test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", (
 
     await page.screenshot({
       path: shot("08-seer-landing"),
+      animations: "allow",
+    });
+  });
+
+  // --- (9) Idle DMG Landing_State (mockup concept3) --------------------
+  // Its OWN test on a normally-clocked page. Navigate WITH `?boot=skip`
+  // (`bootTerminal`) so the boot is already DONE and `landingVisible(state)` is
+  // true on the idle screen. The Part B fix mounts the reused `SeerPortrait`
+  // inside the landing's PREVIEW whenever the manifest carries the `seer` asset
+  // (independent of boot phase), so the Seer is on the idle landing here — no
+  // mid-boot clock freeze is needed (unlike shot 08, which froze mid-boot for
+  // the boot-REGION Seer). The `apps/web` Terminal route supplies the Arcana
+  // manifest (the same manifest shots 5/6 rely on), so the Seer and the eye/moon
+  // card backs render. Wait for the whole landing chrome — region, listbox +
+  // options, HUD, PREVIEW (Seer + three card backs + ORACLE SAYS), hint bar —
+  // before the capture so the frame is complete and deterministic.
+  test("captures the idle DMG landing (HUD, list, preview, hint)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+
+    // The landing region is visible on the idle screen (R1.1).
+    await expect(landing(page)).toBeVisible();
+
+    // The LEGACY REPOS listbox with its four option rows (three repos + the
+    // ENTER row).
+    await expect(repoList(page)).toBeVisible();
+    await expect(repoOptions(page)).toHaveCount(4);
+
+    // The HUD bar (NECRO-ORACLE label, SOUL hearts, PY2 CURSE: ACTIVE).
+    const hud = page.getByRole("group", { name: "Oracle status" });
+    await expect(hud).toBeVisible();
+    await expect(hud).toContainText("NECRO-ORACLE");
+    await expect(hud).toContainText("PY2 CURSE: ACTIVE");
+
+    // The PREVIEW window: the reused Seer portrait + three face-down eye/moon
+    // card backs + the ORACLE SAYS line. The Seer mounts because the apps/web
+    // manifest carries the `seer` asset (Part B bug 1 fix).
+    const preview = page.getByRole("group", { name: "Reading preview" });
+    await expect(preview).toBeVisible();
+    await expect(preview.locator(".crt-seer-portrait")).toBeVisible();
+    await expect(preview.locator("img.crt-seer-img")).toBeVisible();
+    await expect(preview.locator(".crt-landing-cardback")).toHaveCount(3);
+    await expect(preview.locator(".crt-landing-oracle-says")).toBeVisible();
+
+    // The hint bar (▲▼ SELECT  A:SUMMON  B:DEMO  START:HELP).
+    await expect(landing(page).locator(".crt-landing-hint")).toBeVisible();
+
+    // R30: the idle-landing baseline MUST be captured scrolled to the TOP of
+    // the terminal with the full Landing_State in frame — never a mid-scroll
+    // crop. Scroll the window and the output-log scroll container back to the
+    // top, so the HUD_Bar (the top-most landing chrome) sits at the top of the
+    // viewport and the whole landing — HUD, list, preview, hint — is in frame.
+    // The R29 layout keeps the landing within the viewport with no vertical
+    // scroll, so this scroll-to-top is a belt-and-braces guarantee for the
+    // capture frame and does not alter any production behaviour.
+    const log = sel.log(page);
+    await log.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+
+    // Assert the capture starts at the top: the HUD_Bar's top edge is within a
+    // small epsilon of the viewport top, proving shot 09 is NOT a mid-scroll
+    // crop (R30). The HUD is the first landing panel, so if it sits at the top
+    // the full landing below it is in frame.
+    const hudTop = await hud.evaluate((el) => el.getBoundingClientRect().top);
+    expect(hudTop, "HUD_Bar must sit at the top of the frame for R30").toBeLessThan(80);
+
+    await page.screenshot({
+      path: shot("09-landing-idle"),
+      animations: "allow",
+    });
+  });
+
+  // --- (10) Landing after selecting a repo (mockup concept3-summon) ----
+  // Its OWN test on a normally-clocked page. From the idle landing, MOVE the
+  // selection to a concrete repo so that option is inverted
+  // (`aria-selected="true"`) and the PREVIEW's ORACLE SAYS line reflects it,
+  // then capture THAT selected-preview frame. We do NOT activate (no summon is
+  // dispatched): the frame must show the "after selecting a repo" preview, not
+  // the dismissed-landing reading.
+  //
+  // Selection is moved by HOVERING the target option. The landing's keydown
+  // handler lives on the landing root and only fires while focus is inside the
+  // landing subtree, but `?boot=skip` lands focus on the sibling `NECRO>`
+  // input, so a page-level ArrowDown never reaches the landing. `LegacyRepoList`
+  // wires `onMouseEnter` → `onSelect`, and hover (unlike click) selects WITHOUT
+  // activating — exactly the selected-but-not-summoned state this shot wants.
+  test("captures the landing after selecting a concrete repo (preview reflects it)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+    await expect(landing(page)).toBeVisible();
+    await expect(repoOptions(page)).toHaveCount(4);
+
+    // Move the cursor onto the SECOND concrete repo (index 1) by hovering it.
+    // Index 0 is already selected by default, so hovering index 1 demonstrates
+    // the selection moving — the inverted row follows the cursor (R4.5). Hover
+    // selects but does not activate (only click activates), so no summon fires.
+    const target = repoOptions(page).nth(1);
+    await target.hover();
+
+    // The hovered option is now the single selected (inverted) row (R4.5).
+    await expect(target).toHaveAttribute("aria-selected", "true");
+    // Exactly one option is selected at a time.
+    await expect(
+      repoList(page).locator('[role="option"][aria-selected="true"]'),
+    ).toHaveCount(1);
+
+    // The PREVIEW's ORACLE SAYS line is visible and reflects the selected repo.
+    const preview = page.getByRole("group", { name: "Reading preview" });
+    const oracleSays = preview.locator(".crt-landing-oracle-says");
+    await expect(oracleSays).toBeVisible();
+    await expect(oracleSays).not.toBeEmpty();
+
+    // Guard: the landing is still up — we did NOT activate/summon, so the
+    // reading never replaced the landing (this is the selected-preview frame).
+    await expect(landing(page)).toBeVisible();
+
+    await page.screenshot({
+      path: shot("10-landing-summon"),
       animations: "allow",
     });
   });

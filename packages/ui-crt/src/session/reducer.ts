@@ -47,7 +47,7 @@ import {
 import { blockText } from "../render/blocks.js";
 import { renderExplain } from "../render/explain.js";
 import { renderHelp } from "../render/help.js";
-import { renderSummary } from "../render/summary.js";
+import { renderNoPython, renderSummary } from "../render/summary.js";
 import { renderError } from "../render/errors.js";
 import { renderFileResults } from "../render/resurrect-diff.js";
 import { renderResurrectVitality } from "../render/resurrect-vitality.js";
@@ -336,6 +336,13 @@ function stepSubmit(
   pushBlocks(acc, [echoDraft]);
   acc.state = { ...acc.state, history: historyPush(acc.state.history, raw.trim()) };
 
+  // An accepted command dismisses the Landing_State (R1.2). This is the first
+  // submit path that produces output: the empty-entry (`command === null`) and
+  // the bare SUMMON-button prefill both returned above, so neither reaches
+  // here. `home` resets the flag back to false in `doHome`, which runs inside
+  // `dispatchCommand` below, so the `home` round-trip lands on `false` (R2.3).
+  acc.state = { ...acc.state, landingDismissed: true };
+
   dispatchCommand(acc, command);
   maybeFocus(acc, action);
   return result(acc);
@@ -365,6 +372,9 @@ function dispatchCommand(acc: Accumulator, command: Command): void {
       return;
     case "clear":
       doClear(acc);
+      return;
+    case "home":
+      doHome(acc);
       return;
     case "summon":
       doSummon(acc, command.repo);
@@ -410,6 +420,33 @@ function doClear(acc: Accumulator): void {
     reveal: { queue: [], startedAtMs: null },
   };
   acc.state = appendDrafts(reset, [block]);
+}
+
+// ---------------------------------------------------------------------------
+// home
+// ---------------------------------------------------------------------------
+
+/**
+ * Return to the Landing_State (oracle-landing-polish R1.4, R2.3). `home` is a
+ * superset of `clear` plus the landing restore: it empties the output log (no
+ * "screen cleared" block is left — the log must be empty for `landingVisible`),
+ * nulls `summary`/`readings`/`lastSpread`/`lastRitual`, resets the reveal and
+ * card-reveal queues, and sets `landingDismissed = false`. With the boot phase
+ * already `done`, an empty log, and `summary === null`, `landingVisible(state)`
+ * becomes true again — a clean round-trip from Dismissed to LandingVisible.
+ */
+function doHome(acc: Accumulator): void {
+  acc.state = {
+    ...acc.state,
+    log: [],
+    summary: null,
+    readings: {},
+    lastSpread: null,
+    lastRitual: null,
+    reveal: { queue: [], startedAtMs: null },
+    cardReveal: { schedule: [], flippedCount: 0 },
+    landingDismissed: false,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -745,7 +782,15 @@ function stepSummoned(
     inflight: null,
   };
   const acc: Accumulator = { state: resolved, effects: [] };
-  pushBlocks(acc, [renderSummary(action.summary)]);
+  // A summon that landed on a repository with no extractable source files has
+  // nothing to resurrect: surface the in-world no-Python block (R19.4) in
+  // place of the usual "type read fates" summary, so the user is told the plain
+  // fact instead of being invited to read an empty body.
+  pushBlocks(acc, [
+    action.summary.fileCount === 0
+      ? renderNoPython(action.summary)
+      : renderSummary(action.summary),
+  ]);
   return result(acc);
 }
 

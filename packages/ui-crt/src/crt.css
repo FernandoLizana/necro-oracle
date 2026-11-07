@@ -10,8 +10,32 @@
  * is gated under `.crt[data-motion="full"]`; `.crt[data-motion="reduced"] *`
  * removes every animation and transition (R10.3, R10.11).
  *
- * Requirements: R9.1-R9.8, R10.3, R10.9, R10.11, R15.6, R15.7, R15.8, R17.4, R17.5
+ * Requirements: R9.1-R9.8, R10.3, R10.9, R10.11, R15.6, R15.7, R15.8, R17.4, R17.5, R29
  */
+
+/*
+ * No-vertical-scroll reset (oracle-landing-polish R29). The terminal root
+ * `main.crt` is `min-height: 100vh` and the single scroll container is
+ * `.crt-log` INSIDE the `height: 100vh` `.crt-screen` column, so the page
+ * document itself must never scroll. Without this reset the user-agent default
+ * `body { margin: 8px }` offsets `main.crt` down 8px while it still claims a
+ * full `100vh`, pushing `document.documentElement.scrollHeight` 16px past the
+ * viewport and growing a vertical scrollbar at every size (1280x720 /
+ * 1366x768 / 1920x1080). Zeroing the body/html margin and clipping any
+ * incidental page-level overflow keeps the whole landing (HUD, list, preview,
+ * hint) plus the boot banner, the `NECRO>` input and the command chips within
+ * the viewport with no vertical page scroll.
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html:has(.crt),
+body:has(.crt) {
+  overflow: hidden;
+}
 
 .crt {
   /* Phosphor palette (R9.1) — mirrors tokens.ts exactly. */
@@ -19,7 +43,16 @@
   --crt-bg: #001a00;
   --crt-fg-dim: #29cc52;
   --crt-error: #ff7a7a;
-  --crt-focus: #a85c30;
+  /*
+   * Focus-ring colour (oracle-landing-polish R32) — mirrors tokens.ts exactly.
+   * The bright DMG/phosphor shade `#8cff9e` (identical to --dmg-3), used as the
+   * OUTLINE of the global composed focus indicator (see the `.crt
+   * :focus-visible` rule below). No longer the off-palette amber-brown
+   * `#a85c30`; the dark `--crt-bg` (#001a00) offset in the composed ring — not
+   * this colour vs the bright `#33ff66` fg — provides the separation on the
+   * bright-text side, so the indicator stays inside the DMG + phosphor palette.
+   */
+  --crt-focus: #8cff9e;
 
   /* Effect tokens (R9.2-R9.5) — mirror tokens.ts exactly. */
   --crt-glow-radius: 4px;
@@ -77,7 +110,14 @@
   padding: 0;
   background-color: var(--crt-bg);
   color: var(--crt-fg);
-  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  /*
+   * The bitmap pixel display font (oracle-landing-polish R25). The host app
+   * loads VT323 via `next/font` and exposes it as `--font-vt323`; preferring
+   * that variable here resolves the real bundled face, with the literal
+   * "VT323" and the monospace stack as fallbacks for hosts that do not set it.
+   */
+  font-family: var(--font-vt323), "VT323", "IBM Plex Mono", ui-monospace,
+    "Courier New", monospace;
   font-size: 18px;
   line-height: 1.35;
   overflow: hidden;
@@ -120,7 +160,8 @@
   padding: 1rem;
   background-color: #001a00;
   color: #33ff66;
-  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-family: var(--font-vt323), "VT323", "IBM Plex Mono", ui-monospace,
+    "Courier New", monospace;
   font-size: 18px;
   line-height: 1.35;
 }
@@ -246,10 +287,24 @@ html[data-js="ready"] .crt-no-js {
   text-decoration: underline;
 }
 
-/* A visible 2px focus ring that reaches >= 3:1 on bg and fg (R15.7). */
+/*
+ * The global COMPOSED focus indicator (oracle-landing-polish R32). A two-colour
+ * ring: a bright `#8cff9e` (`--crt-focus`, = --dmg-3) outline, separated from
+ * whatever it sits on by a `#001a00` (`--crt-bg`) inner offset/gap. The
+ * `box-shadow: 0 0 0 2px var(--crt-bg)` paints a solid dark separating ring in
+ * the `outline-offset` gap, so the bright outline never sits directly on the
+ * bright `#33ff66` phosphor foreground — the dark gap provides the separation
+ * on the bright-text side. The `#8cff9e` ring clears >= 3:1 against the
+ * `#001a00` offset/background it visibly sits against (~11:1), so the indicator
+ * is plainly visible against both the dark surround and the bright text, while
+ * staying strictly inside the DMG + phosphor palette (no amber-brown, R32.1,
+ * R32.2). Kept at a 2px ring; the layering (text → #001a00 gap → #8cff9e ring)
+ * composes the in-palette indicator per R32.
+ */
 .crt :focus-visible {
   outline: 2px solid var(--crt-focus);
-  outline-offset: 1px;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--crt-bg);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -338,7 +393,8 @@ html[data-js="ready"] .crt-no-js {
 .crt-ascii-card-art {
   margin: 0;
   white-space: pre;
-  font-family: "VT323", "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  font-family: var(--font-vt323), "VT323", "IBM Plex Mono", ui-monospace,
+    "Courier New", monospace;
 }
 
 /*

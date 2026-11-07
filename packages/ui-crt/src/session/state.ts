@@ -95,6 +95,13 @@ export interface SessionState {
   readonly reveal: RevealState;
   readonly boot: BootState;
   readonly cardReveal: CardRevealState;
+  /**
+   * Whether the Landing_State has been dismissed by the first accepted command
+   * (oracle-landing-polish, R1.2/R1.5). Seeded `false`; set `true` on the first
+   * `submit` that produces output; set back to `false` by the `home` command.
+   * Pure session memory — no clock, DOM, network or storage.
+   */
+  readonly landingDismissed: boolean;
 }
 
 /** Every action the reducer understands. */
@@ -193,5 +200,6 @@ export function initialState(): SessionState {
     reveal: { queue: [], startedAtMs: null },
     boot: { phase: "playing", startedAtMs: null, stepIndex: 0, seen: false },
     cardReveal: { schedule: [], flippedCount: 0 },
+    landingDismissed: false,
   };
 }

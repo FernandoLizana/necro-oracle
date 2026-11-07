@@ -82,6 +82,23 @@ export type PatchDownloadPort = (
   ritualId: string,
 ) => Promise<void>;
 
+/**
+ * Lazily yields the resurrection result-view component from its own bundler
+ * chunk (oracle-landing-polish, Part B bug 2). This port exists so the heavy
+ * `ResurrectionResult` view is reached only through a literal-path dynamic
+ * import on first use and lands in its own lazily-loaded chunk, keeping the
+ * terminal initial route within the <= 250 KB gzipped budget (R14.5, R9.1).
+ *
+ * The component type is deliberately `unknown` here: `@necro/ui-crt` must NOT
+ * import the concrete `ResurrectionResult` component type, which lives in
+ * `apps/web` — that would invert the dependency direction. `apps/web` supplies
+ * the concrete port (`() => Promise<ResurrectionResultComponent>`), which is
+ * assignable to this structural shape because `Promise<T>` is assignable to
+ * `Promise<unknown>`. The resolved value is narrowed/cast back to the concrete
+ * component by the apps/web host that mounts it (R9.8).
+ */
+export type ResurrectViewPort = () => Promise<unknown>;
+
 /** The full set of ports the Terminal is constructed with. */
 export interface TerminalPorts {
   readonly api: ApiPort;
@@ -110,4 +127,16 @@ export interface TerminalPorts {
    * from a `navigator.webdriver` / env signal in the browser adapters.
    */
   readonly isTest?: boolean | undefined;
+  /**
+   * Lazily loads the resurrection result-view component chunk
+   * (oracle-landing-polish, Part B bug 2). OPTIONAL and default-absent: when
+   * omitted, the resurrection view is simply never mounted through the port, so
+   * a host (and every `@necro/ui-crt` unit test) that passes no `resurrectView`
+   * port type-checks and behaves exactly as before (R9.8). Production wires
+   * `createResurrectViewPort()`; the single reference keeps the loader in the
+   * module graph so the bundler emits the `ResurrectionResult` as a distinct
+   * chunk (R9.1). Typed structurally (`() => Promise<unknown>`) so this package
+   * never depends on the concrete `apps/web` component type.
+   */
+  readonly resurrectView?: ResurrectViewPort | undefined;
 }

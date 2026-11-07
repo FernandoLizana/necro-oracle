@@ -16,6 +16,8 @@ export function printCommand(cmd: Exclude<Command, { kind: "unknown" }>): string
       return "help";
     case "clear":
       return "clear";
+    case "home":
+      return "home";
     case "summon":
       return `summon ${cmd.repo}`;
     case "read":

@@ -33,8 +33,26 @@
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { VT323 } from "next/font/google";
 
 import { BOOT_PHRASE } from "@necro/ui-crt/phrases";
+
+// Bitmap pixel display font (oracle-landing-polish, defect 4 / R25). VT323 is an
+// SIL-OFL bitmap pixel font; `next/font/google` fetches it at BUILD time and
+// self-hosts the `.woff2` from the app bundle (no runtime request to Google, no
+// committed binary), so the DMG surfaces render in the real bitmap face rather
+// than silently falling back to a system monospace. The font is exposed as the
+// stable `--font-vt323` CSS variable (not a hashed family name), which `crt.css`
+// and `@necro/ui-crt`'s `--dmg-font` reference first so `"VT323"` resolves to
+// the bundled face. `display: "swap"` keeps text visible during load; the
+// monospace stack stays as the final fallback. License recorded in
+// docs/COMPLIANCE.md (R25.3).
+const vt323 = VT323({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-vt323",
+});
 
 export const metadata: Metadata = {
   title: "Necro-Oracle terminal",
@@ -55,7 +73,10 @@ export default async function RootLayout({
   await headers();
 
   return (
-    <html lang="en">
+    // The VT323 variable class is applied to <html> so the `--font-vt323`
+    // custom property is in scope for the whole document, including the
+    // terminal root and every DMG landing surface (R25.1, R25.2).
+    <html lang="en" className={vt323.variable}>
       <body>
         {/*
           Authoritative no-JS note (R1.5): a static, visible-by-default element

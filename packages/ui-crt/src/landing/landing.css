@@ -1,0 +1,557 @@
+/*
+ * src/landing/landing.css
+ *
+ * Feature: oracle-landing-polish, task 7.1.
+ *
+ * The DMG Landing_State chrome: an ADDITIVE stylesheet on top of `crt.css` and
+ * `arcana.css`. It styles the four landing panel boxes — the HUD bar, the
+ * LEGACY REPOS list, the PREVIEW window, and the hint bar — in the strict
+ * 4-shade DMG Asset_Palette. It never redefines a Spec 03 (`crt.css`) or
+ * Arcana_Visions (`arcana.css`) token, class, or keyframe; it only adds the
+ * `.crt-landing*` rules this spec needs.
+ *
+ * TWO PALETTES, as the design fixes them (design §"Part B — visual consistency
+ * audit", G5). The DMG landing surfaces below are authored in the strict
+ * 4-shade Asset_Palette bound to `--dmg-0..3`:
+ *   --dmg-0 #001a00  (darkest; shared with the CRT background --crt-bg)
+ *   --dmg-1 #0b4f1a
+ *   --dmg-2 #2fa84a
+ *   --dmg-3 #8cff9e  (brightest)
+ * These four values mirror `landing/palette.ts` `DMG_PALETTE` byte-for-byte.
+ * Every `color` / `background-color` / `border-color` on a DMG surface is one
+ * of `var(--dmg-0..3)` or `transparent` and NOTHING else (R10.1, V1). This is
+ * DISTINCT from — and never alters — the surrounding Spec 03 phosphor chrome
+ * (`--crt-fg` #33ff66, `--crt-fg-dim`, etc.).
+ *
+ * ONE FONT (R15.1, V7): every DMG surface draws text with the single bitmap
+ * pixel `font-family` token `--dmg-font`. No proportional or smoothed font
+ * appears on any DMG surface.
+ *
+ * ONE SPACING SCALE (R13.1, R13.2, R17.1, V5, V9): all gutters, margins,
+ * padding, border-widths, and panel-box metrics derive from the single `--px`
+ * grid unit and the `--dmg-gap*` tokens, each an INTEGER multiple of `--px`, so
+ * every computed box metric and offset is a whole pixel value with no
+ * sub-pixel blur. No ad-hoc spacing value lives outside this token set.
+ *
+ * TEXT FIT (R14.1, R14.2, V6): repo labels and the ORACLE SAYS line clip to a
+ * single line with `text-overflow: ellipsis`; they never overflow their panel.
+ *
+ * IMAGES (R11.2, R11.3, V3): every landing image surface carries
+ * `image-rendering: pixelated` and `filter: none` — no colour-shifting or blur
+ * filter is ever applied. (The integer size — logical x `--arcana-scale` — is
+ * set by the Arcana_Visions image rules in `arcana.css`, R11.1.)
+ *
+ * MOTION (R16.1, R16.2, V8): the ONLY landing animations are the candle
+ * flicker and the cursor blink, and both run ONLY inside a Motion_Zone gated by
+ * `.crt[data-motion="full"]`. Under `data-motion="reduced"` the `crt.css`
+ * `.crt[data-motion="reduced"] *` block already strips every animation and
+ * transition; the explicit resting rules below make the steady state plain, and
+ * a `prefers-reduced-motion` guard keeps them off even at full motion when the
+ * OS asks for less motion.
+ *
+ * This file loads NO image via CSS `url(...)`: the Seer and Card_Back bitmaps
+ * arrive through `<img>` elements in the components, never a CSS background.
+ *
+ * Requirements: R10.1, R10.2, R11.1, R11.2, R11.3, R13.1, R13.2, R14.1, R14.2,
+ * R15.1, R16.1, R16.2, R17.1
+ */
+
+/* ------------------------------------------------------------------------ */
+/* DMG palette + spacing + font tokens (R10.1, R13.*, R15.1, R17.1).         */
+/* Scoped to the landing root so nothing here can leak onto Spec 03 chrome.  */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing {
+  /*
+   * The strict 4-shade DMG Asset_Palette (V1) — mirrors landing/palette.ts
+   * DMG_PALETTE exactly, darkest -> brightest. ONLY these (or `transparent`)
+   * may be used for color / background-color / border-color below.
+   */
+  --dmg-0: #001a00;
+  --dmg-1: #0b4f1a;
+  --dmg-2: #2fa84a;
+  --dmg-3: #8cff9e;
+
+  /*
+   * The single bitmap pixel font token for every DMG surface (V7, R25). One
+   * family, reused everywhere below via `font-family: var(--dmg-font)`. The
+   * host app loads VT323 through `next/font` and exposes it as `--font-vt323`;
+   * preferring that variable resolves the real BUNDLED bitmap face so DMG
+   * surfaces no longer fall back to a system monospace. The literal "VT323" and
+   * the monospace stack remain fallbacks for hosts that do not set the variable.
+   */
+  --dmg-font: var(--font-vt323), "VT323", "IBM Plex Mono", ui-monospace,
+    "Courier New", monospace;
+
+  /*
+   * The single spacing scale (V5, V9). `--px` is the integer pixel grid unit;
+   * every gutter/margin/padding/border below is an INTEGER multiple of it, so
+   * all panel-box metrics and offsets land on whole pixels (R13.1, R13.2).
+   */
+  --px: 1px;
+  --dmg-gap: calc(8 * var(--px)); /* standard inter-panel gutter / padding */
+  --dmg-gap-sm: calc(4 * var(--px)); /* tight gutter inside a row */
+  --dmg-gap-lg: calc(16 * var(--px)); /* loose gutter between regions */
+  --dmg-border: calc(2 * var(--px)); /* every panel-box border width */
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dmg-gap);
+  padding: var(--dmg-gap);
+  /* DMG darkest shade = the shared background; sits flush on --crt-bg. */
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+  font-family: var(--dmg-font);
+  /* Integer pixel line box keeps rows on the grid. */
+  line-height: 1;
+  /*
+   * Viewport-fit layout (R29) + boot-banner layout (R22). The landing is a
+   * sibling ABOVE the output log inside the flex-column `.crt-screen`
+   * (`height: 100vh`). It must take ONLY its needed, bounded height so the boot
+   * banner (the log's first block), the `NECRO>` CommandLine input and the
+   * ButtonRow chips all stay visible with NO vertical page scroll at 1280×720,
+   * 1366×768 and 1920×1080 (R29.1).
+   *
+   * The overshoot this fixes: the PREVIEW panel used to grow to the full Seer
+   * image with no height cap, making the landing taller than the viewport and
+   * pushing the HUD/list/hint/input/chips off-screen. The fix bounds the
+   * preview's height budget (see `.crt-landing-preview` below) and lets the
+   * landing SHRINK: `flex: 0 1 auto` + `min-height: 0` means the landing never
+   * forces the `.crt-screen` column taller than the viewport, while the HUD,
+   * list and hint keep their intrinsic height and only the height-capped
+   * preview is bounded. The log (`flex: 1 1 auto`, its own scroll host) then
+   * takes the remaining space and the boot banner stays fully visible inside
+   * it, never clipped or overlapped by the hint bar or any landing panel
+   * (R22.1, R22.2). The landing uses NORMAL flow only (no absolute positioning,
+   * no negative margins), so nothing is layered over the boot line.
+   */
+  flex: 0 1 auto;
+  min-height: 0;
+  /* Belt-and-braces: the landing never paints outside its own box. */
+  overflow: hidden;
+}
+
+/*
+ * Every descendant text node on the landing inherits the ONE bitmap pixel
+ * font (R15.1): no proportional or smoothed family can sneak onto a DMG
+ * surface. Declared explicitly (not relying on inheritance alone) so the
+ * style test reads the single token on each surface.
+ */
+.crt .crt-landing,
+.crt .crt-landing * {
+  font-family: var(--dmg-font);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Focus ring within the DMG palette (R23, R32, defect 2).                   */
+/*                                                                           */
+/* No landing-specific focus override is needed any more. As of              */
+/* oracle-landing-polish R32 the GLOBAL `crt.css` `.crt :focus-visible` ring  */
+/* is itself the in-palette COMPOSED indicator: a `#8cff9e` (= `--dmg-3`,     */
+/* `--crt-focus`) outline separated from the foreground by a `#001a00`        */
+/* (`--crt-bg` = `--dmg-0`) offset. Both colours are DMG_Palette members, so  */
+/* the global ring already satisfies R23 for every Landing_State control AND  */
+/* for the `NECRO>` input — which is a sibling OUTSIDE the `.crt-landing`      */
+/* subtree and now inherits the correct in-palette ring from the global rule. */
+/* The former landing-only `--dmg-3` override and the `data-landing="visible"`*/
+/* plumbing it depended on are therefore removed as redundant: the global     */
+/* ring is in-palette everywhere, so no landing scope is required.            */
+/* ------------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------------ */
+/* Shared panel-box chrome (R13.1, R13.2): HUD, list, preview, hint.         */
+/* All four panels share one box recipe so their metrics stay on the grid.   */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing-panel {
+  box-sizing: border-box;
+  /* Integer border + padding -> whole-pixel box metrics (R13.1). */
+  border: var(--dmg-border) solid var(--dmg-2);
+  padding: var(--dmg-gap);
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+}
+
+/* ------------------------------------------------------------------------ */
+/* HUD bar (R3.*): NECRO-ORACLE label, SOUL hearts, PY2 CURSE: ACTIVE.       */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing-hud {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dmg-gap);
+}
+
+.crt .crt-landing-hud-label {
+  color: var(--dmg-3);
+}
+
+.crt .crt-landing-hud-hearts {
+  display: inline-flex;
+  gap: var(--dmg-gap-sm);
+  /* The brightest shade for the filled SOUL hearts glyph row. */
+  color: var(--dmg-3);
+}
+
+.crt .crt-landing-hud-curse {
+  color: var(--dmg-2);
+}
+
+/* ------------------------------------------------------------------------ */
+/* LEGACY REPOS list (R4.*, R10.2): selectable rows with a ▶ cursor and the  */
+/* inverted selected row.                                                    */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dmg-gap-sm);
+  /* The listbox fills the panel column; rows clip within it (R14.2). */
+  min-width: 0;
+}
+
+.crt .crt-landing-row {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--dmg-gap);
+  padding: var(--dmg-gap-sm) var(--dmg-gap);
+  min-width: 0;
+  background-color: transparent;
+  color: var(--dmg-3);
+  cursor: pointer;
+}
+
+/* The ▶ cursor is decorative (aria-hidden in the component); fixed-width gutter. */
+.crt .crt-landing-row-cursor {
+  flex: 0 0 auto;
+  width: var(--dmg-gap);
+  color: var(--dmg-2);
+}
+
+/* The repo label clips to a single line with an ellipsis (R14.2, V6). */
+.crt .crt-landing-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * The `TAG · FILES` caption (R27, R31): the tag, the middle-dot separator with
+ * a single space on both sides, and the file count read as one trailing caption
+ * on the right of the row. It is rendered as ONE inline text run (NOT a flex
+ * container), so `white-space: nowrap` keeps the `TAG · FILES` string on a
+ * single line WITH both surrounding spaces preserved — a flex layout would have
+ * trimmed the separator's edge whitespace, collapsing `DUNGEON · 4 FILES` to
+ * `DUNGEON·4 FILES` (R31). It never grows, and clips with an ellipsis if the
+ * row is too narrow so it never overflows the row box (V6).
+ */
+.crt .crt-landing-row-caption {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dmg-2);
+}
+
+/*
+ * Truly inverted selected row (R24, R10.2, V2 — defect 3). The mockup shows a
+ * FULLY inverted band, so swap to a SOLID brightest-shade background with the
+ * darkest-shade text: `--dmg-0` (#001a00) text on a solid `--dmg-3` (#8cff9e)
+ * background (ratio ~= 13:1, well over the 4.5:1 floor). Both are DMG_Palette
+ * members, so palette purity holds (R24.2, R10.2). The ▶ cursor, label and the
+ * `TAG · FILES` caption all invert to `--dmg-0` too, so the whole option reads
+ * as one solid inverted band rather than a dim tint.
+ *
+ * No scanline / afterglow / overlay may show OVER the inverted row (R24.1).
+ * The `crt.css` scanline + flicker layers are screen-level siblings, not
+ * per-row children, so they never paint inside this row; the solid `--dmg-3`
+ * fill is fully opaque so nothing behind it shows through. As belt-and-braces,
+ * pin the row's own steady state: no running animation and no transition on
+ * the selected row or its parts, so no afterglow/flicker can ride the swap.
+ */
+.crt .crt-landing-row[aria-selected="true"] {
+  background-color: var(--dmg-3);
+  color: var(--dmg-0);
+  animation: none;
+  transition: none;
+}
+
+.crt .crt-landing-row[aria-selected="true"] .crt-landing-row-cursor,
+.crt .crt-landing-row[aria-selected="true"] .crt-landing-row-label,
+.crt .crt-landing-row[aria-selected="true"] .crt-landing-row-caption {
+  color: var(--dmg-0);
+  animation: none;
+  transition: none;
+}
+
+/* ------------------------------------------------------------------------ */
+/* PREVIEW window (R6.*): the pixel Seer, three Card_Backs, ORACLE SAYS.     */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Height-bounded PREVIEW panel (R29, supersedes the R26 overshoot). The preview
+ * is the one landing panel that can grow large (the Seer + three card backs),
+ * so it is the flex-SHRINKABLE child that carries the landing's height budget.
+ *
+ * `max-height: 42vh` caps the panel at a fraction of the viewport, so that the
+ * HUD, the LEGACY REPOS list, the hint bar, the boot banner line, the `NECRO>`
+ * input and the command chips all fit in the remaining viewport with no
+ * vertical scroll at 1280×720 / 1366×768 / 1920×1080 (R29.1). `flex: 0 1 auto`
+ * + `min-height: 0` let the panel shrink to that budget inside the landing
+ * column; `overflow: hidden` keeps its (integer-scaled) contents clipped to the
+ * panel rather than overflowing the viewport.
+ *
+ * Crucially, `PreviewWindow` measures THIS panel's real box with a
+ * ResizeObserver and feeds its (now height-bounded) rect to `integerScale`, so
+ * the Seer and the card backs are scaled to the largest integer factor that
+ * fits BOTH the bounded panel height and its width (minimum 1). The images
+ * still FILL the (now bounded) preview — preserving R26 — while the whole
+ * landing fits the viewport (R29.2, R29.3). The integer-scale and no-smoothing
+ * guarantees of R11 are untouched (the image box rules below keep
+ * `image-rendering: pixelated` and `filter: none`).
+ */
+.crt .crt-landing-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dmg-gap);
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 42vh;
+  overflow: hidden;
+}
+
+/*
+ * The three face-down Card_Backs sit in a left-to-right row on the grid.
+ *
+ * Inside the height-bounded preview column (R29) the image rows must GIVE WAY
+ * to the ORACLE SAYS line, not the other way around: `min-height: 0` +
+ * `flex: 0 1 auto` let this card-back row SHRINK below its content height if
+ * the panel's height budget is tight, so the oracle line (pinned `flex: 0 0
+ * auto` below) always keeps its intrinsic row and never collapses to height 0
+ * under the preview's `overflow: hidden`. `PreviewWindow` already reserves the
+ * oracle-line + gap height before integer-scaling the card backs, so the backs
+ * still substantially fill the (now slightly smaller) image budget (R26, R11).
+ */
+.crt .crt-landing-cardbacks {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: var(--dmg-gap);
+  min-height: 0;
+  flex: 0 1 auto;
+}
+
+/*
+ * The reused Seer_Portrait region shrinks the same way (R29): it yields to the
+ * oracle line rather than squeezing it out. `PreviewWindow` scales the Seer
+ * against its reserved height share, so it still fills the bounded panel (R26).
+ */
+.crt .crt-landing-preview .crt-seer-portrait {
+  min-height: 0;
+  flex: 0 1 auto;
+}
+
+/*
+ * Every landing image surface — the Seer portrait and each Card_Back — is
+ * crisp and never filtered (R11.2, R11.3, V3). `image-rendering: pixelated`
+ * keeps the 4-shade art sharp at its integer scale; `filter: none` guarantees
+ * no colour-shifting or blur filter is ever applied. The integer rendered size
+ * (logical x `--arcana-scale`) is governed by the Arcana_Visions rules in
+ * `arcana.css` for the Seer and by the width/height below for the card backs.
+ */
+.crt .crt-landing-cardback {
+  display: block;
+  image-rendering: pixelated;
+  filter: none;
+  /* Integer-scaled box: logical 120x160 card-back x --arcana-scale (R11.1). */
+  width: calc(120 * var(--arcana-scale, 1) * var(--px));
+  height: calc(160 * var(--arcana-scale, 1) * var(--px));
+  background-color: transparent;
+}
+
+/*
+ * Missing-Seer fallback (R6.6): plain phosphor DMG text in the Seer's place
+ * when the manifest lacks the asset or the image fails — never a broken-image
+ * indicator. Inherits the single bitmap pixel font and the brightest shade.
+ */
+.crt .crt-landing-seer-fallback {
+  color: var(--dmg-3);
+  background-color: transparent;
+}
+
+/*
+ * Missing Card_Back fallback (R6.7): a plain phosphor-style DMG box in the
+ * card's place, same integer footprint, no broken-image indicator.
+ */
+.crt .crt-landing-cardback-fallback {
+  box-sizing: border-box;
+  width: calc(120 * var(--arcana-scale, 1) * var(--px));
+  height: calc(160 * var(--arcana-scale, 1) * var(--px));
+  border: var(--dmg-border) solid var(--dmg-2);
+  background-color: var(--dmg-0);
+  color: var(--dmg-2);
+}
+
+/*
+ * ORACLE SAYS line (R14.1, R14.2, V6): plain DMG text, single line, clipped to
+ * an ellipsis so a long oracle line never overflows the preview panel.
+ */
+.crt .crt-landing-oracle-says {
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--dmg-3);
+  /*
+   * Keep the oracle line's intrinsic height inside the height-bounded preview
+   * flex column (R29). Without `flex: 0 0 auto` the integer-scaled Seer and
+   * card-back rows grew to fill the whole 42vh budget and squeezed this line to
+   * height 0 just below the clipped preview — so it fell outside the viewport.
+   * `flex: 0 0 auto` pins its row (it never grows past its content and, paired
+   * with the shrinkable image rows above, never shrinks to 0), so the ORACLE
+   * SAYS line always stays within the viewport at 1280×720 / 1366×768 /
+   * 1920×1080.
+   */
+  flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Hint bar (R7.1): the DMG key-binding hint strip.                          */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing-hint {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--dmg-gap);
+  color: var(--dmg-2);
+  /* Clip rather than wrap-break mid-hint if the viewport is very narrow. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Empty-state message (R19.5): shown when the list renders zero entries.    */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-landing-empty {
+  margin: 0;
+  color: var(--dmg-2);
+}
+
+/* The fetch-failure error state (R19.7): same strict DMG palette, brighter    */
+/* shade for emphasis so it reads as an alert without leaving the 4-shade set. */
+.crt .crt-landing-empty-error {
+  color: var(--dmg-3);
+}
+
+/* The mystical line is dim; the plain technical fact is the brighter, more    */
+/* legible shade (it is the authoritative live-region text, R19.6). Both are   */
+/* members of the DMG palette (R10.1).                                         */
+.crt .crt-landing-empty-mystical {
+  color: var(--dmg-2);
+}
+
+.crt .crt-landing-empty-technical {
+  color: var(--dmg-3);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Motion_Zones (R16.1, R16.2, V8): candle flicker + cursor blink ONLY.      */
+/*                                                                           */
+/* These are the ONLY two animations on the landing, and each lives inside a */
+/* Motion_Zone element that animates ONLY under `.crt[data-motion="full"]`.  */
+/* `crt.css`'s `.crt[data-motion="reduced"] *` strips every animation and    */
+/* transition under reduced motion; the resting rules here make the steady   */
+/* state explicit, and the `prefers-reduced-motion` guard keeps them off     */
+/* even in full motion when the OS asks for reduced motion.                  */
+/* ------------------------------------------------------------------------ */
+
+/* Resting state: no animation until full motion opts in below. */
+.crt .crt-landing-candle,
+.crt .crt-landing-cursor {
+  display: inline-block;
+}
+
+/* The candle flame flicker: a gentle bright-shade pulse, palette-safe. */
+@keyframes crt-landing-candle-kf {
+  0% {
+    color: var(--dmg-2);
+  }
+  50% {
+    color: var(--dmg-3);
+  }
+  100% {
+    color: var(--dmg-2);
+  }
+}
+
+/* The blinking landing cursor: on/off opacity, no colour change. */
+@keyframes crt-landing-cursor-kf {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * Full-motion only (R16.1). One cycle/s => 2 luminance changes/s, inside the
+ * Flash_Limit. Both run `infinite` but at a cadence fixed by the 1s period, so
+ * no rolling one-second window exceeds the cap.
+ */
+.crt[data-motion="full"] .crt-landing-candle {
+  animation: crt-landing-candle-kf 1s steps(2, jump-none) infinite;
+}
+
+.crt[data-motion="full"] .crt-landing-cursor {
+  animation: crt-landing-cursor-kf 1s steps(1, jump-none) infinite;
+}
+
+/*
+ * Reduced motion / motion-off (R16.2). `crt.css` already removes the animation
+ * via `.crt[data-motion="reduced"] *`; these explicit resting rules pin the
+ * steady visual (candle at the mid shade, cursor solid) so nothing flickers.
+ */
+.crt[data-motion="reduced"] .crt-landing-candle {
+  color: var(--dmg-2);
+}
+
+.crt[data-motion="reduced"] .crt-landing-cursor {
+  opacity: 1;
+}
+
+/*
+ * Respect the OS preference even at full motion (R16.2): if the user asks for
+ * reduced motion, the candle flicker and cursor blink hold their steady state.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .crt[data-motion="full"] .crt-landing-candle,
+  .crt[data-motion="full"] .crt-landing-cursor {
+    animation: none;
+  }
+
+  .crt[data-motion="full"] .crt-landing-candle {
+    color: var(--dmg-2);
+  }
+
+  .crt[data-motion="full"] .crt-landing-cursor {
+    opacity: 1;
+  }
+}

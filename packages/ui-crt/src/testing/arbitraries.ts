@@ -742,3 +742,101 @@ export const arbMotionSoundSequence = fc.array(arbMotionSoundStep, {
 export const arbOverLengthRaw: fc.Arbitrary<string> = fc
   .integer({ min: MAX_ENTRY_LENGTH + 1, max: MAX_ENTRY_LENGTH + 200 })
   .chain((len) => fc.string({ minLength: len, maxLength: len }));
+
+// ---------------------------------------------------------------------------
+// Landing_State lifecycle arbitraries (oracle-landing-polish task 5.2)
+// ---------------------------------------------------------------------------
+//
+// These builders produce real, booted `SessionState` values by driving the
+// pure session reducer (`step` from `../session/reducer.js`) with the same
+// `boot` action the app uses on the idle screen — `bootSignal: true` so
+// `boot.phase` settles to "done" immediately. Nothing here reads the DOM,
+// clock, network or storage; every state is reached through the pure reducer,
+// so the arbitraries are safe for unit/property tests (no network / LLM /
+// sandbox).
+
+import { initialState } from "../session/state.js";
+import type { Action, SessionState } from "../session/state.js";
+import { step } from "../session/reducer.js";
+
+/**
+ * The idle `boot` action. `bootSignal: true` starts `boot.phase: "done"`
+ * immediately, so the booted state is the common idle screen with
+ * `landingDismissed === false`. `stepBoot` always appends the boot banner
+ * block (kind "boot") as the first Output_Block, so the booted log holds that
+ * one banner block — which `landingVisible` treats as an empty idle screen.
+ */
+export const BOOT_IDLE: Action = {
+  type: "boot",
+  motionPreference: "on",
+  soundPreference: "off",
+  prefersReduced: false,
+  visible: true,
+  bootSignal: true,
+};
+
+/** A freshly booted, settled (boot.phase === "done") idle session state. */
+export function bootedIdleState(): SessionState {
+  return step(initialState(), BOOT_IDLE).state;
+}
+
+/** Apply a single `submit` through the pure reducer. */
+export function submitRaw(
+  state: SessionState,
+  raw: string,
+  source: "enter" | "button" = "enter",
+): SessionState {
+  return step(state, { type: "submit", raw, source }).state;
+}
+
+/**
+ * A command string that the parser ACCEPTS and that produces output — so the
+ * reducer's `submit` path dismisses the landing (sets `landingDismissed =
+ * true`). Deliberately excludes the empty / whitespace-only entries and the
+ * bare `summon` prefill, which produce no output and never dismiss the landing.
+ * `summon`/`read`/`resurrect` carry an argument so they are accepted commands
+ * (and `summon o/n` opens an in-flight request but still echoes + dismisses).
+ */
+export const arbAcceptedCommand: fc.Arbitrary<string> = fc.constantFrom(
+  "help",
+  "clear",
+  "motion off",
+  "motion on",
+  "sound off",
+  "demo",
+  "read fates",
+  "explain",
+  "summon o/n",
+  "nonsense-command",
+);
+
+/**
+ * A booted, landing-VISIBLE idle state: `landingDismissed === false`,
+ * `boot.phase === "done"`, boot-only log, null summary. This is the canonical
+ * starting point for the landing round-trip property. The generator is trivial
+ * (the idle state is unique) but is exposed as an arbitrary so properties can
+ * compose it with command sequences.
+ *
+ * Testing-standards arbitraries convention: `arbSessionStateIdle`.
+ */
+export const arbSessionStateIdle: fc.Arbitrary<SessionState> = fc.constant(
+  bootedIdleState(),
+);
+
+/**
+ * A booted, landing-DISMISSED state reached by applying a non-empty sequence of
+ * accepted commands to the idle state. Every such state has
+ * `landingDismissed === true` (the first accepted command dismisses the
+ * landing) and is a realistic post-command session.
+ *
+ * Testing-standards arbitraries convention: `arbSessionStateDismissed`.
+ */
+export const arbSessionStateDismissed: fc.Arbitrary<SessionState> = fc
+  .array(arbAcceptedCommand, { minLength: 1, maxLength: 6 })
+  .map((commands) => {
+    let state = bootedIdleState();
+    for (const raw of commands) {
+      state = submitRaw(state, raw);
+    }
+    return state;
+  });

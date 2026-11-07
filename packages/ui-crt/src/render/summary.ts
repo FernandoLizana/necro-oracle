@@ -26,6 +26,26 @@ function textLines(text: string): OutputLine[] {
 }
 
 /**
+ * Render the in-world "nothing to resurrect" block for a summon that landed on
+ * a repository with no extractable source files (R19.4). The visible mystical
+ * line is <= 16 words; the technical line is the plain fact the DOM live region
+ * reads verbatim: `No .py files found in owner/repo@sha; nothing to
+ * resurrect.`. The sha is the full pinned commit so the fact is unambiguous.
+ */
+export function renderNoPython(summary: SummonSummary): BlockDraft {
+  const { ref } = summary;
+  const lines: OutputLine[] = [];
+  lines.push(...textLines("The crypt is bare. No Python corpse to raise."));
+  lines.push(
+    ...textLines(
+      `No .py files found in ${ref.owner}/${ref.name}@${ref.sha}; ` +
+        "nothing to resurrect.",
+    ),
+  );
+  return { kind: "oracle", demo: false, lines };
+}
+
+/**
  * Render a `SummonSummary` as a single oracle block. The summary is public
  * metadata only; nothing here reveals snapshot contents.
  */

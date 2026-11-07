@@ -153,14 +153,22 @@ export function classifyFailure(failure: Failure, ctx: RequestContext, nowMs: nu
   if (status === 404) {
     switch (endpoint) {
       case "repo":
-        return summonerError(ctx.authenticated === true ? "REPO_NOT_FOUND" : "REPO_PRIVATE", base);
+        return ctx.authenticated === true
+          ? summonerError("REPO_NOT_FOUND", {
+              ...base,
+              ...(ctx.ref !== undefined ? { ref: ctx.ref } : {}),
+            })
+          : summonerError("REPO_PRIVATE", base);
       case "commit":
         return summonerError("REF_NOT_FOUND", {
           ...base,
           ...(ctx.ref !== undefined ? { ref: ctx.ref } : {}),
         });
       case "tarball":
-        return summonerError("REPO_NOT_FOUND", base);
+        return summonerError("REPO_NOT_FOUND", {
+          ...base,
+          ...(ctx.ref !== undefined ? { ref: ctx.ref } : {}),
+        });
       case "pulls":
       case "release":
         return { status: "absent" };

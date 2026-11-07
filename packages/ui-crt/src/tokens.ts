@@ -14,20 +14,27 @@
 // scanline composite — and demands >= 4.5:1 for text and >= 3:1 for the focus
 // ring. Two notes on the values below:
 //
-//   - `CRT_FOCUS` is `#a85c30`, an amber-brown, NOT the near-white the design
-//     table listed as a candidate. A focus ring must reach >= 3:1 against both
-//     the near-black background AND the bright `#33ff66` foreground. Because
-//     `#33ff66` has a high relative luminance (~0.73), any colour light enough
-//     to read against the background but still 3:1 below the foreground lands
-//     in a narrow mid-luminance band; `#a85c30` sits in it with the most
-//     balanced margin (~3.69:1 against both). The design's `#d9ffe3` reached
-//     only ~1.24:1 against the foreground and was rejected by the test, so the
-//     token (and the matching CSS variable) were adjusted here per the design's
-//     own rule that "the test is the arbiter".
+//   - `CRT_FOCUS` is `#8cff9e`, the bright DMG/phosphor shade (identical to the
+//     DMG_PALETTE brightest shade `--dmg-3`), as part of the global in-palette
+//     COMPOSED focus indicator (oracle-landing-polish R32). The focus ring is no
+//     longer a SINGLE colour expected to clear >= 3:1 against BOTH the near-black
+//     background AND the bright `#33ff66` foreground — that constraint is what
+//     forced the off-palette amber-brown `#a85c30` before. Instead the indicator
+//     is a two-colour ring: the bright `#8cff9e` outline is separated from the
+//     bright `#33ff66` foreground by a `#001a00` inner offset/gap (the dark CRT
+//     background showing between the text and the ring). The dark offset — not
+//     the outline colour clearing 3:1 against the foreground — provides the
+//     visible separation on the bright-text side. `#8cff9e` clears >= 3:1 against
+//     the `#001a00` offset/background with a wide margin (~11:1), so the ring is
+//     plainly visible against both the dark surround and (via the dark gap) the
+//     bright phosphor text, while staying strictly inside the DMG + phosphor
+//     palette (no amber-brown). The `crt.css` `.crt :focus-visible` rule composes
+//     the `#8cff9e` outline with a `--crt-bg` (#001a00) separating ring.
 //   - Every other candidate from the design table (`#33ff66`, `#001a00`,
 //     `#29cc52`, `#ff7a7a`) passed the computed thresholds unchanged.
 //
-// _Requirements: R9.1, R9.2, R9.3, R9.4, R9.5, R9.6, R9.7, R9.8, R15.6, R15.7_
+// _Requirements: R9.1, R9.2, R9.3, R9.4, R9.5, R9.6, R9.7, R9.8, R15.6, R15.7,
+//  R32.1, R32.2, R32.4_
 
 // ---------------------------------------------------------------------------
 // Phosphor palette (R9.1)
@@ -46,11 +53,18 @@ export const CRT_FG_DIM = "#29cc52";
 export const CRT_ERROR = "#ff7a7a";
 
 /**
- * Focus-ring colour; >= 3:1 against both bg and fg (R15.7). Adjusted from the
- * design's candidate `#d9ffe3` (which failed the >= 3:1 vs fg check) to an
- * amber-brown that satisfies the computed threshold on both sides.
+ * Focus-ring colour: the bright DMG/phosphor shade `#8cff9e` (identical to the
+ * DMG_PALETTE `--dmg-3`), used as the outline of the global COMPOSED focus
+ * indicator (R32). The ring is a two-colour composite — a `#8cff9e` outline
+ * separated from the bright `#33ff66` foreground by a `#001a00` inner offset —
+ * so the bright ring never sits directly on the bright phosphor text. The ring
+ * only has to clear >= 3:1 against the `#001a00` offset/background it visibly
+ * sits against (it reaches ~11:1), because the dark offset — not the outline
+ * colour vs the foreground — provides the separation on the bright-text side.
+ * This replaces the former off-palette amber-brown `#a85c30` so the global
+ * focus indicator stays strictly within the DMG + phosphor palette (R32.1).
  */
-export const CRT_FOCUS = "#a85c30";
+export const CRT_FOCUS = "#8cff9e";
 
 // ---------------------------------------------------------------------------
 // Effect tokens (R9.3–R9.7)

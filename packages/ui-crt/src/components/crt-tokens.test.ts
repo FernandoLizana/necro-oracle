@@ -12,7 +12,13 @@
 //   2. The phosphor palette is exactly the steering colours (R9.1).
 //   3. `fg`, `fg-dim` and `error` reach >= 4.5:1 contrast on `bg`, both on the
 //      flat background and under the scanline composite (R15.6).
-//   4. `focus` reaches >= 3:1 against both `bg` and `fg` (R15.7).
+//   4. `focus` is the in-palette `#8cff9e` and reaches >= 3:1 against the
+//      `#001a00` offset/background of the composed focus indicator (R15.7,
+//      R32.4). The indicator is a COMPOSED two-colour ring — a `#8cff9e`
+//      outline separated from the bright `#33ff66` foreground by a `#001a00`
+//      offset — so the dark offset (not the outline colour vs the fg) provides
+//      the separation on the bright-text side; the former "focus vs fg >= 3:1"
+//      check is dropped accordingly.
 //   5. The flicker animation changes luminance at most 3 times per second and
 //      by at most 5 % (R9.4).
 //   6. The scanline and glow effects are CSS-only: no `url(` anywhere in the
@@ -224,13 +230,36 @@ describe("R15.6 (contrast): text reaches >= 4.5:1 on the background", () => {
   });
 });
 
-describe("R15.7 (focus): the focus colour reaches >= 3:1 against bg and fg", () => {
-  it("focus vs bg >= 3:1 and focus vs fg >= 3:1", () => {
+describe("R15.7 / R32.4 (focus): the composed in-palette focus ring reaches >= 3:1 against its dark offset", () => {
+  // The global `.crt :focus-visible` indicator is now a COMPOSED two-colour
+  // ring (oracle-landing-polish R32): a bright `#8cff9e` (`--crt-focus`, =
+  // --dmg-3) outline separated from the bright `#33ff66` foreground by a
+  // `#001a00` (`--crt-bg`) offset/gap. The VISIBLE contrast obligation is the
+  // bright ring against the dark offset/background it sits on — NOT the ring
+  // against the bright fg, because the dark offset provides that separation. So
+  // we assert `#8cff9e` is a palette member and clears >= 3:1 against `#001a00`
+  // (it reaches ~11:1), and we no longer require >= 3:1 vs the `#33ff66` fg.
+  it("focus is the in-palette #8cff9e and reaches >= 3:1 against the #001a00 offset/background", () => {
     const focus = parseHex(tokens.CRT_FOCUS);
     const bg = parseHex(tokens.CRT_BG);
-    const fg = parseHex(tokens.CRT_FG);
+
+    // The focus outline is the DMG/phosphor brightest shade (= --dmg-3), a
+    // palette member — no off-palette amber-brown (R32.1).
+    expect(tokens.CRT_FOCUS.toLowerCase()).toBe("#8cff9e");
+
+    // The bright ring clears the 3:1 visible-focus floor against the dark
+    // `#001a00` offset/background it visibly sits against (~11:1, R32.4).
     expect(contrastRatio(focus, bg)).toBeGreaterThanOrEqual(3);
-    expect(contrastRatio(focus, fg)).toBeGreaterThanOrEqual(3);
+
+    // The composed CSS actually pairs the `--crt-focus` outline with a
+    // `--crt-bg` (#001a00) separating offset ring (box-shadow), so the bright
+    // ring never sits directly on the bright fg; that dark gap — not the
+    // outline-vs-fg ratio — provides the bright-text-side separation (R32.2).
+    const focusRule = /\.crt\s*:focus-visible\s*\{[^}]*\}/s.exec(css);
+    expect(focusRule, "missing .crt :focus-visible rule").not.toBeNull();
+    const rule = (focusRule as RegExpExecArray)[0];
+    expect(rule).toMatch(/outline:\s*2px\s+solid\s+var\(--crt-focus\)/);
+    expect(rule).toMatch(/var\(--crt-bg\)/);
   });
 });
 

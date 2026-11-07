@@ -24,6 +24,29 @@ describe("parseCommand — command names and argument forms", () => {
     expect(parseCommand("clear")).toStrictEqual<Command>({ kind: "clear" });
   });
 
+  // oracle-landing-polish R2.1: `home` with no arguments parses to a `home`
+  // command; case-insensitive on the name like every other command.
+  it("recognises the no-argument home command (oracle-landing-polish R2.1)", () => {
+    expect(parseCommand("home")).toStrictEqual<Command>({ kind: "home" });
+    expect(parseCommand("HOME")).toStrictEqual<Command>({ kind: "home" });
+    expect(parseCommand("Home")).toStrictEqual<Command>({ kind: "home" });
+    // Surrounding whitespace is trimmed (R2.9) and still parses to `home`.
+    expect(parseCommand("  home  ")).toStrictEqual<Command>({ kind: "home" });
+  });
+
+  // oracle-landing-polish R2.2: `home` with one or more arguments is NOT a
+  // `home` command; it yields an unknown carrying the trimmed raw entry.
+  it("returns unknown for home with any argument (oracle-landing-polish R2.2)", () => {
+    expect(parseCommand("home x")).toStrictEqual<Command>({
+      kind: "unknown",
+      raw: "home x",
+    });
+    expect(parseCommand("home a b")).toStrictEqual<Command>({
+      kind: "unknown",
+      raw: "home a b",
+    });
+  });
+
   // R2.1 case-insensitivity on the command name.
   it("matches command names case-insensitively (R2.1)", () => {
     expect(parseCommand("HELP")).toStrictEqual<Command>({ kind: "help" });
@@ -221,6 +244,38 @@ describe("parseCommand — command names and argument forms", () => {
       kind: "resurrect",
       target: { kind: "file", path: "Src/App.py" },
     });
+  });
+});
+
+describe("parseCommand — other commands unchanged by home (oracle-landing-polish R2.4)", () => {
+  // oracle-landing-polish R2.4: adding `home` must not change how any other
+  // input parses. A representative sampling parses byte-identically to the
+  // Spec 03 behaviour, including the bare-repo summon and the unknown fallback.
+  it("parses a representative sampling of commands unchanged (R2.4)", () => {
+    const cases: readonly (readonly [string, Command | null])[] = [
+      ["help", { kind: "help" }],
+      ["clear", { kind: "clear" }],
+      ["summon octocat/Hello-World", { kind: "summon", repo: "octocat/Hello-World" }],
+      ["octocat/Hello-World", { kind: "summon", repo: "octocat/Hello-World" }],
+      ["read fates", { kind: "read", spread: "fates" }],
+      ["read", { kind: "read", spread: "necropsy" }],
+      ["explain 1", { kind: "explain", target: { kind: "position", position: 1 } }],
+      ["explain tower", { kind: "explain", target: { kind: "card", card: "tower" } }],
+      ["motion off", { kind: "motion", arg: "off" }],
+      ["demo", { kind: "demo" }],
+      ["demo lich-py2", { kind: "demo", name: "lich-py2" }],
+      ["sound on", { kind: "sound", arg: "on" }],
+      ["resurrect", { kind: "resurrect", target: { kind: "bare" } }],
+      ["", null],
+      ["   ", null],
+      ["frobnicate", { kind: "unknown", raw: "frobnicate" }],
+      // `homely` is a different word: it is not the `home` command, so it falls
+      // through to the unknown fallback unchanged.
+      ["homely", { kind: "unknown", raw: "homely" }],
+    ];
+    for (const [input, expected] of cases) {
+      expect(parseCommand(input)).toStrictEqual(expected);
+    }
   });
 });
 

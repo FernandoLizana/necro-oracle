@@ -127,10 +127,13 @@ export function summonerError(
       technical = `Expected owner/repo or https://github.com/owner/repo. Rejected: ${reason}.`;
       break;
     }
-    case "REPO_NOT_FOUND":
+    case "REPO_NOT_FOUND": {
+      const atRef = ctx.ref !== undefined && ctx.ref !== "" ? `@${f(ctx.ref, "")}` : "";
+      if (atRef !== "") details.ref = f(ctx.ref, "");
       mystical = "No grave lies at this address.";
-      technical = `GitHub shows no repository ${repo} visible to this token. Check the spelling, or the repository moved or was renamed.`;
+      technical = `GitHub returned 404 for ${repo}${atRef}. Check the spelling, or the repository moved, was renamed, or is private.`;
       break;
+    }
     case "REPO_PRIVATE":
       mystical = "A sealed crypt. The oracle reads only open graves.";
       technical = `${repo} is private or cannot be shown to be public. Only public repositories are supported.`;
