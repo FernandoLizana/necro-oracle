@@ -105,6 +105,58 @@ export function visualCardIndex(
   return cards.findIndex((card) => card.draw.card === target.card);
 }
 
+/**
+ * The card id THE LOVERS (VI) carries in the deck (lovers-binding R14.3). The
+ * `lovers` detector + registry entry land in a later task of this spec, so the
+ * oracle `CardId` enum does not yet include `"lovers"`; this selector therefore
+ * compares the drawn card id as a WIDENED string so the eligibility gate is
+ * forward-compatible the moment the card is drawn, without this module taking a
+ * compile-time dependency on a card id literal the enum does not yet hold. The
+ * comparison stays pure and total.
+ */
+const LOVERS_CARD_ID = "lovers";
+
+/**
+ * The lovers-binding eligibility signal the Terminal gates the `lovers <file>
+ * js` chip + hint on (lovers-binding R14.3): the pure answer to "WHILE THE
+ * LOVERS (VI) was drawn AND the file is resurrectable". It reads `SessionState`
+ * only — no clock, DOM, network — and returns:
+ *
+ *   - `null` when THE LOVERS was not drawn in the current reading, OR no
+ *     resurrectable file is in scope. The chip/hint is NOT offered.
+ *   - `{ file }` when THE LOVERS was drawn AND a resurrectable Python file is in
+ *     scope, carrying that file's path so the Terminal can prefill `lovers
+ *     <file> ` exactly as SUMMON prefills `summon ` (R14.3).
+ *
+ * "The file is resurrectable" is derived from the most recent completed
+ * resurrection (`state.lastRitual`): the Lovers pipeline binds the RESURRECTED
+ * Python 3 source, so a file that has already been resurrected is the file a
+ * binding can act on. The first resurrected file path is surfaced as the
+ * prefill target; when the deck's `lovers` card + detector land, a drawn LOVERS
+ * over a resurrected file immediately lights the chip with no further wiring.
+ *
+ * SEAM: the authoritative server gate (R14.4) still owns the final
+ * resurrectable check and terminates with a typed `VALIDATION_FAILED`
+ * oracle-voice error when THE LOVERS was not drawn OR the file has no bindable
+ * top-level functions — this client selector only decides whether to OFFER the
+ * affordance, never whether the binding will succeed.
+ */
+export function loversEligible(
+  state: SessionState,
+): { readonly file: string } | null {
+  const loversDrawn = visualCards(state).some(
+    (card) => (card.draw.card as string) === LOVERS_CARD_ID,
+  );
+  if (!loversDrawn) return null;
+
+  const ritual = state.lastRitual;
+  if (ritual === null) return null;
+  const file = ritual.files[0];
+  if (file === undefined) return null;
+
+  return { file: file.path };
+}
+
 /** Keep only the drawn positions of a spread, preserving order. */
 function drawnPositions(
   spread: readonly SpreadPosition[],

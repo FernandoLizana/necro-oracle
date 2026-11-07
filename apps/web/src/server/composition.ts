@@ -31,24 +31,45 @@ import { loadEnv } from "@necro/config";
 import {
   createDefaultRegistry,
   LocalCovenRunner,
+  LocalLoversRunner,
   type CovenRunner,
   type LedgerEvent,
   type LedgerPort,
+  type LlmCachePort,
   type LlmPort,
+  type LoversGrimoirePort,
+  type LoversRunner,
+  type ModelRouterPort,
+  type ModelTier,
   type RitualInput,
+  type RitualPorts,
   type SandboxPort,
 } from "@necro/coven";
 import { loadDemoRitualInput } from "@necro/coven/node";
 import { py2to3Grimoire } from "@necro/grimoires-py2to3";
-import { createMockLlmPort } from "@necro/llm";
+import {
+  buildDeterministicHeart,
+  buildTemplatePair,
+  GENERATE_STEP,
+  PLAN_STEP,
+  validateLovers,
+} from "@necro/grimoires-lovers-js";
+import {
+  createMockLlmPort,
+  createOpenRouterLlmPort,
+  resolveModel,
+  routeModel,
+} from "@necro/llm";
 import { createE2bSandboxPort } from "@necro/sandbox";
-import { runReading } from "@necro/oracle";
+import { NecroError, runReading } from "@necro/oracle";
 
 import {
   chooseLimiterPrimary,
   createRouteDeps,
   makeGithubGateway,
+  type LoversDeps,
   type ResurrectDeps,
+  type ResurrectedFile,
   type RouteDeps,
   type RouteEnvPort,
   type SpendBreakers,
@@ -117,12 +138,18 @@ let cachedResurrect: ResurrectDeps | undefined;
  * module scope so the one `LocalCovenRunner` (built once with the default
  * registry) survives across warm requests.
  *
- * Provider policy for the shipped build:
- *   - `llm`:     left UNDEFINED (Degraded_Mode) until a real provider is wired.
- *     Only the Mock provider exists today; wiring Mock into a LIVE Ritual would
- *     fabricate conversions, so the live path runs deterministic fixers only
- *     and the runner emits its Degraded skip-note (R13.3). `demoLlm` DOES use
- *     the Mock provider — demo output is deterministic by design (R14.4).
+ * Provider policy for the shipped build (lovers-binding task 11.6a):
+ *   - `llm`:     the real OpenRouter provider WHEN `OPENROUTER_API_KEY` is
+ *     present (built here, closing over the `NECRO_LLM_MODEL_FALLBACKS` array
+ *     and the per-request token/timeout caps); otherwise UNDEFINED so the live
+ *     path runs deterministic fixers only and the runner emits its Degraded
+ *     skip-note (R13.3). The route further decides, per request, whether to
+ *     swap in a BYOK provider (see `makeUserLlm`). `demoLlm` DOES use the Mock
+ *     provider — demo output is deterministic by design (R14.4).
+ *   - `router`:  the pure `ModelRouterPort` built from the `@necro/llm` router,
+ *     closing over the tier env model ids, injected into every Ritual.
+ *   - `makeUserLlm`: a per-request OpenRouter provider factory keyed by the
+ *     user key, so BYOK works even with NO server key (item 8 / D.5).
  *   - `sandbox`: the E2B parse-only port WHEN `E2B_API_KEY` is configured, else
  *     UNDEFINED (Target_Parser only, R5.7). E2B opens a micro-VM per port, so a
  *     production rollout should move to a per-Ritual sandbox factory; the
@@ -165,6 +192,64 @@ export function getResurrectDeps(
     apiKey: envSource["E2B_API_KEY"],
   });
 
+  // --- lovers-binding (task 11.6a): LLM routing + provider wiring -----------
+
+  // The concrete ModelRouterPort (Resolved decision 7): a thin adapter over the
+  // pure `@necro/llm` router, closing over the tier env model ids so the runner
+  // depends only on the coven-owned port type (`@necro/llm` never imports
+  // `@necro/coven`). `route` is the pure tier selection; `resolveModel` applies
+  // the override-then-env precedence (A.3). The port type requires a `string`
+  // return, so a missing env model id resolves to the empty string — the
+  // runner/provider treat an empty model id as the signal to stay on the
+  // deterministic path (consistent with resolveModel returning `undefined`).
+  const fastModel = base.env.get("NECRO_LLM_MODEL_FAST");
+  const strongModel = base.env.get("NECRO_LLM_MODEL_STRONG");
+  const modelEnv: { fast?: string; strong?: string } = {
+    ...(fastModel !== undefined ? { fast: fastModel } : {}),
+    ...(strongModel !== undefined ? { strong: strongModel } : {}),
+  };
+  const router: ModelRouterPort = {
+    route: (signals) => routeModel(signals),
+    resolveModel: (tier: ModelTier, override) =>
+      resolveModel(tier, modelEnv, override) ?? "",
+  };
+
+  // The OpenRouter `models` fallback array and the per-request caps closed over
+  // by every provider built here.
+  const serverKey = base.env.get("OPENROUTER_API_KEY");
+  const fallbackModels = base.env.get("NECRO_LLM_MODEL_FALLBACKS");
+  const providerModels = fallbackModels !== undefined && fallbackModels.length > 0
+    ? fallbackModels
+    : undefined;
+
+  // The server-key OpenRouter provider: wired as `deps.llm` for the EXISTING
+  // resurrect route ONLY when `OPENROUTER_API_KEY` is present (the critical gap
+  // this task closes). When the key is absent the route keeps the
+  // Mock/deterministic default (`llm` stays undefined) — unless a valid user
+  // key arrives, in which case the route builds a BYOK provider via
+  // `makeUserLlm`. `demo` requests never use this provider (the route omits
+  // `deps.llm` for demo and uses `demoLlm`), so the "not demo" half of the
+  // policy is enforced at the route, not here.
+  const serverLlm: LlmPort | undefined =
+    serverKey !== undefined
+      ? createOpenRouterLlmPort({
+          apiKey: serverKey,
+          ...(providerModels !== undefined ? { models: providerModels } : {}),
+        })
+      : undefined;
+
+  // The per-request BYOK provider factory: builds an OpenRouter provider from a
+  // user key for ONE request. Available whenever the OpenRouter provider module
+  // is reachable (always, in this build), so BYOK works even with NO server key
+  // configured (item 8 / D.5). The key is used for that request only and never
+  // stored; the daily-ceiling skip and per-IP keep/skip decisions live in the
+  // route.
+  const makeUserLlm = (userKey: string): LlmPort =>
+    createOpenRouterLlmPort({
+      apiKey: userKey,
+      ...(providerModels !== undefined ? { models: providerModels } : {}),
+    });
+
   // Closed-by-default breakers until the spend monitor lands.
   const breakers: SpendBreakers = {
     llmOpen: () => false,
@@ -187,9 +272,133 @@ export function getResurrectDeps(
     breakers,
     loadDemoInput,
     demoLlm,
-    // `llm` omitted (Degraded_Mode). `sandbox` omitted unless E2B configured.
+    router,
+    makeUserLlm,
+    // `llm` is the server OpenRouter provider when a server key is present,
+    // else omitted (Degraded_Mode / BYOK-only). `sandbox` omitted unless E2B
+    // configured.
+    ...(serverLlm === undefined ? {} : { llm: serverLlm }),
     ...(sandbox === undefined ? {} : { sandbox }),
   };
   cachedResurrect = deps;
   return cachedResurrect;
+}
+
+// ---------------------------------------------------------------------------
+// Lovers_Route deps (lovers-binding, task 11.6b).
+//
+// The Lovers_Route reuses everything `getResurrectDeps` already wired in 11.6a
+// — the shared `RouteDeps` (summon + runReading), the `CovenRunner` (to
+// resurrect the bound file to Python 3), the pure `ModelRouterPort`, the server
+// OpenRouter provider / per-request BYOK factory / Mock demo provider, the
+// spend breakers and the per-ritual ledger factory — and ADDS the Lovers
+// capabilities: a `LoversRunner` (a `LocalLoversRunner` built from the
+// `LoversGrimoirePort` assembled from the `@necro/grimoires-lovers-js` barrel,
+// the sanctioned grimoire import point), a per-request accepted-output cache
+// factory, the SEPARATE `NECRO_LOVERS_DAILY_CEILING`, and the offline demo
+// seam. Memoised at module scope like `getResurrectDeps`.
+// ---------------------------------------------------------------------------
+
+/** The one cached LoversDeps for this warm instance; built on first call. */
+let cachedLovers: LoversDeps | undefined;
+
+/**
+ * The lovers composition root. Reuses the memoised `ResurrectDeps` (same
+ * summoner/limiter/clock/runner/providers) and adds the Lovers runner + seams,
+ * memoised so the one `LocalLoversRunner` (built once with the injected
+ * `LoversGrimoirePort`) survives across warm requests.
+ */
+export function getLoversDeps(
+  envSource: Record<string, string | undefined> = process.env,
+): LoversDeps {
+  if (cachedLovers !== undefined) return cachedLovers;
+
+  // Reuse every provider / router / breaker / ledger seam 11.6a already wired.
+  const resurrect = getResurrectDeps(envSource);
+
+  // The structural LoversGrimoirePort, assembled from the lovers-js barrel (the
+  // sanctioned grimoire import point). coven never imports a grimoire, so the
+  // runner receives these capabilities injected.
+  const grimoirePort: LoversGrimoirePort = {
+    plan: PLAN_STEP,
+    generate: GENERATE_STEP,
+    buildDeterministicHeart,
+    buildTemplatePair,
+    validateLovers,
+  };
+
+  // The one LoversRunner for this warm instance. Its single-request deadline
+  // (A.8) is the default `totalBudgetMs`, kept inside the route's 120 s
+  // `maxDuration` backstop minus the summon + resurrect headroom the route
+  // spends first.
+  const loversRunner: LoversRunner = new LocalLoversRunner(grimoirePort);
+
+  // A per-request accepted-output completion cache (design A.8): a minimal
+  // in-memory, first-write-wins store. One cache per request keeps BYOK keys
+  // from ever influencing a shared cache and matches the request lifetime.
+  const makeCache = (): LlmCachePort => {
+    const store = new Map<string, string>();
+    return {
+      get: (key) => store.get(key),
+      set: (key, text) => {
+        if (!store.has(key)) store.set(key, text);
+      },
+    };
+  };
+
+  // The separate server daily ceiling for the Lovers_Route (R20.1).
+  const loversDailyCeiling = resurrect.env.get("NECRO_LOVERS_DAILY_CEILING");
+
+  // The offline demo seam: load the demo ritual input, resurrect it
+  // deterministically (no LlmPort), and hand the first resurrected file's
+  // after-content to the binding as its Python 3 source. Network is blocked by
+  // the handler for the whole demo run; the Mock provider drives the binding.
+  const loadDemoLovers =
+    resurrect.loadDemoInput === undefined
+      ? undefined
+      : async (now: string): Promise<ResurrectedFile> => {
+          const input = await resurrect.loadDemoInput!(now);
+          const ports: RitualPorts = {
+            clock: resurrect.clock,
+            ledger: resurrect.makeLedger(),
+          };
+          const outcome = await resurrect.runner.run(input, ports, {
+            phase: () => undefined,
+            skipNote: () => undefined,
+          });
+          const file =
+            outcome.result.files.find(
+              (f) => f.validated && f.after.trim().length > 0,
+            ) ?? outcome.result.files[0];
+          if (file === undefined) {
+            throw new NecroError(
+              "UPSTREAM_UNAVAILABLE",
+              "No replay is kept in this crypt.\nThe demo repository has no bindable file.",
+            );
+          }
+          return { file: file.path, source: file.after };
+        };
+
+  const deps: LoversDeps = {
+    clock: resurrect.clock,
+    env: resurrect.env,
+    fetch: resurrect.fetch,
+    limiter: resurrect.limiter,
+    github: resurrect.github,
+    runReading: resurrect.runReading,
+    loversRunner,
+    resurrectRunner: resurrect.runner,
+    makeLedger: resurrect.makeLedger,
+    makeCache,
+    breakers: resurrect.breakers,
+    loversDailyCeiling,
+    // Reuse the 11.6a provider/router/demo seams unchanged.
+    ...(resurrect.router === undefined ? {} : { router: resurrect.router }),
+    ...(resurrect.llm === undefined ? {} : { llm: resurrect.llm }),
+    ...(resurrect.makeUserLlm === undefined ? {} : { makeUserLlm: resurrect.makeUserLlm }),
+    ...(resurrect.demoLlm === undefined ? {} : { demoLlm: resurrect.demoLlm }),
+    ...(loadDemoLovers === undefined ? {} : { loadDemoLovers }),
+  };
+  cachedLovers = deps;
+  return cachedLovers;
 }

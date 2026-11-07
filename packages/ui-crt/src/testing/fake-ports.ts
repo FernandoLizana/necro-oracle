@@ -19,6 +19,10 @@ import type {
   ApiPort,
   DemoBundle,
   DemoPort,
+  LoversProgress,
+  LoversProgressEvent,
+  LoversRequestArgs,
+  LoversResponse,
   PlayableSpread,
   ProgressEvent,
   ReadProgress,
@@ -247,6 +251,19 @@ export interface FakeApi extends ApiPort {
     resolve: (response: RitualResponse) => void;
     reject: (error: unknown) => void;
   }[];
+  /**
+   * Every `lovers` call. `emit(event)` pushes one decoded lovers
+   * Progress_Event to the live `onProgress` callback; `resolve`/`reject` settle
+   * the final `LoversResponse`. Named `loversCalls` so it does not collide with
+   * the `lovers(...)` method the `ApiPort` interface contributes.
+   */
+  readonly loversCalls: {
+    args: LoversRequestArgs;
+    signal: AbortSignal;
+    emit: (event: LoversProgressEvent) => void;
+    resolve: (response: LoversResponse) => void;
+    reject: (error: unknown) => void;
+  }[];
 }
 
 /** Build a fake readings API whose every call is resolved manually by the test. */
@@ -254,10 +271,12 @@ export function makeFakeApi(): FakeApi {
   const summons: FakeApi["summons"] = [];
   const reads: FakeApi["reads"] = [];
   const resurrects: FakeApi["resurrects"] = [];
+  const loversCalls: FakeApi["loversCalls"] = [];
   return {
     summons,
     reads,
     resurrects,
+    loversCalls,
     summon(repo, signal) {
       return new Promise<SummonSummary>((resolve, reject) => {
         summons.push({ repo, signal, resolve, reject });
@@ -281,6 +300,17 @@ export function makeFakeApi(): FakeApi {
           pinned,
           target,
           spread,
+          signal,
+          emit: (event) => onProgress(event),
+          resolve,
+          reject,
+        });
+      });
+    },
+    lovers(args, signal, onProgress: LoversProgress) {
+      return new Promise<LoversResponse>((resolve, reject) => {
+        loversCalls.push({
+          args,
           signal,
           emit: (event) => onProgress(event),
           resolve,

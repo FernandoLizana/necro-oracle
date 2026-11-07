@@ -1,0 +1,402 @@
+/*
+ * apps/web/src/components/lovers-view.css
+ *
+ * Feature: lovers-binding, task 12.2 — the scoped DMG stylesheet for the Lovers
+ * split view (design C.6 "DMG Lovers view + viewport fit"; R21.1–R21.6, R22.1).
+ *
+ * This is an ADDITIVE stylesheet imported as a side effect by `LoversView.tsx`
+ * (mirroring how `Landing.tsx` imports `landing/landing.css`). It is scoped
+ * under `.crt-lovers` so nothing here leaks onto the surrounding Spec 03
+ * phosphor chrome or the oracle-landing-polish DMG surfaces.
+ *
+ * STRICT 4-SHADE DMG PALETTE (R21.3, V1). Every `color` / `background-color` /
+ * `border-color` on a Lovers surface below is one of `var(--dmg-0..3)` or
+ * `transparent` and NOTHING else. The four values mirror
+ * `@necro/ui-crt` `landing/palette.ts` `DMG_PALETTE` byte-for-byte:
+ *   --dmg-0 #001a00  (darkest; shared with the CRT background --crt-bg)
+ *   --dmg-1 #0b4f1a
+ *   --dmg-2 #2fa84a
+ *   --dmg-3 #8cff9e  (brightest)
+ * The palette-guard test (task 12.3, R28-style) source-scans this file and
+ * asserts every hex literal is a DMG_PALETTE member, exactly as the landing
+ * palette test scans `landing.css`.
+ *
+ * ONE FONT (R21.4): every Lovers surface draws text with the single bundled
+ * bitmap pixel `--dmg-font` token (VT323 via `next/font`'s `--font-vt323`), the
+ * same token the DMG landing surfaces use.
+ *
+ * ONE SPACING SCALE: all gutters/padding/border-widths derive from the single
+ * `--px` integer grid unit and the `--lov-gap*` tokens, each an INTEGER
+ * multiple of `--px`, so every box metric lands on whole pixels.
+ *
+ * INTEGER IMAGES (R21.4): every Lovers image surface carries
+ * `image-rendering: pixelated` and `filter: none` — no colour-shift or blur.
+ *
+ * VIEWPORT FIT, NO PAGE SCROLL (R21.5, R21.6). Reuses the oracle-landing-polish
+ * viewport-fit technique: the root is a bounded flex column with
+ * `overflow: hidden`; the panes are `flex: 1 1 0; min-height: 0` so they take
+ * the remaining height and NEVER grow the page; each pane body owns its own
+ * `overflow: auto` so content that exceeds the integer grid scrolls INTERNALLY
+ * inside the pane rather than scrolling the page. At 1280x720 / 1366x768 /
+ * 1920x1080 the outer view fits the viewport with no page scrollbar.
+ *
+ * MOTION (R21.1, V8). The ONLY Lovers animation is the pixel-heart seam ritual,
+ * and it runs ONLY inside a Motion_Zone gated by `.crt[data-motion="full"]`.
+ * Under `data-motion="reduced"` `crt.css`'s `.crt[data-motion="reduced"] *`
+ * block strips every animation; the explicit resting rule here pins the steady
+ * state, and a `prefers-reduced-motion` guard keeps it off even at full motion.
+ *
+ * This file loads NO image via CSS `url(...)`.
+ *
+ * Requirements: R21.1, R21.2, R21.3, R21.4, R21.5, R21.6, R22.1
+ */
+
+/* ------------------------------------------------------------------------ */
+/* DMG palette + spacing + font tokens. Scoped to the Lovers root.           */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers {
+  /* The strict 4-shade DMG palette — mirrors DMG_PALETTE exactly. */
+  --dmg-0: #001a00;
+  --dmg-1: #0b4f1a;
+  --dmg-2: #2fa84a;
+  --dmg-3: #8cff9e;
+
+  /*
+   * The single bundled bitmap pixel font token (R21.4). Prefers the
+   * `next/font`-bundled `--font-vt323` face, then the literal "VT323", then the
+   * monospace fallback stack — identical to the DMG landing surfaces.
+   */
+  --dmg-font: var(--font-vt323), "VT323", "IBM Plex Mono", ui-monospace,
+    "Courier New", monospace;
+
+  /* The single integer spacing scale: every metric is a whole-pixel multiple. */
+  --px: 1px;
+  --lov-gap: calc(8 * var(--px));
+  --lov-gap-sm: calc(4 * var(--px));
+  --lov-gap-lg: calc(16 * var(--px));
+  --lov-border: calc(2 * var(--px));
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lov-gap);
+  padding: var(--lov-gap);
+  /* The DMG darkest shade is the background; sits flush on --crt-bg. */
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+  font-family: var(--dmg-font);
+  line-height: 1;
+
+  /*
+   * Viewport fit (R21.5): the view fills its host and NEVER grows the page.
+   * `height: 100%` + `max-height: 100vh` bound it to the viewport, and
+   * `overflow: hidden` guarantees the OUTER view never paints a page scrollbar
+   * at any supported viewport. The panes below are the shrinkable children that
+   * carry the remaining height and own their internal scroll (R21.6).
+   */
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/*
+ * Every descendant text node inherits the ONE bitmap pixel font (R21.4): no
+ * proportional or smoothed family can sneak onto a Lovers surface. Declared
+ * explicitly so the palette/style guard reads the single token on each surface.
+ */
+.crt .crt-lovers,
+.crt .crt-lovers * {
+  font-family: var(--dmg-font);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Shared panel-box chrome. Every Lovers box shares one recipe so its        */
+/* metrics stay on the integer grid.                                         */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers-panel {
+  box-sizing: border-box;
+  border: var(--lov-border) solid var(--dmg-2);
+  padding: var(--lov-gap);
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Header: the oracle-voice binding verdict + the souls-spent / path line.   */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lov-gap-sm);
+  flex: 0 0 auto;
+}
+
+/* The short mystical line (dim shade) then the plain technical fact (bright). */
+.crt .crt-lovers-mystical {
+  margin: 0;
+  color: var(--dmg-2);
+}
+
+.crt .crt-lovers-technical {
+  margin: 0;
+  color: var(--dmg-3);
+}
+
+/* The souls-spent / path attribution line: single bright-shade fact line. */
+.crt .crt-lovers-souls {
+  margin: 0;
+  color: var(--dmg-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------------ */
+/* The pixel ritual: two hearts stitched by a seam (R21.1).                  */
+/*                                                                           */
+/* Pure CSS pixel art — no image, no url(). Each heart is a fixed            */
+/* integer-scaled box; the seam is a thin bright bar between them. The seam  */
+/* shimmer animates ONLY inside the Motion_Zone gated below.                 */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers-ritual {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lov-gap-sm);
+  flex: 0 0 auto;
+}
+
+/* A single pixel heart glyph drawn in the bitmap font at an integer scale. */
+.crt .crt-lovers-heart {
+  display: inline-block;
+  /* Integer-scaled type: logical glyph x the --lov-heart-scale integer. */
+  font-size: calc(16 * var(--lov-heart-scale, 1) * var(--px));
+  line-height: 1;
+  color: var(--dmg-3);
+  background-color: transparent;
+}
+
+.crt .crt-lovers-heart-py {
+  color: var(--dmg-3);
+}
+
+.crt .crt-lovers-heart-js {
+  color: var(--dmg-2);
+}
+
+/*
+ * The seam that stitches the two hearts: a thin, bright, whole-pixel bar. Its
+ * resting state is a solid bright shade; the shimmer animation is gated to full
+ * motion only (R21.1).
+ */
+.crt .crt-lovers-seam {
+  display: inline-block;
+  width: calc(2 * var(--lov-heart-scale, 1) * var(--px));
+  height: calc(14 * var(--lov-heart-scale, 1) * var(--px));
+  background-color: var(--dmg-3);
+  border: 0;
+}
+
+/* The pixel seam shimmer: a two-step bright/dim pulse within the palette. */
+@keyframes crt-lovers-seam-kf {
+  0% {
+    background-color: var(--dmg-2);
+  }
+  50% {
+    background-color: var(--dmg-3);
+  }
+  100% {
+    background-color: var(--dmg-2);
+  }
+}
+
+/*
+ * Full-motion only (R21.1): one cycle per second => 2 luminance changes per
+ * second, inside the Flash_Limit. The seam is the ONLY animated Lovers element.
+ */
+.crt[data-motion="full"] .crt-lovers-seam {
+  animation: crt-lovers-seam-kf 1s steps(2, jump-none) infinite;
+}
+
+/*
+ * Reduced motion / motion-off (R21.1): `crt.css` already removes the animation
+ * via `.crt[data-motion="reduced"] *`; this explicit resting rule pins the
+ * steady visual (seam at the bright shade) so nothing flickers.
+ */
+.crt[data-motion="reduced"] .crt-lovers-seam {
+  background-color: var(--dmg-3);
+  animation: none;
+}
+
+/*
+ * Respect the OS preference even at full motion (R21.1): if the user asks for
+ * reduced motion, the seam holds its steady state.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .crt[data-motion="full"] .crt-lovers-seam {
+    animation: none;
+    background-color: var(--dmg-3);
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* The split view: Python left / contract center / JavaScript right (R21.2). */
+/*                                                                           */
+/* The three panes share the remaining viewport height equally and each owns */
+/* its own internal scroll (R21.6). This flex row is the shrinkable region   */
+/* that lets the whole view fit the viewport with no page scroll (R21.5).    */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers-split {
+  display: flex;
+  flex-direction: row;
+  gap: var(--lov-gap);
+  /*
+   * Take the remaining column height and allow shrinking (R21.5): `flex: 1 1 0`
+   * + `min-height: 0` means the split region fills what's left after the header
+   * and ritual, and never forces the view taller than the viewport.
+   */
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* One code pane column: a bounded box whose BODY scrolls internally. */
+.crt .crt-lovers-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lov-gap-sm);
+  /* Three equal columns; each may shrink so the row never overflows. */
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The pane heading: the side label (PYTHON HEART / CONTRACT / JS BELOVED). */
+.crt .crt-lovers-pane-title {
+  margin: 0;
+  flex: 0 0 auto;
+  color: var(--dmg-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * The pane body: the fixed, integer-scaled code box (R21.6). It takes the
+ * remaining pane height (`flex: 1 1 0; min-height: 0`) and OWNS its overflow —
+ * `overflow: auto` scrolls the rising code lines INTERNALLY within the pane,
+ * so content that exceeds the integer grid never scrolls the page (R21.5).
+ */
+.crt .crt-lovers-code {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: var(--lov-gap-sm);
+  border: var(--lov-border) solid var(--dmg-1);
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+  /* Whole-pixel code type on the integer grid; wraps rather than overflowing x. */
+  font-size: calc(14 * var(--px));
+  line-height: calc(16 * var(--px));
+  white-space: pre;
+  tab-size: 2;
+}
+
+/*
+ * One rising code line (R21.2). Each line is its own block so the "rising"
+ * reveal can stagger them. The rise/fade transform runs ONLY under full motion
+ * (gated below); at reduced motion the line is simply shown in its resting
+ * state with no transform, so the code is fully readable with no animation.
+ */
+.crt .crt-lovers-line {
+  display: block;
+  color: var(--dmg-3);
+  background-color: transparent;
+}
+
+/* The rising reveal: each line slides up from a small offset into place. */
+@keyframes crt-lovers-rise-kf {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(6 * var(--px)));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * Full-motion only (R21.1/R21.2): the code rises line by line. The per-line
+ * `--lov-rise-delay` (set inline in the component) staggers the lines. The
+ * animation is short and plays ONCE (not infinite), so it does not flash.
+ */
+.crt[data-motion="full"] .crt-lovers-line {
+  animation: crt-lovers-rise-kf 240ms ease-out both;
+  animation-delay: var(--lov-rise-delay, 0ms);
+}
+
+/* Reduced motion: no rise; the line rests fully visible and in place. */
+.crt[data-motion="reduced"] .crt-lovers-line {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt[data-motion="full"] .crt-lovers-line {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* The "Download pair" action (R22.1): a clickable DMG button.               */
+/* ------------------------------------------------------------------------ */
+
+.crt .crt-lovers-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--lov-gap);
+  flex: 0 0 auto;
+}
+
+.crt .crt-lovers-download {
+  box-sizing: border-box;
+  display: inline-block;
+  padding: var(--lov-gap-sm) var(--lov-gap);
+  border: var(--lov-border) solid var(--dmg-2);
+  background-color: var(--dmg-0);
+  color: var(--dmg-3);
+  font-family: var(--dmg-font);
+  font-size: calc(16 * var(--px));
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* The disabled (download in flight) state stays within the palette. */
+.crt .crt-lovers-download[disabled] {
+  color: var(--dmg-2);
+  border-color: var(--dmg-1);
+  cursor: default;
+}
+
+/* The download status / error line: a single plain fact line in the palette. */
+.crt .crt-lovers-download-status {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--dmg-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

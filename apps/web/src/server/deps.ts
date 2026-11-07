@@ -33,7 +33,10 @@ import {
 import type {
   CovenRunner,
   LedgerPort,
+  LlmCachePort,
   LlmPort,
+  LoversRunner,
+  ModelRouterPort,
   RitualInput,
   SandboxPort,
 } from "@necro/coven";
@@ -57,6 +60,23 @@ export interface RouteEnvPort extends EnvPort {
   get(key: "NECRO_CLIENT_IP_HEADER"): string;
   get(key: "UPSTASH_REDIS_REST_URL"): string | undefined;
   get(key: "UPSTASH_REDIS_REST_TOKEN"): string | undefined;
+  // --- lovers-binding (task 11.6a): OpenRouter + model + ceiling keys --------
+  // The server OpenRouter credential; absent keeps the route on the
+  // Mock/deterministic default (unless a valid user key is present — BYOK).
+  get(key: "OPENROUTER_API_KEY"): string | undefined;
+  // Tier model ids the ModelRouterPort closes over (pure configuration).
+  get(key: "NECRO_LLM_MODEL_FAST"): string | undefined;
+  get(key: "NECRO_LLM_MODEL_STRONG"): string | undefined;
+  // The OpenRouter `models` fallback array (comma list -> string[]).
+  get(key: "NECRO_LLM_MODEL_FALLBACKS"): readonly string[] | undefined;
+  // Server-key token/request daily ceiling and per-reading call cap (A.8).
+  get(key: "NECRO_LLM_DAILY_CEILING"): number;
+  get(key: "NECRO_LLM_MAX_CALLS_PER_READING"): number;
+  // --- lovers-binding (task 11.6b): the SEPARATE lovers daily ceiling -------
+  // The server-key daily ceiling applied by the Lovers_Route when soulSource =
+  // ORACLE (R20.1), bounding lovers spend on the server key independently of
+  // the shared request ceiling. Defaulted in `@necro/config` (default 200).
+  get(key: "NECRO_LOVERS_DAILY_CEILING"): number;
 }
 
 /**
@@ -128,6 +148,84 @@ export interface ResurrectDeps extends RouteDeps {
   readonly breakers: SpendBreakers;
   readonly loadDemoInput?: (now: string) => Promise<RitualInput>;
   readonly demoLlm?: LlmPort;
+  // --- lovers-binding (task 11.6a): LLM routing + BYOK seams ----------------
+  /**
+   * The pure injected `ModelRouterPort` (Resolved decision 7). Built in
+   * `composition.ts` from the pure `@necro/llm` router closing over the tier
+   * env model ids, and forwarded to the runner as `RitualPorts.router`. Absent
+   * only in tests that do not exercise routing.
+   */
+  readonly router?: ModelRouterPort;
+  /**
+   * Build an OpenRouter `LlmPort` for ONE request from a per-request key
+   * (BYOK / `soulSource = YOURS`). Present whenever the OpenRouter provider can
+   * be constructed (i.e. the provider module is wired); the handler calls it
+   * with the validated user key so BYOK works even when `OPENROUTER_API_KEY` is
+   * absent (item 8 / D.5). The returned port is used for that request only and
+   * never stored. Absent in tests that do not exercise BYOK.
+   */
+  readonly makeUserLlm?: (userKey: string) => LlmPort;
+}
+
+/**
+ * The resurrected Python 3 source of ONE file, sourced for the Lovers binding.
+ * The Lovers input is the RESURRECTED Python 3 source (R16.1), so the Lovers
+ * route first resurrects the requested file (reusing the resurrect runner) and
+ * hands the file's after-content to the {@link LoversRunner}.
+ */
+export interface ResurrectedFile {
+  /** The repo-relative path of the resurrected file (echoed to the result). */
+  readonly file: string;
+  /** The resurrected Python 3 module source (the LoversRunner `source`). */
+  readonly source: string;
+}
+
+/**
+ * Everything the Lovers_Route (`POST /api/lovers`) needs beyond the shared
+ * `RouteDeps` (lovers-binding design C.5, C.4). It reuses the
+ * `github`/`runReading`/`limiter`/`env`/`clock` of `RouteDeps` to source the
+ * in-scope reading (to enforce the LOVERS-drawn precondition, R14.4) EXACTLY as
+ * the resurrect route does, reuses the `resurrectRunner` to produce the
+ * resurrected Python 3 source of the bound file (R16.1), then drives the
+ * `loversRunner` (PLAN -> GENERATE -> VALIDATE -> BIND) over that source. The
+ * LLM routing / BYOK / cache seams mirror `ResurrectDeps` so 11.6a's wiring is
+ * reused unchanged:
+ *
+ *   - `loversRunner`   the `LoversRunner` (a `LocalLoversRunner` built once from
+ *                      the injected `LoversGrimoirePort` in composition);
+ *   - `resurrectRunner` the shared `CovenRunner` used to resurrect the file to
+ *                      Python 3 before the binding (R16.1);
+ *   - `makeLedger`     a per-ritual `LedgerPort` factory;
+ *   - `makeCache`      a per-request accepted-output completion cache factory
+ *                      (design A.8; absent => the runner runs with no cache);
+ *   - `router`         the pure injected `ModelRouterPort` (R35.4);
+ *   - `llm`            the server OpenRouter provider (ORACLE), or `undefined`
+ *                      when no server key is configured (deterministic / BYOK);
+ *   - `makeUserLlm`    the per-request BYOK provider factory (soulSource YOURS);
+ *   - `demoLlm`        the Mock `LlmPort` a demo binding runs with (R15.4);
+ *   - `loadDemoLovers` the demo seam: the resurrected Python 3 source + file
+ *                      path for an offline demo binding (`undefined` => demo
+ *                      unsupported in this deployment);
+ *   - `breakers`       the spend breakers (shared with resurrect);
+ *   - `loversDailyCeiling` the SEPARATE server daily ceiling (R20.1).
+ *
+ * Every field beyond the shared ones is optional so a test injects only what a
+ * case needs; the handler treats an absent `llm` as the deterministic template
+ * path.
+ */
+export interface LoversDeps extends RouteDeps {
+  readonly loversRunner: LoversRunner;
+  readonly resurrectRunner: CovenRunner;
+  readonly makeLedger: () => LedgerPort;
+  readonly makeCache?: () => LlmCachePort;
+  readonly router?: ModelRouterPort;
+  readonly llm?: LlmPort;
+  readonly makeUserLlm?: (userKey: string) => LlmPort;
+  readonly demoLlm?: LlmPort;
+  readonly loadDemoLovers?: (now: string) => Promise<ResurrectedFile>;
+  readonly breakers: SpendBreakers;
+  /** The separate server daily ceiling for the Lovers_Route (R20.1). */
+  readonly loversDailyCeiling: number;
 }
 
 /**

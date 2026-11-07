@@ -250,6 +250,36 @@ html[data-js="ready"] .crt-no-js {
 }
 
 /*
+ * Soul_Source HUD indicator (lovers-binding task 10.6, R24.4, design §D.6).
+ * The always-present terminal-chrome line stating the active Soul_Source
+ * (`SOUL SOURCE: ORACLE` / `SOUL SOURCE: YOURS`) plus the souls-spent
+ * attribution seam. Authored in the strict 4-shade DMG Asset_Palette so the
+ * terminal-wide palette guard stays green: the brightest DMG shade `#8cff9e`
+ * (= --dmg-3) for the MODE label on the shared darkest shade `#001a00`
+ * (= --dmg-0 = --crt-bg) — a pair whose sRGB contrast ratio is well over the
+ * 4.5:1 floor (R24.4 a11y, §D.6). The souls-spent seam line uses the same
+ * bright shade so it reads clearly whenever it is wired. These two hex values
+ * are DMG_Palette members, so palette purity holds with no new colour.
+ */
+.crt-soul-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  flex: 0 0 auto;
+  margin-top: 0.5rem;
+  color: #8cff9e;
+  background-color: #001a00;
+}
+
+.crt-soul-source-label {
+  color: #8cff9e;
+}
+
+.crt-soul-source-spent {
+  color: #8cff9e;
+}
+
+/*
  * DOWNLOAD PATCH control (visual-necromancy task 23.5, R7.3, R10.2, R10.3).
  * Styled as a CRT phosphor button matching the command-button look rather than
  * the native full-width grey default: transparent background, a dim phosphor

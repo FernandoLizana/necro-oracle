@@ -14,7 +14,7 @@
 //
 // _Requirements: R7.3, R7.4, R6.15, R6.21_
 
-import type { ReadingPhase, ResurrectionPhase } from "../protocol.js";
+import type { LoversPhase, ReadingPhase, ResurrectionPhase } from "../protocol.js";
 
 /** The canonical boot banner (oracle-voice Fixed phrases). */
 export const BOOT_PHRASE =
@@ -26,6 +26,14 @@ export const PRE_READING_PHRASE = "Shuffle. Cut. The repository speaks.";
 /** The canonical line printed just before a resurrection ritual begins (R1.1). */
 export const PRE_RESURRECTION_PHRASE =
   "The coven gathers. The dead code is called back to life.";
+
+/**
+ * The canonical line printed just before a Lovers binding begins
+ * (lovers-binding R14.1). THE LOVERS (VI) draws two souls together; the binding
+ * stitches a Python heart to a JavaScript beloved across a JSON contract.
+ */
+export const PRE_BINDING_PHRASE =
+  "THE LOVERS draw close. Two tongues, one contract, bound across the seam.";
 
 /**
  * Banner marking a reading replayed from the demo bundle rather than summoned
@@ -111,6 +119,34 @@ export const RESURRECT_PHASE_VOICE: Readonly<
   DIFF: {
     mystical: "The oracle draws the line between what was and is.",
     technical: "DIFF: assembling the before/after patch over fixed files.",
+  },
+};
+
+/**
+ * One Progress_Line per Lovers_Phase (lovers-binding R19.*, design C.5),
+ * surfaced by the terminal as the lovers stream reports each phase. The key set
+ * is exactly the four ordered phases of the binding pipeline (PLAN, GENERATE,
+ * VALIDATE, BIND); each technical line carries its own phase token verbatim so
+ * the client can key its progress display off it and a renamed phase is caught
+ * by the example test. Pure Oracle_Voice: ASCII-only, no emoji, each physical
+ * line within 72 columns and the mystical half <= 16 words.
+ */
+export const LOVERS_PHASE_VOICE: Readonly<Record<LoversPhase, PhaseVoice>> = {
+  PLAN: {
+    mystical: "The oracle reads which souls may cross the seam.",
+    technical: "PLAN: mapping each function's params and return types.",
+  },
+  GENERATE: {
+    mystical: "A bound spirit shapes the beloved in the new tongue.",
+    technical: "GENERATE: drafting the JavaScript client and the contract.",
+  },
+  VALIDATE: {
+    mystical: "Both hearts are tested against the parser's gate.",
+    technical: "VALIDATE: parsing both sides and checking the contract.",
+  },
+  BIND: {
+    mystical: "The seam is sealed; the two are bound as one.",
+    technical: "BIND: stitching the Python heart to the JS beloved.",
   },
 };
 

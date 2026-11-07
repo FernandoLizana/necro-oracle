@@ -15,6 +15,9 @@ import type { NecroErrorCode } from "@necro/oracle/client";
 
 import type {
   DemoBundle,
+  LoversModelOverrides,
+  LoversProgressEvent,
+  LoversResponse,
   PlayableSpread,
   ProgressEvent,
   ReadingResponse,
@@ -22,7 +25,7 @@ import type {
   RitualResponse,
   SummonSummary,
 } from "../protocol.js";
-import type { ResurrectTarget } from "../command/types.js";
+import type { ModelTierArg, ResurrectTarget } from "../command/types.js";
 import type { OutputBlock } from "../render/blocks.js";
 import type { CardRevealStep } from "../motion/card-reveal.js";
 import type { History } from "./history.js";
@@ -32,7 +35,7 @@ import type { SoundEvent, SoundPreference, SoundState } from "../sound/sound-red
 /** A single outstanding request, tagged by the kind of work it performs. */
 export interface InflightRequest {
   readonly id: number;
-  readonly kind: "summon" | "read" | "demo-load" | "resurrect";
+  readonly kind: "summon" | "read" | "demo-load" | "resurrect" | "lovers";
 }
 
 /** The reveal queue: the ids of blocks still animating, and the start clock. */
@@ -64,6 +67,37 @@ export interface CardRevealState {
   readonly flippedCount: number;
 }
 
+/**
+ * The active key source for the current browser tab (lovers-binding R24.1,
+ * R24.2). `ORACLE` is the server key under the daily ceilings; `YOURS` is the
+ * user-supplied BYOK key. The reducer only ever flips this flag — the raw key
+ * value never lives in session state (design §D.3/D.6): it is held solely in
+ * the `apps/web` `SoulKeyContext` ref and transported per request.
+ */
+export type SoulSource = "ORACLE" | "YOURS";
+
+/**
+ * The HUD mirror of the BYOK key status (lovers-binding R25.3, D.6). It carries
+ * ONLY whether a key is set and the last four characters for the status line —
+ * never the raw key. The shell reports these two facts to the reducer through a
+ * `byok.key-set` action after the masked input accepts a value; the reducer
+ * never receives (and so never stores, logs, or historises) the key itself.
+ */
+export interface SoulKeyStatus {
+  readonly keySet: boolean;
+  readonly last4: string;
+}
+
+/**
+ * A session-only model override per tier (lovers-binding R25.8, D.2). Set by the
+ * `model fast|strong <id>` command; the ids are already `MODEL_ID_RE`-validated
+ * by the parser. This lives in session state ONLY and is never written to any
+ * storage (no `StoragePort`, no `prefs.save` effect) — it dies with the tab.
+ */
+export type SessionModelOverrides = {
+  readonly [T in ModelTierArg]?: string;
+};
+
 /** The complete pure session model the reducer transitions. */
 export interface SessionState {
   readonly log: readonly OutputBlock[];
@@ -84,6 +118,14 @@ export interface SessionState {
    * `null` until a `resurrect` command resolves.
    */
   readonly lastRitual: RitualResponse | null;
+  /**
+   * The most recent completed Lovers binding `LoversResult`, surfaced so the
+   * view layer can mount the lazy DMG `LoversView` (lovers-binding R21.*,
+   * R22.1). The pure reducer renders a result-summary block into the log
+   * itself; this field carries only the settled result the DMG view reads,
+   * mirroring `lastRitual`. `null` until a `lovers` command resolves.
+   */
+  readonly lastLovers: LoversResponse | null;
   readonly inflight: InflightRequest | null;
   /** A demo name waiting for the bundle to load. */
   readonly pendingDemo: string | null;
@@ -102,6 +144,24 @@ export interface SessionState {
    * Pure session memory — no clock, DOM, network or storage.
    */
   readonly landingDismissed: boolean;
+  /**
+   * The active Soul_Source (lovers-binding R24.1, R24.2, D.6). Seeded `ORACLE`;
+   * set `YOURS` when the shell reports a key has been set (`byok.key-set`) and
+   * reset to `ORACLE` by `key clear`. Pure session memory — never persisted.
+   */
+  readonly soulSource: SoulSource;
+  /**
+   * The HUD mirror of the BYOK key status (lovers-binding R25.3, D.6): whether a
+   * key is set and its last four characters. The raw key is NEVER held here — it
+   * lives only in the `apps/web` `SoulKeyContext` ref. Seeded not-set.
+   */
+  readonly soulKeyStatus: SoulKeyStatus;
+  /**
+   * The session-only model overrides (lovers-binding R25.8, D.2). Recorded from
+   * the `model fast|strong <id>` command and used by the server (when the
+   * Soul_Source is `YOURS`) for THIS session only. Never written to any storage.
+   */
+  readonly sessionModelOverrides: SessionModelOverrides;
 }
 
 /** Every action the reducer understands. */
@@ -138,6 +198,16 @@ export type Action =
       readonly result: RitualResponse;
     }
   | {
+      readonly type: "api.lovers.progress";
+      readonly requestId: number;
+      readonly event: LoversProgressEvent;
+    }
+  | {
+      readonly type: "api.lovers.resolved";
+      readonly requestId: number;
+      readonly result: LoversResponse;
+    }
+  | {
       readonly type: "api.failed";
       readonly requestId: number;
       readonly error: { readonly code: NecroErrorCode; readonly userMessage: string };
@@ -148,7 +218,16 @@ export type Action =
   | { readonly type: "skip-reveal" }
   | { readonly type: "reveal.tick"; readonly nowMs: number }
   | { readonly type: "media"; readonly prefersReduced: boolean }
-  | { readonly type: "sound"; readonly event: SoundEvent };
+  | { readonly type: "sound"; readonly event: SoundEvent }
+  /**
+   * The shell reports that the masked `SoulKeyInput` accepted a key
+   * (lovers-binding R24.2, R25.2, D.3). It carries ONLY the last four
+   * characters — NEVER the raw key — so the reducer can mirror
+   * `soulKeyStatus` and flip `soulSource` to `YOURS` while the key value
+   * stays in the `apps/web` ref alone. The masked input, not this action, is
+   * the only path a key value travels, and it never reaches session state.
+   */
+  | { readonly type: "byok.key-set"; readonly last4: string };
 
 /** Every side effect the reducer describes for the adapter layer to perform. */
 export type Effect =
@@ -166,6 +245,19 @@ export type Effect =
       readonly target: ResurrectTarget;
       readonly spread: PlayableSpread;
     }
+  | {
+      readonly type: "api.lovers";
+      readonly requestId: number;
+      readonly pinned: string;
+      readonly file: string;
+      readonly spread: PlayableSpread;
+      /**
+       * The session-only BYOK model overrides, carried ONLY when the
+       * Soul_Source is `YOURS` (lovers-binding D.2 item 5); omitted on ORACLE so
+       * the reducer never forwards an override the server would ignore.
+       */
+      readonly models?: LoversModelOverrides | undefined;
+    }
   | { readonly type: "api.abort" }
   | {
       readonly type: "patch.download";
@@ -177,7 +269,25 @@ export type Effect =
   | { readonly type: "sound.start" }
   | { readonly type: "sound.release" }
   | { readonly type: "sound.apply"; readonly hum: boolean; readonly click: boolean }
-  | { readonly type: "focus"; readonly target: "input" };
+  | { readonly type: "focus"; readonly target: "input" }
+  /**
+   * Signal the shell to open the masked `SoulKeyInput` (lovers-binding R25.2,
+   * D.2). The reducer describes the intent as an Effect — exactly as it
+   * describes `api.*`, `prefs.save`, and `focus` — and NEVER touches the DOM
+   * or the key value itself. The adapter mounts the masked input; when the
+   * user submits, the shell stores the raw key in the `SoulKeyContext` ref and
+   * dispatches a `byok.key-set` action carrying ONLY the last four characters.
+   * This is how `key set` opens the masked input while the key value stays out
+   * of the pure reducer entirely.
+   */
+  | { readonly type: "byok.open-key-input" }
+  /**
+   * Signal the shell to drop the raw key from the `SoulKeyContext` ref
+   * (lovers-binding R25.4, R26.*). Emitted by `key clear`; the reducer resets
+   * only its own status mirror and Soul_Source, while the adapter clears the
+   * ref that actually held the value.
+   */
+  | { readonly type: "byok.clear-key" };
 
 /** The fresh, pre-boot session. The `boot` action fills in the live values. */
 export function initialState(): SessionState {
@@ -191,6 +301,7 @@ export function initialState(): SessionState {
     lastSpread: null,
     demoBundle: null,
     lastRitual: null,
+    lastLovers: null,
     inflight: null,
     pendingDemo: null,
     motionPreference: "auto",
@@ -201,5 +312,8 @@ export function initialState(): SessionState {
     boot: { phase: "playing", startedAtMs: null, stepIndex: 0, seen: false },
     cardReveal: { schedule: [], flippedCount: 0 },
     landingDismissed: false,
+    soulSource: "ORACLE",
+    soulKeyStatus: { keySet: false, last4: "" },
+    sessionModelOverrides: {},
   };
 }

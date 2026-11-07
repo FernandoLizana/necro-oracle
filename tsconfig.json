@@ -16,6 +16,7 @@
     { "path": "packages/action" },
     { "path": "packages/config" },
     { "path": "packages/grimoires/_template" },
-    { "path": "packages/grimoires/py2to3" }
+    { "path": "packages/grimoires/py2to3" },
+    { "path": "packages/grimoires/lovers-js" }
   ]
 }

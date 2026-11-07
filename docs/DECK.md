@@ -194,6 +194,48 @@ unlocks the **py2to3** grimoire (`@necro/grimoires-py2to3`, pair
 No pull request is opened in this feature; the grimoire delivers a per-file diff
 and a downloadable unified-diff patch.
 
+### THE LOVERS (VI) → `lovers-js`
+
+> THE LOVERS: *"Two runtimes, one vow. The heart beats in Python; the beloved
+> answers in JavaScript."*
+
+**THE LOVERS (VI)** is the binding card. Unlike the diagnosis cards above (drawn
+by a pure detector over a repository's faults), THE LOVERS is a *binding* card: it
+is offered once a file has been resurrected to Python 3, and its draw — together
+with a resurrectable file that has bindable top-level functions — unlocks the
+**lovers-js** grimoire (`@necro/grimoires-lovers-js`, pair `python3->javascript`,
+card id `lovers`). It is the deck's first cross-language binding rather than a
+same-language modernization.
+
+- **Precondition (the card cannot lie here either).** If THE LOVERS (VI) was not
+  drawn, or the file has no bindable top-level functions (or exceeds the
+  `MAX_BINDABLE = 8` / `MAX_SOURCE_BYTES = 32768` caps), the Lovers_Route
+  terminates with a typed `VALIDATION_FAILED` oracle-voice error and never calls a
+  model. The pure deterministic `extractPlan` is the single source of bindability
+  truth — a function or parameter named a JS-reserved identifier is refused with
+  an oracle-voice `skipReason` rather than emitting invalid JavaScript.
+- **Input.** The *resurrected* Python 3 source of the file (never raw Python 2),
+  so THE LOVERS follows JUDGEMENT in the deck's resurrection order.
+- **Pipeline (`LoversRunner`): PLAN → GENERATE → VALIDATE → EMIT.** A FAST-model
+  PLAN lists bindable functions and their Py→JSON→JS type map; a routed GENERATE
+  produces the JavaScript beloved (a client that spawns `python3 heart.py` over a
+  JSON-lines contract — never a reimplementation), the contract schema, and both
+  contract tests. The Python heart (the JSON dispatcher) is **always emitted
+  deterministically** by the AST-template bridge on both the LLM and the fallback
+  paths.
+- **Validation gate.** tree-sitter parses both sides with zero error nodes (python
+  + the new javascript grammar), the contract schema is a valid JSON Schema draft
+  2020-12 whose `$defs` keys equal the planned functions, every planned function
+  exists on both sides, and a static deny-list scan rejects dangerous constructs
+  (no eval/Function/exec, no network, no fs writes/deletes, no `child_process`
+  beyond the single heart spawn). A failure after one unified retry falls back to
+  the deterministic AST-template bridge with `path: "template"`.
+
+No pull request is opened; the result is surfaced in the DMG split Lovers_View and
+a client-side ZIP download (`python/`, `js/`, `contract/`, a `README`). The full
+module map lives in `docs/ARCHITECTURE.md` → "Lovers_Binding"; the prompt
+templates and default model ids are in `docs/PROMPTS.md`.
+
 ## Divergence allowlist
 
 Every intended behaviour change a grimoire makes must be declared in its

@@ -38,12 +38,15 @@ import type { Action, Effect, SessionState } from "./state.js";
 import { step } from "./reducer.js";
 
 import type {
+  LoversResponse,
   ReadingResponse,
   RitualResponse,
   SummonSummary,
 } from "../protocol.js";
 import {
   BOOT_PHRASE,
+  LOVERS_PHASE_VOICE,
+  PRE_BINDING_PHRASE,
   PRE_READING_PHRASE,
   PRE_RESURRECTION_PHRASE,
   RESURRECT_PHASE_VOICE,
@@ -744,6 +747,233 @@ describe("resurrect", () => {
       summary: makeSummary(),
     }).state;
     expect(after.lastRitual).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lovers (lovers-binding R14.1, R14.4, R19.*, task 14.4)
+// ---------------------------------------------------------------------------
+
+/** A field-complete, LoversResultWireSchema-valid `LoversResponse`. */
+function makeLoversResponse(
+  overrides: Partial<LoversResponse> = {},
+): LoversResponse {
+  return {
+    file: "src/app.py",
+    targetLang: "javascript",
+    pair: {
+      jsBeloved: "// beloved",
+      contractSchema: "{}",
+      pythonTests: "# py",
+      jsTests: "// js",
+      pythonHeart: "# heart",
+    },
+    plan: {
+      functions: [
+        {
+          name: "add",
+          params: [],
+          returns: { pyType: "int", jsonType: "number", jsType: "number" },
+          bindable: true,
+          edgeCases: [],
+        },
+      ],
+      typeMap: [],
+    },
+    path: "llm",
+    soulsSpent: {
+      promptTokens: 120,
+      completionTokens: 80,
+      costUsd: 0.0123,
+      soulSource: "ORACLE",
+      byModel: [],
+    },
+    soulSource: "ORACLE",
+    demo: false,
+    ...overrides,
+  };
+}
+
+describe("lovers (R14.1, R14.4, R19.*)", () => {
+  it("refuses with an oracle-voice block and no effect when no reading is in scope (R14.4)", () => {
+    const base = bootState();
+    const { state, effects } = submit(base, "lovers src/app.py js");
+    expect(effects.filter((e) => e.type === "api.lovers")).toHaveLength(0);
+    const text = appended(base.log, state.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toContain("no reading");
+  });
+
+  it("refuses when a summary exists but no spread has been read (R14.4)", () => {
+    let state = submit(bootState(), "summon o/n").state;
+    state = step(state, {
+      type: "api.summoned",
+      requestId: state.inflight!.id,
+      summary: makeSummary(),
+    }).state;
+    const { state: after, effects } = submit(state, "lovers src/app.py js");
+    expect(effects.filter((e) => e.type === "api.lovers")).toHaveLength(0);
+    const text = appended(state.log, after.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toContain("no reading");
+  });
+
+  it("with a reading in scope pushes the pre-binding phrase and emits exactly one api.lovers effect with the right pinned/file/spread (R14.1)", () => {
+    const base = withReadingInScope();
+    const { state, effects } = submit(base, "lovers src/app.py js");
+    const emitted = effects.filter((e) => e.type === "api.lovers");
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({
+      pinned: `o/n@${SHA}`,
+      spread: "fates",
+      file: "src/app.py",
+    });
+    // The single in-flight slot is now a lovers request.
+    expect(state.inflight).toMatchObject({ kind: "lovers" });
+    const text = appended(base.log, state.log).map(blockText).join("\n");
+    expect(text).toContain(PRE_BINDING_PHRASE);
+  });
+
+  it("omits the model override on ORACLE even when a session override is set (D.2 item 5)", () => {
+    // Record a session override, then bind while the Soul_Source is ORACLE.
+    const withOverride = submit(withReadingInScope(), "model fast openai/gpt-4o-mini").state;
+    expect(withOverride.sessionModelOverrides.fast).toBe("openai/gpt-4o-mini");
+    expect(withOverride.soulSource).toBe("ORACLE");
+
+    const { effects } = submit(withOverride, "lovers src/app.py js");
+    const emitted = effects.filter((e) => e.type === "api.lovers");
+    expect(emitted).toHaveLength(1);
+    // On ORACLE the reducer never forwards an override the server would ignore.
+    expect(emitted[0]).not.toHaveProperty("models");
+  });
+
+  it("forwards the model override only when the Soul_Source is YOURS (D.2 item 5)", () => {
+    let state = withReadingInScope();
+    // A key is bound -> Soul_Source YOURS.
+    state = step(state, { type: "byok.key-set", last4: "abcd" }).state;
+    expect(state.soulSource).toBe("YOURS");
+    // Record both tier overrides for this session.
+    state = submit(state, "model fast openai/gpt-4o-mini").state;
+    state = submit(state, "model strong anthropic/claude-3.5-sonnet").state;
+
+    const { effects } = submit(state, "lovers src/app.py js");
+    const emitted = effects.filter((e) => e.type === "api.lovers");
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({
+      models: { fast: "openai/gpt-4o-mini", strong: "anthropic/claude-3.5-sonnet" },
+    });
+  });
+
+  it("refuses to start a second lovers binding while one is in flight (R3.11)", () => {
+    const base = withReadingInScope();
+    const first = submit(base, "lovers src/app.py js").state;
+    expect(first.inflight).toMatchObject({ kind: "lovers" });
+    const { state, effects } = submit(first, "lovers src/app.py js");
+    expect(effects.filter((e) => e.type === "api.lovers")).toHaveLength(0);
+    const text = appended(first.log, state.log).map(blockText).join("\n").toLowerCase();
+    expect(text).toMatch(/already underway|ritual/);
+  });
+
+  it("renders exactly one status block per lovers phase, keeping inflight (R19.*)", () => {
+    let state = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const requestId = state.inflight!.id;
+    const phases = ["PLAN", "GENERATE", "VALIDATE", "BIND"] as const;
+    for (const phase of phases) {
+      const before = state.log.length;
+      state = step(state, {
+        type: "api.lovers.progress",
+        requestId,
+        event: { kind: "phase", phase },
+      }).state;
+      const added = state.log.slice(before);
+      expect(added).toHaveLength(1);
+      expect(added[0]!.kind).toBe("status");
+      // The phase token is surfaced verbatim so the client can key off it.
+      expect(blockText(added[0]!)).toContain(LOVERS_PHASE_VOICE[phase].technical);
+      expect(state.inflight?.id).toBe(requestId);
+    }
+  });
+
+  it("renders a skip-note as a single status block during a lovers binding (R19.*)", () => {
+    let state = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const requestId = state.inflight!.id;
+    const note = "The living tongue slumbered; the old rite binds instead.";
+    const before = state.log.length;
+    state = step(state, {
+      type: "api.lovers.progress",
+      requestId,
+      event: { kind: "skip-note", note },
+    }).state;
+    const added = state.log.slice(before);
+    expect(added).toHaveLength(1);
+    expect(added[0]!.kind).toBe("status");
+    expect(blockText(added[0]!)).toContain(note);
+  });
+
+  it("resolving renders the result summary, stores lastLovers, and clears inflight (R21.*, R22.1)", () => {
+    const started = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const requestId = started.inflight!.id;
+    const before = started.log.length;
+    const resolved = step(started, {
+      type: "api.lovers.resolved",
+      requestId,
+      result: makeLoversResponse(),
+    }).state;
+
+    expect(resolved.inflight).toBeNull();
+    expect(resolved.lastLovers).not.toBeNull();
+    expect(resolved.lastLovers?.file).toBe("src/app.py");
+
+    const text = resolved.log.slice(before).map(blockText).join("\n");
+    // The authoritative summary names the file, the function count and path.
+    expect(text).toContain("BOUND src/app.py to JavaScript");
+    expect(text).toContain("1 function(s)");
+    expect(text.toUpperCase()).toContain("THE LOVERS");
+  });
+
+  it("ignores a stale api.lovers.resolved whose requestId does not match inflight", () => {
+    const started = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const requestId = started.inflight!.id;
+    const after = step(started, {
+      type: "api.lovers.resolved",
+      requestId: requestId + 999,
+      result: makeLoversResponse(),
+    }).state;
+    expect(after.inflight?.id).toBe(requestId);
+    expect(after.lastLovers).toBeNull();
+  });
+
+  it("a failed lovers binding renders the error and clears inflight (api.failed)", () => {
+    const started = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const requestId = started.inflight!.id;
+    const before = started.log.length;
+    const failed = step(started, {
+      type: "api.failed",
+      requestId,
+      error: {
+        code: "UPSTREAM_UNAVAILABLE",
+        userMessage: "The binding slipped from the circle before it sealed.",
+      },
+    }).state;
+    expect(failed.inflight).toBeNull();
+    expect(failed.lastLovers).toBeNull();
+    const text = failed.log.slice(before).map(blockText).join("\n");
+    expect(text).toContain("The binding slipped from the circle before it sealed.");
+  });
+
+  it("a new summon clears the last lovers result (R5.4)", () => {
+    const started = submit(withReadingInScope(), "lovers src/app.py js").state;
+    const resolved = step(started, {
+      type: "api.lovers.resolved",
+      requestId: started.inflight!.id,
+      result: makeLoversResponse(),
+    }).state;
+    expect(resolved.lastLovers).not.toBeNull();
+    const next = submit(resolved, "summon o/n2").state;
+    const after = step(next, {
+      type: "api.summoned",
+      requestId: next.inflight!.id,
+      summary: makeSummary(),
+    }).state;
+    expect(after.lastLovers).toBeNull();
   });
 });
 

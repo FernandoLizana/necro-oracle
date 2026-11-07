@@ -24,7 +24,24 @@ import {
   RepoRefSchema,
 } from "@necro/oracle/client";
 import type { ReadingResponse, SummonSummary } from "@necro/ui-crt";
+import { MODEL_ID_RE } from "@necro/ui-crt";
 import { z } from "zod";
+
+/**
+ * Optional BYOK session model overrides (lovers-binding D.2, R25.7/R40). Each id
+ * is validated against `MODEL_ID_RE` imported from `@necro/ui-crt` — the SINGLE
+ * source of truth for the safe OpenRouter model-id pattern — so the SERVER
+ * validates the SAME pattern the client parser already enforces. `.strict()` so
+ * no unknown keys survive the boundary; `.optional()` so callers may omit it.
+ * Overrides are honoured by the route only when `soulSource = YOURS`.
+ */
+export const ModelOverridesSchema = z
+  .object({
+    fast: z.string().regex(MODEL_ID_RE).optional(),
+    strong: z.string().regex(MODEL_ID_RE).optional(),
+  })
+  .strict()
+  .optional();
 
 /** `POST /api/summon` request body: a single repo reference, 1..200 chars. */
 export const SummonRequestSchema = z
@@ -62,6 +79,33 @@ export const ResurrectRequestSchema = z
       .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/),
     target: z.string().max(400).optional(),
     spread: z.enum(["fates", "necropsy"]),
+    // ADD (lovers-binding D.2, R40): optional BYOK model overrides, validated by
+    // MODEL_ID_RE. Additive and optional so every existing caller still
+    // validates; honoured by the route only when soulSource = YOURS.
+    models: ModelOverridesSchema,
+    demo: z.literal(true).optional(),
+  })
+  .strict();
+
+/**
+ * `POST /api/lovers` request body (lovers-binding design C.5). Mirrors the
+ * resurrect/reading requests: a commit-pinned `owner/name@<40-hex-lowercase-sha>`
+ * ref, the repo-relative `file` to bind, the fixed `javascript` target language,
+ * the spread of the in-scope reading (`celtic` is rejected, matching the other
+ * routes), optional BYOK `models` overrides (each `MODEL_ID_RE`-validated), and
+ * the optional literal-`true` demo marker. `.strict()` so no unknown keys
+ * survive the boundary.
+ */
+export const LoversRequestSchema = z
+  .object({
+    ref: z
+      .string()
+      .max(200)
+      .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/),
+    file: z.string().min(1).max(400),
+    targetLang: z.literal("javascript"),
+    spread: z.enum(["fates", "necropsy"]),
+    models: ModelOverridesSchema,
     demo: z.literal(true).optional(),
   })
   .strict();

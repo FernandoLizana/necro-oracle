@@ -14,8 +14,10 @@ import { NecroError } from "../util/errors.js";
 
 import {
   hasLegacyPythonNodes,
+  parseJavascript,
   parsePython,
   queryPython,
+  type Tree,
 } from "./tree-sitter.js";
 
 // --- parsePython ---------------------------------------------------------
@@ -57,6 +59,69 @@ describe("parsePython (R3.1, R3.3, R3.6)", () => {
   it("accepts source exactly at the 1 MB boundary", () => {
     const atLimit = "#".repeat(1_048_576);
     expect(() => parsePython(atLimit)).not.toThrow();
+  });
+});
+
+// --- parseJavascript -----------------------------------------------------
+
+// Count error nodes in a parsed tree via a single cursor walk — the same
+// error-node counting the validation gate relies on (design C.3 / R18.1).
+// tree-sitter signals a syntax error either with an explicit `ERROR` node or a
+// `MISSING` (inserted) node, so both count.
+function countErrorNodes(tree: Tree): number {
+  let errors = 0;
+  const cursor = tree.walk();
+  try {
+    for (;;) {
+      if (cursor.currentNode.type === "ERROR" || cursor.currentNode.isMissing) {
+        errors += 1;
+      }
+      if (cursor.gotoFirstChild()) {
+        continue;
+      }
+      for (;;) {
+        if (cursor.gotoNextSibling()) {
+          break;
+        }
+        if (!cursor.gotoParent()) {
+          return errors;
+        }
+      }
+    }
+  } finally {
+    cursor.delete();
+  }
+}
+
+describe("parseJavascript (R18.1)", () => {
+  it("returns a program-root Tree for valid JavaScript source", () => {
+    const tree = parseJavascript("export function f(x){ return x; }\n");
+    expect(tree.rootNode.type).toBe("program");
+  });
+
+  it("parses a trivial JS snippet with zero error nodes", () => {
+    const tree = parseJavascript("export function f(x){ return x; }\n");
+    expect(countErrorNodes(tree)).toBe(0);
+  });
+
+  it("reports one or more error nodes for a syntax error", () => {
+    // Unterminated string + dangling operator: tree-sitter cannot recover
+    // cleanly and surfaces ERROR / MISSING node(s). rootNode.hasError agrees.
+    const tree = parseJavascript("const x = @@@ ;\nfunction (");
+    expect(tree.rootNode.hasError).toBe(true);
+    expect(countErrorNodes(tree)).toBeGreaterThan(0);
+  });
+
+  it("throws NecroError(FILE_TOO_LARGE) when source byte length exceeds 1 MB", () => {
+    const tooBig = "//".repeat(1_048_576); // > 1 MB of source
+    expect(() => parseJavascript(tooBig)).toThrowError(NecroError);
+    try {
+      parseJavascript(tooBig);
+      expect.unreachable("parseJavascript should have thrown FILE_TOO_LARGE");
+    } catch (err) {
+      expect(err).toBeInstanceOf(NecroError);
+      expect((err as NecroError).code).toBe("FILE_TOO_LARGE");
+    }
   });
 });
 

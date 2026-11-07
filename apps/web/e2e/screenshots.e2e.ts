@@ -78,13 +78,38 @@
 //       input, so a page-level ArrowDown never reaches the landing — hover is the
 //       deterministic, in-contract way to move the cursor without activating.
 //
-// _Requirements: 9.1, 9.3, 13.7, 21.5, 21.6_
+// Lovers_Binding (task 16.1) adds three MORE deterministic frames for the DMG
+// Lovers_View and the two Soul_Source_HUD modes (R33.1, R21.*, R24.4, R30.*),
+// each in its OWN normally-clocked test (the Lovers surfaces are static once
+// settled — no clock control needed). Every one of these runs the WIRED lovers
+// flow entirely OFFLINE: `/api/summon` + `/api/readings` (the reading carrying
+// a THE LOVERS draw so the repo reads as bindable) + `/api/lovers` are all
+// intercepted with `page.route(...)`, so the OpenRouter provider's `fetch` is
+// never reached — the same offline patterns the sibling `lovers-flow.e2e.ts`
+// spec uses. No new production code; this is capture-only.
+//   (11) the DMG Lovers_View split view — after a successful `lovers <file> js`
+//        binding the lazy `LoversView` mounts: a `<section>` region named "The
+//        Lovers binding" with the three code panes PYTHON HEART / CONTRACT /
+//        JS BELOVED rising into view. Waits for the region + all three pane
+//        headings + the bound code bodies before the capture (R21.1, R21.2,
+//        R33.1);
+//   (12) the Soul_Source_HUD in ORACLE mode — the always-present HUD status
+//        line `SOUL SOURCE: ORACLE` on the idle screen with NO key set (the
+//        default Soul_Source), captured tight on the HUD element (R24.4,
+//        R33.1);
+//   (13) the Soul_Source_HUD in YOURS mode — after `key set` enters a key
+//        through the masked `SoulKeyInput`, the HUD flips to `SOUL SOURCE:
+//        YOURS`; captured tight on the HUD element. The key value is only ever
+//        typed into the masked field and never appears in the shot (R24.4,
+//        R33.1).
+//
+// _Requirements: 9.1, 9.3, 13.7, 21.5, 21.6, 33.1, 21.1, 24.4, 30.1_
 
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 
 import {
   bootLogoShot,
@@ -129,6 +154,248 @@ const repoList = (page: Page): Locator =>
   page.getByRole("listbox", { name: "Legacy repositories" });
 /** Every selectable option row in the LEGACY REPOS listbox. */
 const repoOptions = (page: Page): Locator => repoList(page).getByRole("option");
+
+// ---------------------------------------------------------------------------
+// Lovers_Binding capture helpers (task 16.1). These mirror the OFFLINE route
+// mocks and copy anchors in the sibling `lovers-flow.e2e.ts` VERBATIM so the
+// lovers shots exercise the same wired flow with zero real network: the
+// `@necro/ui-crt` barrel transitively imports crt.css (which Playwright's TS
+// loader cannot parse), so the few copy anchors are restated here rather than
+// imported, exactly as `support/terminal.ts` restates its phrase constants.
+// ---------------------------------------------------------------------------
+
+/** The DMG `LoversView` region accessible name (components/LoversView.tsx). */
+const LOVERS_VIEW_REGION = "The Lovers binding";
+
+/** The three code-pane titles the DMG split view renders. */
+const LOVERS_PANE_TITLES = ["PYTHON HEART", "CONTRACT", "JS BELOVED"] as const;
+
+/** The four ordered Lovers_Phases, the wire `{ phase }` tokens. */
+const LOVERS_PHASES = ["PLAN", "GENERATE", "VALIDATE", "BIND"] as const;
+
+/** The bindable file we bind in these shots. */
+const BINDABLE_FILE = "src/greet.py";
+
+/** A representative fake OpenRouter-style user key (only ever typed, masked). */
+const FAKE_USER_KEY = "sk-or-v1-necro-lovers-shot-secret-abcd99";
+
+/** NDJSON headers the lovers stream sets (mirrors lovers-flow.e2e.ts). */
+const NDJSON_HEADERS = {
+  "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
+} as const;
+
+/** The demo bundle the live-reading-with-lovers body is built from. */
+const bundlePath = new URL("../src/demo/bundle.generated.json", import.meta.url);
+
+/** One LOVERS (VI) draw — card id "lovers" — the bindability precondition. */
+const LOVERS_DRAW = {
+  card: "lovers",
+  evidence: [
+    {
+      detail: `bindable public function greet in ${BINDABLE_FILE}`,
+      kind: "bindable_function",
+      path: BINDABLE_FILE,
+      line: 1,
+      source: "static",
+    },
+  ],
+  grimoires: ["lovers-js"],
+  orientation: "upright",
+  severity: 1,
+  summary:
+    "The Lovers draw close: a bindable soul waits to cross from Python to JavaScript.",
+} as const;
+
+/** The HUD status region accessible name in each Soul_Source mode. */
+function soulSourceHud(page: Page, mode: "ORACLE" | "YOURS"): Locator {
+  return page.getByRole("status", { name: `SOUL SOURCE: ${mode}` });
+}
+
+/** NDJSON body from an array of line objects (one JSON object per line). */
+function ndjson(lines: readonly unknown[]): string {
+  return lines.map((line) => JSON.stringify(line)).join("\n") + "\n";
+}
+
+/**
+ * Build the LIVE readings body whose reading carries the LOVERS draw (the
+ * bindability precondition), reusing the schema-valid green-garden necropsy
+ * fixture with the demo flag stripped and the LOVERS draw injected into both
+ * the draw list and an empty spread slot (mirrors lovers-flow.e2e.ts).
+ */
+function liveReadingWithLovers(): { summary: unknown; reading: unknown } {
+  const bundle = JSON.parse(readFileSync(bundlePath, "utf8")) as Record<
+    string,
+    { necropsy: { summary: Record<string, unknown>; reading: Record<string, unknown> } }
+  >;
+  const base = bundle["green-garden"]?.necropsy;
+  if (base === undefined) {
+    throw new Error("demo bundle is missing the green-garden necropsy fixture");
+  }
+  const { demo: _demo, ...summary } = base.summary as { demo?: unknown };
+  const reading = JSON.parse(JSON.stringify(base.reading)) as {
+    draws?: unknown[];
+    spread?: { draw: unknown; label: string; position: number }[];
+  };
+  reading.draws = [...(reading.draws ?? []), LOVERS_DRAW];
+  if (Array.isArray(reading.spread)) {
+    const emptySlot = reading.spread.find((slot) => slot.draw === null);
+    if (emptySlot !== undefined) {
+      emptySlot.draw = LOVERS_DRAW;
+    }
+  }
+  return { summary, reading };
+}
+
+/** One deterministic, schema-valid LoversResult for the bound file. */
+function loversResult(
+  overrides: { path?: "llm" | "template"; soulSource?: "ORACLE" | "YOURS" } = {},
+): Record<string, unknown> {
+  const path = overrides.path ?? "llm";
+  const soulSource = overrides.soulSource ?? "ORACLE";
+  return {
+    file: BINDABLE_FILE,
+    targetLang: "javascript",
+    pair: {
+      pythonHeart:
+        "import sys, json\n" +
+        "def greet(name):\n" +
+        '    return "Hello, " + name\n' +
+        'if __name__ == "__main__":\n' +
+        "    for line in sys.stdin:\n" +
+        "        req = json.loads(line)\n" +
+        '        out = {"id": req["id"], "ok": True, "value": greet(**req["args"])}\n' +
+        '        sys.stdout.write(json.dumps(out, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\\n")\n' +
+        "        sys.stdout.flush()\n",
+      jsBeloved:
+        "export function greet(name) {\n  return `Hello, ${name}`;\n}\n",
+      contractSchema:
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema",' +
+        '"$defs":{"greet.request":{"type":"object",' +
+        '"properties":{"name":{"type":"string"}},' +
+        '"required":["name"],"additionalProperties":false},' +
+        '"greet.response":{"type":"string"}}}',
+      pythonTests:
+        "def test_greet():\n" + '    assert greet("Mort") == "Hello, Mort"\n',
+      jsTests:
+        'import { greet } from "./greet.js";\n' +
+        'test("greet", () => { expect(greet("Mort")).toBe("Hello, Mort"); });\n',
+    },
+    plan: {
+      functions: [
+        {
+          name: "greet",
+          params: [
+            {
+              name: "name",
+              pyType: "str",
+              jsonType: "string",
+              jsType: "string",
+              required: true,
+            },
+          ],
+          returns: { pyType: "str", jsonType: "string", jsType: "string" },
+          bindable: true,
+          edgeCases: [],
+        },
+      ],
+      typeMap: [{ py: "str", json: "string", js: "string" }],
+    },
+    path,
+    soulsSpent: {
+      promptTokens: path === "llm" ? 180 : 0,
+      completionTokens: path === "llm" ? 64 : 0,
+      costUsd: path === "llm" ? 0.0012 : 0,
+      soulSource,
+      byModel:
+        path === "llm"
+          ? [
+              {
+                model: "openai/gpt-4o-mini",
+                promptTokens: 180,
+                completionTokens: 64,
+                costUsd: 0.0012,
+              },
+            ]
+          : [],
+    },
+    soulSource,
+    demo: false,
+  };
+}
+
+/**
+ * Intercept `/api/summon`, `/api/readings` (reading carries the LOVERS draw),
+ * and `/api/lovers` (the four phases then a schema-valid result line) entirely
+ * offline, so the lovers shots touch ZERO real network (the OpenRouter
+ * provider's `fetch` is never reached). Mirrors lovers-flow.e2e.ts.
+ */
+async function mockLoversFlow(
+  page: Page,
+  result: Record<string, unknown>,
+): Promise<void> {
+  const response = liveReadingWithLovers();
+
+  await page.route("**/api/summon", async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "cache-control": "no-store" },
+      body: JSON.stringify(response.summary),
+    });
+  });
+
+  await page.route("**/api/readings", async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      headers: NDJSON_HEADERS,
+      body: ndjson([
+        { phase: "SUMMON" },
+        { phase: "DOWNLOAD" },
+        { phase: "EXTERNAL" },
+        { phase: "READING" },
+        { result: response },
+      ]),
+    });
+  });
+
+  await page.route("**/api/lovers", async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      headers: NDJSON_HEADERS,
+      body: ndjson([
+        ...LOVERS_PHASES.map((phase) => ({ phase })),
+        { result },
+      ]),
+    });
+  });
+
+  // Fail loudly if any request escapes the mocks to a real host.
+  await page.route(
+    /github\.com|pypi\.org|osv\.dev|amazonaws\.com|openrouter/,
+    (route) => route.abort(),
+  );
+}
+
+/** Bring a bindable reading into scope: summon then read the necropsy spread. */
+async function summonAndRead(page: Page): Promise<void> {
+  await runCommand(page, "summon graveyard/green-garden");
+  await expect(sel.log(page)).toContainText("graveyard/green-garden");
+  await runCommand(page, "read necropsy");
+  await expect(sel.log(page)).toContainText("THE STAR");
+}
+
+/** Submit a user key through the masked `key set` input (SoulKeyInput). */
+async function enterKey(page: Page, key: string): Promise<void> {
+  await runCommand(page, "key set");
+  const field = page.locator("#crt-soul-key");
+  await expect(field).toBeVisible();
+  await expect(field).toHaveAttribute("type", "password");
+  await field.fill(key);
+  await field.press("Enter");
+}
 
 /**
  * The virtual-clock instant (ms from the ritual's first frame) at which to
@@ -555,5 +822,101 @@ test.describe("marketing screenshots (demo mode, full motion) — R9.1, R9.3", (
       path: shot("10-landing-summon"),
       animations: "allow",
     });
+  });
+
+  // --- (11) DMG Lovers_View split view ---------------------------------
+  // Its OWN test on a normally-clocked page. Drive the WIRED lovers flow fully
+  // offline (summon → read [reading carries a THE LOVERS draw] → `lovers
+  // <file> js`): the NDJSON stream emits the four phases then a schema-valid
+  // `{ result }` line, the client re-validates it, and the lazy DMG
+  // `LoversView` mounts — a `<section>` region named "The Lovers binding" with
+  // the three code panes PYTHON HEART / CONTRACT / JS BELOVED. Wait for the
+  // region, all three pane headings, and the bound code bodies so the frame is
+  // complete and deterministic before the capture (R21.1, R21.2, R33.1). No
+  // clock control: the split view is static once the stream settles.
+  test("captures the DMG Lovers split view (region + three code panes)", async ({
+    page,
+  }) => {
+    await mockLoversFlow(page, loversResult({ path: "llm", soulSource: "ORACLE" }));
+    await bootTerminal(page);
+    const log = sel.log(page);
+
+    await summonAndRead(page);
+
+    // Start the binding and let the stream settle (aria-busy back to false).
+    await runCommand(page, `lovers ${BINDABLE_FILE} js`);
+    await expect(log).toContainText(`BOUND ${BINDABLE_FILE} to JavaScript`);
+    await expect(log).toHaveAttribute("aria-busy", "false");
+
+    // The lazy DMG LoversView region mounts (a mounted view proves the result
+    // line was schema-valid, since the client re-validates before resolving).
+    const view = page.getByRole("region", { name: LOVERS_VIEW_REGION });
+    await expect(view).toBeVisible();
+    for (const title of LOVERS_PANE_TITLES) {
+      await expect(view.getByRole("heading", { name: title })).toBeVisible();
+    }
+    // The bound code bodies actually rendered in their panes.
+    await expect(view).toContainText("def greet(name):");
+    await expect(view).toContainText("export function greet(name)");
+    await expect(view).toContainText("greet.request");
+
+    // Scroll the view to the top of the frame so the split view is captured in
+    // full (the Lovers_View fits the viewport with no page scroll — R21.5).
+    await view.scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
+
+    await page.screenshot({
+      path: shot("11-lovers-view"),
+      animations: "allow",
+    });
+  });
+
+  // --- (12) Soul_Source_HUD — ORACLE mode ------------------------------
+  // Its OWN test on a normally-clocked page. With NO key set, the always-present
+  // Soul_Source HUD reads `SOUL SOURCE: ORACLE` (the default source, R24.4). The
+  // HUD is a `role="status"` line whose accessible name IS that text. Capture it
+  // tight on the HUD element on the idle screen (no flow needed — the mode is
+  // the default and the HUD is static). (R24.4, R33.1, R30.1)
+  test("captures the Soul_Source HUD in ORACLE mode (no key)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+
+    const hud = soulSourceHud(page, "ORACLE");
+    await expect(hud).toBeVisible();
+    await expect(hud).toContainText("SOUL SOURCE: ORACLE");
+
+    await hud.scrollIntoViewIfNeeded();
+    await hud.screenshot({ path: shot("12-soul-source-oracle"), animations: "allow" });
+  });
+
+  // --- (13) Soul_Source_HUD — YOURS mode -------------------------------
+  // Its OWN test on a normally-clocked page. After `key set` enters a key
+  // through the masked `SoulKeyInput`, the Soul_Source flips to `YOURS` and the
+  // HUD reads `SOUL SOURCE: YOURS` (R24.4). The key value is only ever typed
+  // into the masked (`type="password"`) field and is never echoed, so it never
+  // appears in the shot. Capture the HUD tight on the element. (R24.4, R33.1,
+  // R30.1)
+  test("captures the Soul_Source HUD in YOURS mode (after key set)", async ({
+    page,
+  }) => {
+    await bootTerminal(page);
+
+    // The HUD starts in ORACLE, then flips to YOURS once a key is bound.
+    await expect(soulSourceHud(page, "ORACLE")).toBeVisible();
+    await enterKey(page, FAKE_USER_KEY);
+
+    const hud = soulSourceHud(page, "YOURS");
+    await expect(hud).toBeVisible();
+    await expect(hud).toContainText("SOUL SOURCE: YOURS");
+
+    // Guard: the typed key value never leaks into the rendered page.
+    const bodyText = await page.locator("body").innerText();
+    expect(bodyText).not.toContain(FAKE_USER_KEY);
+
+    await hud.scrollIntoViewIfNeeded();
+    await hud.screenshot({ path: shot("13-soul-source-yours"), animations: "allow" });
   });
 });

@@ -7,11 +7,26 @@ export {
   // Port interfaces
   type LlmRequest,
   type LlmResult,
+  type LlmCallOptions,
   type LlmPort,
   type SandboxPort,
   type LedgerPort,
   type ClockPort,
   type RitualPorts,
+  type LoversPorts,
+  type LlmCachePort,
+  // Model-router port + structural model-type references (design A.1/A.3/A.6)
+  type ModelRouterPort,
+  type ModelTier,
+  type RouterSignals,
+  type UsageRecord,
+  // Chunked LLM_Pass structured-edit gate (design B.2)
+  type ChunkStep,
+  type ChunkRequestInput,
+  type ChunkGateResult,
+  type ChunkRejectReason,
+  type ChunkDiagnoseFn,
+  type ChunkParseFn,
   // Grimoire interface and its parts
   type FixResult,
   type Fixer,
@@ -63,6 +78,44 @@ export {
   type RitualResult,
   type RitualInput,
 } from "./models.js";
+
+// --- Prompt templates: the ONE source of truth for prompt text (A.4, A.5a) -
+// Pure, browser-safe, Node-builtin-free text assembly shared by the adapter-
+// free grimoires AND re-exported through the `@necro/llm` barrel. py2to3's
+// `LlmStep.buildRequest` delegates to `buildMessages("py2to3.chunk", …)` here
+// (R43.9), so there is a single source of truth for prompt text. The markers
+// (`UNTRUSTED_OPEN`/`UNTRUSTED_CLOSE`) and `PROMPT_VERSION` are OWNED here; the
+// crypto cache-key hash lives in `@necro/llm` and consumes `cacheKeyParts`.
+export {
+  PROMPT_VERSION,
+  UNTRUSTED_OPEN,
+  UNTRUSTED_CLOSE,
+  neutraliseDelimiters,
+  PROMPT_TEMPLATES,
+  getTemplate,
+  buildMessages,
+  cacheKeyParts,
+  type PromptPurpose,
+  type PromptTemplate,
+  type FewShotPair,
+  type MessageInputs,
+  type PromptMessage,
+  type BuiltMessages,
+  type CacheKeyInputs,
+} from "./prompts/templates.js";
+
+// --- Residual chunking for the Resurrection LLM_Pass (chunk) ---------------
+// Pure, adapter-free (imports @necro/oracle `parsePython` only, injected by
+// default). `groupResiduals` folds a file's residual diagnostics into per-unit
+// `ResidualChunk`s — one per enclosing top-level def/class plus a module-level
+// chunk — each carrying ONLY its own diagnostics and a `context` that is a
+// strict subset of the file (enclosing unit + referenced import lines), never
+// the whole file (R11.1-R11.3).
+export {
+  groupResiduals,
+  type ResidualChunk,
+  type ParseFn,
+} from "./chunk/residual-chunk.js";
 
 // --- Per-file diff and unified-patch generation (diff) ---------------------
 // Pure, adapter-free. `lineDiff` produces a `DiffLine[]` per file (R7.1/R7.2);
@@ -179,3 +232,88 @@ export {
   type DemoPortsInput,
 } from "./demo/ports.js";
 export { demoFixtureMissingError } from "./demo/errors.js";
+
+// --- The Lovers (VI) binding data models (lovers/types) --------------------
+// The canonical, adapter-free zod contracts for the Lovers grimoire (design
+// C.2 "Lovers grimoire schemas", C.2a "Pinned JSON-lines protocol", C.4
+// "LoversRunner"). `LoversPairLlmSchema` is the GENERATE LLM output (jsBeloved +
+// contractSchema + pythonTests + jsTests, NO heart); `LoversPairSchema` extends
+// it with the deterministically-emitted `pythonHeart` (identical on both the
+// llm and template paths). `UsageAggregateSchema` is a STRUCTURAL MIRROR of
+// `@necro/llm`'s owning schema so coven never depends on the llm adapter.
+export {
+  LOVERS_LANGUAGE_PAIR,
+  MAX_BINDABLE,
+  JsonTypeSchema,
+  type JsonType,
+  UsageAggregateSchema,
+  type UsageAggregate,
+  LoversParamSchema,
+  type LoversParam,
+  LoversReturnsSchema,
+  type LoversReturns,
+  LoversFunctionSchema,
+  type LoversFunction,
+  LoversTypeMapEntrySchema,
+  type LoversTypeMapEntry,
+  LoversPlanSchema,
+  type LoversPlan,
+  LoversPairLlmSchema,
+  type LoversPairLlm,
+  LoversPairSchema,
+  type LoversPair,
+  ContractSchema,
+  type Contract,
+  parseContract,
+  LoversResultSchema,
+  type LoversResult,
+} from "./lovers/types.js";
+
+// --- Deterministic PLAN extraction for the Lovers binding (lovers/extract) -
+// Pure, adapter-free (imports @necro/oracle `parsePython` only, injected by
+// default — mirrors `residual-chunk.ts`'s `ParseFn` pattern). `extractPlan`
+// reads the top-level `function_definition` nodes of the RESURRECTED Python 3
+// source into a `LoversPlan` (params/returns/bindable/edgeCases/typeMap),
+// capping bindable functions at `MAX_BINDABLE` (8) and rejecting input over
+// `MAX_SOURCE_BYTES` (32768) with a `{ ok:false, reason }` oracle-voice signal
+// so the runner/route can skip the model call (design C.2 / C.4).
+export {
+  extractPlan,
+  MAX_SOURCE_BYTES,
+  type ExtractPlanResult,
+  type ParseFn as LoversParseFn,
+} from "./lovers/extract-plan.js";
+
+// --- Static deny-list scan for the Lovers binding (lovers/deny-list) -------
+// Pure, adapter-free static source scan (design C.3a). `denyScan(code, lang)`
+// returns the first offending construct (eval/Function/exec, network, fs
+// write/delete, os.system, child_process beyond a single spawn of the python
+// heart) or `null` when clean. The Lovers gate (`validateLovers`) runs it over
+// every generated artifact and rejects a hit WITHOUT executing the code
+// (R17.7, R17.8). It never imports an adapter and never runs the scanned code.
+export { denyScan, type DenyScanLang } from "./lovers/deny-list.js";
+
+// --- The LoversRunner (lovers/runner) --------------------------------------
+// Drives one Lovers (VI) binding through PLAN -> GENERATE -> VALIDATE -> EMIT
+// (design C.4). Adapter-free: the `LlmPort`/`ModelRouterPort`/cache arrive via
+// the injected `LoversPorts`, and the grimoire capabilities (the two `LlmStep`s,
+// the deterministic `ast-bridge`, and `validateLovers`) arrive via the injected
+// `LoversGrimoirePort` — coven never imports a grimoire or `@necro/llm`. It
+// computes `extractPlan` first (R16.6 precondition), applies the ONE unified
+// retry policy under a single-request deadline (A.8), ALWAYS emits the
+// deterministic `pythonHeart` (item 3), falls back to the AST-template bridge
+// with `path: "template"`, and folds usage with the coven-local `sumUsage`.
+export {
+  LocalLoversRunner,
+  LOVERS_PHASES,
+  type LoversRunner,
+  type LoversRunnerInput,
+  type LoversRunnerOptions,
+  type LoversEmit,
+  type LoversPhase,
+  type LoversGrimoirePort,
+  type LoversGateParseFn,
+  type LoversValidateSchemaFn,
+  type LoversDenyScanFn,
+  type LoversValidateResult,
+} from "./lovers/runner.js";

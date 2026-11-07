@@ -217,13 +217,24 @@ export function stripWhitespace(s: string): string {
 // browser-safe like the code it exercises.
 
 import { CardIdSchema, type CardId } from "@necro/oracle/client";
-import type { Command, SpreadArg } from "../command/types.js";
+import type {
+  Command,
+  KeyOp,
+  ModelTierArg,
+  SpreadArg,
+} from "../command/types.js";
 
 // `motion`/`sound` argument literals. Declared locally (rather than imported
 // from the not-yet-built motion module) so this arbitrary depends only on
 // `command/types.ts`, the module the round-trip property exercises.
 type CommandMotionArg = "auto" | "on" | "off";
 type CommandSoundArg = "on" | "off";
+
+// lovers-binding: the `key` operations and `model` tiers (lovers/key/model
+// round-trip, R14.1, R25.1, R25.5, R25.6, R25.7). Declared locally so this
+// arbitrary still depends only on `command/types.ts`.
+const COMMAND_KEY_OPS: readonly KeyOp[] = ["set", "status", "clear"];
+const COMMAND_MODEL_TIERS: readonly ModelTierArg[] = ["fast", "strong"];
 
 /** Every `CardId` literal, for the `explain <card>` form. */
 const COMMAND_CARD_IDS: readonly CardId[] = CardIdSchema.options;
@@ -263,9 +274,36 @@ const arbCommandDemoName: fc.Arbitrary<string> = fc.stringMatching(
 );
 
 /**
+ * A `lovers` file token: a non-whitespace path whose case is preserved by the
+ * parser (`lovers <file> <lang>`). Kept free of whitespace so the printed
+ * `lovers <file> javascript` re-tokenises to exactly two args and round-trips.
+ */
+const arbCommandLoversFile: fc.Arbitrary<string> = fc.stringMatching(
+  /^[A-Za-z0-9_./-]{1,40}$/,
+);
+
+/**
+ * A model id matching the shared `MODEL_ID_RE`: `vendor/model` over a
+ * restricted charset, with an optional leading `~` and an optional `:tag`. The
+ * parser preserves the id's original case, so these round-trip through
+ * `printCommand` unchanged.
+ */
+const arbCommandModelId: fc.Arbitrary<string> = fc
+  .tuple(
+    fc.stringMatching(/^~?[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/),
+    fc.stringMatching(/^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/),
+    fc.option(fc.stringMatching(/^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/), {
+      nil: "",
+    }),
+  )
+  .map(([vendor, model, tag]) => `${vendor}/${model}${tag ? `:${tag}` : ""}`)
+  .filter((id) => id.length <= 128);
+
+/**
  * Generates a valid, non-`unknown` {@link Command}. Covers every variant and
  * both argument-present and argument-absent forms for `motion`, `demo` and
- * `sound`, and both target shapes for `explain`.
+ * `sound`, both target shapes for `explain`, and the lovers-binding `lovers`,
+ * `key` and `model` variants (R14.1, R25.1, R25.5, R25.6, R25.7).
  */
 export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
   fc.oneof(
@@ -303,6 +341,20 @@ export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
       .map<Command>((arg) =>
         arg === undefined ? { kind: "sound" } : { kind: "sound", arg },
       ),
+    // lovers <file> js|javascript → normalised targetLang "javascript"
+    arbCommandLoversFile.map<Command>((file) => ({
+      kind: "lovers",
+      file,
+      targetLang: "javascript",
+    })),
+    // key set|status|clear
+    fc
+      .constantFrom(...COMMAND_KEY_OPS)
+      .map<Command>((op) => ({ kind: "key", op })),
+    // model fast|strong <id> (id validated by MODEL_ID_RE)
+    fc
+      .tuple(fc.constantFrom(...COMMAND_MODEL_TIERS), arbCommandModelId)
+      .map<Command>(([tier, id]) => ({ kind: "model", tier, id })),
   ) as fc.Arbitrary<Exclude<Command, { kind: "unknown" }>>;
 
 // ============================================================================

@@ -12,6 +12,10 @@
 //   - parsePython(source): SYNCHRONOUS; throws PARSER_INIT_FAILED if called
 //     before init resolves, FILE_TOO_LARGE if byte length > 1 MB; best-effort
 //     partial tree for invalid UTF-8 (never throws on bad bytes).
+//   - parseJavascript(source): SYNCHRONOUS; same contract as parsePython but
+//     backed by the tree-sitter-javascript grammar WASM, loaded identically via
+//     createRequire(import.meta.url).resolve(...) and armed by the same
+//     initParser() call (R18.1). Error-node counting is identical.
 //   - queryPython(tree, sexpPattern): throws INVALID_QUERY_PATTERN for an
 //     invalid S-expression.
 //   - hasLegacyPythonNodes(tree): true on any of the 7 py2 legacy indicators.
@@ -35,28 +39,30 @@ export type { QueryMatch };
 /** Maximum source size the parser will accept, in bytes (1 MB). */
 const MAX_SOURCE_BYTES = 1_048_576;
 
-// Module-level singletons. Both start null; neither is touched at import time.
+// Module-level singletons. All start null; none is touched at import time.
 let initPromise: Promise<void> | null = null;
 let parserSingleton: Parser | null = null;
 let languageSingleton: Language | null = null;
+// JavaScript grammar singletons, armed by the same initParser() call (R18.1).
+let jsParserSingleton: Parser | null = null;
+let jsLanguageSingleton: Language | null = null;
 
 /**
- * Resolve the on-disk tree-sitter-python grammar to a file:// URL.
+ * Resolve an on-disk grammar WASM specifier to a file:// URL.
  *
- * Locates `node_modules/tree-sitter-python/tree-sitter-python.wasm` via Node's
- * module resolution (`createRequire(...).resolve`) and converts the absolute
- * path to a `file://` URL. `node:module` and `node:url` are imported
- * dynamically — only inside the async init path — so they never reach the
- * browser-safe main entry at import time. Resolution reads the filesystem's
- * module graph only; there is no network access (R3.1, R21.6).
+ * Locates the `.wasm` grammar (e.g.
+ * `node_modules/tree-sitter-python/tree-sitter-python.wasm`) via Node's module
+ * resolution (`createRequire(...).resolve`) and converts the absolute path to a
+ * `file://` URL. `node:module` and `node:url` are imported dynamically — only
+ * inside the async init path — so they never reach the browser-safe main entry
+ * at import time. Resolution reads the filesystem's module graph only; there is
+ * no network access (R3.1, R21.6).
  */
-async function grammarWasmUrl(): Promise<URL> {
+async function grammarWasmUrl(specifier: string): Promise<URL> {
   const { createRequire } = await import("node:module");
   const { pathToFileURL } = await import("node:url");
   const require = createRequire(import.meta.url);
-  const wasmPath = require.resolve(
-    "tree-sitter-python/tree-sitter-python.wasm",
-  );
+  const wasmPath = require.resolve(specifier);
   return pathToFileURL(wasmPath);
 }
 
@@ -73,17 +79,35 @@ export function initParser(): Promise<void> {
   initPromise ??= (async (): Promise<void> => {
     try {
       await Parser.init();
-      const language = await Language.load(await grammarWasmUrl());
+
+      // Python grammar.
+      const language = await Language.load(
+        await grammarWasmUrl("tree-sitter-python/tree-sitter-python.wasm"),
+      );
       const parser = new Parser();
       parser.setLanguage(language);
       parserSingleton = parser;
       languageSingleton = language;
+
+      // JavaScript grammar — loaded identically and armed by this same call
+      // (R18.1). Its WASM is ABI-compatible with the installed web-tree-sitter.
+      const jsLanguage = await Language.load(
+        await grammarWasmUrl(
+          "tree-sitter-javascript/tree-sitter-javascript.wasm",
+        ),
+      );
+      const jsParser = new Parser();
+      jsParser.setLanguage(jsLanguage);
+      jsParserSingleton = jsParser;
+      jsLanguageSingleton = jsLanguage;
     } catch (cause) {
       // Reset so the next call retries (allows recovery from a transient load
       // failure), then surface the failure in the oracle's voice.
       initPromise = null;
       parserSingleton = null;
       languageSingleton = null;
+      jsParserSingleton = null;
+      jsLanguageSingleton = null;
       throw new NecroError(
         "PARSER_INIT_FAILED",
         "The oracle could not awaken its sight; the grammar of the dead refused to load.",
@@ -126,6 +150,47 @@ export function parsePython(source: string): Tree {
   if (tree === null) {
     // parse() only returns null when no language is set, which cannot happen
     // once parserSingleton is non-null. Guard anyway rather than return null.
+    throw new NecroError(
+      "PARSER_INIT_FAILED",
+      "The oracle's sight faltered mid-reading; the grammar slipped from its grasp.",
+    );
+  }
+  return tree;
+}
+
+/**
+ * Parse JavaScript source into a tree-sitter `Tree`. Synchronous;
+ * `initParser()` must have resolved first. This mirrors `parsePython` exactly,
+ * differing only in the grammar it is backed by (R18.1):
+ *
+ *   - throws NecroError(PARSER_INIT_FAILED) if called before init resolves
+ *   - throws NecroError(FILE_TOO_LARGE) if source byte length > 1_048_576
+ *   - returns a best-effort partial Tree for invalid UTF-8 (never throws on
+ *     bad bytes); a lone surrogate is encoded as the replacement character by
+ *     the runtime rather than raising.
+ */
+export function parseJavascript(source: string): Tree {
+  if (jsParserSingleton === null || jsLanguageSingleton === null) {
+    throw new NecroError(
+      "PARSER_INIT_FAILED",
+      "The oracle's sight is not yet bound to the grammar; call initParser() before reading.",
+    );
+  }
+
+  // Measure the true UTF-8 byte length (not the UTF-16 string length) so the
+  // 1 MB limit matches the bytes the parser will actually consume.
+  const byteLength = Buffer.byteLength(source, "utf8");
+  if (byteLength > MAX_SOURCE_BYTES) {
+    throw new NecroError(
+      "FILE_TOO_LARGE",
+      "This scroll is too vast for the oracle to read; its corpse exceeds one megabyte.",
+    );
+  }
+
+  const tree = jsParserSingleton.parse(source);
+  if (tree === null) {
+    // parse() only returns null when no language is set, which cannot happen
+    // once jsParserSingleton is non-null. Guard anyway rather than return null.
     throw new NecroError(
       "PARSER_INIT_FAILED",
       "The oracle's sight faltered mid-reading; the grammar slipped from its grasp.",

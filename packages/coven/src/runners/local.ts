@@ -37,12 +37,14 @@
 
 import {
   computeVitality,
+  hasLegacyPythonNodes,
   initParser,
   NecroError,
   parsePython,
   type Tree,
 } from "@necro/oracle";
 
+import { groupResiduals, type ResidualChunk } from "../chunk/residual-chunk.js";
 import { buildPatch, lineDiff } from "../diff.js";
 import { maskContentItem, maskSecretsInText } from "../mask.js";
 import { covenError } from "../models.js";
@@ -55,14 +57,25 @@ import type {
   RitualResult,
 } from "../models.js";
 import type {
+  ChunkRequestInput,
   Grimoire,
   LlmPort,
+  ModelRouterPort,
+  ModelTier,
   RitualPorts,
+  RouterSignals,
   SandboxPort,
+  UsageRecord,
 } from "../ports.js";
 import { rediagnose } from "../rediagnose.js";
 import type { LanguagePairRegistry } from "../registry.js";
 import { selectCandidates } from "../select.js";
+import {
+  sumUsage,
+  type HealerAttribution,
+  type SoulSource,
+  type UsageAggregate,
+} from "./souls.js";
 
 // ---------------------------------------------------------------------------
 // Phase sequence + the monotonic emit reporter (design: "Resurrection phase
@@ -121,11 +134,46 @@ export interface CovenRunnerOptions {
    * Target_Parser and emits a skip-note (R5.6). Default 15 s.
    */
   readonly sandboxTimeoutMs?: number;
+  /**
+   * The per-reading hard cap on TOTAL LLM calls across the Ritual
+   * (`NECRO_LLM_MAX_CALLS_PER_READING`, design A.8 / R36.1). Once reached,
+   * every remaining chunk keeps its deterministic result and issues no model
+   * call (R36.2). The composition root plumbs the validated env value in;
+   * defaults to 12 (the documented env default) when unset.
+   */
+  readonly maxLlmCallsPerReading?: number;
+  /**
+   * The reading-level `soulSource` stamped onto the reported souls-spent
+   * aggregate (design B.3): the server's key (`"ORACLE"`, default) or the
+   * user's BYOK key (`"YOURS"`). Additive only; the public result shape is
+   * unchanged.
+   */
+  readonly soulSource?: SoulSource;
 }
 
 const DEFAULT_TOTAL_BUDGET_MS = 45_000;
 const DEFAULT_VALIDATE_BUDGET_MS = 20_000;
 const DEFAULT_SANDBOX_TIMEOUT_MS = 15_000;
+
+/** Documented default of `NECRO_LLM_MAX_CALLS_PER_READING` (design A.7). */
+const DEFAULT_MAX_LLM_CALLS_PER_READING = 12;
+
+// ---------------------------------------------------------------------------
+// Single-request DEADLINE arithmetic for the chunked LLM_Pass (design A.8).
+//
+// The runner derives the request deadline from the overall wall-clock budget it
+// already owns (`deadline = clock.nowMs() + totalBudgetMs`, set in `run`). Every
+// chunk call reads that ONE deadline: its `timeoutMs` is the smaller of the
+// per-call cap and the remaining time minus a write/cleanup reserve. A retry is
+// SKIPPED straight to the deterministic chunk when too little time remains
+// (R36.3).
+// ---------------------------------------------------------------------------
+
+/** Write/cleanup headroom held back out of every call's timeout (design A.8). */
+const WRITE_RESERVE_MS = 5_000;
+
+/** Per-call cap for a Part B chunk call (design A.8; GENERATE cap reused). */
+const CHUNK_PER_CALL_CAP_MS = 45_000;
 
 // ---------------------------------------------------------------------------
 // The runner contract (design: "Coven_Runner").
@@ -144,6 +192,23 @@ const DEFAULT_SANDBOX_TIMEOUT_MS = 15_000;
 export interface RitualOutcome {
   readonly result: RitualResult;
   readonly error: NecroError | null;
+  /**
+   * OPTIONAL ADDITIVE (design B.3, R13.2): the reading-level "souls spent"
+   * aggregate — summed prompt/completion tokens, cost, the `soulSource`, and a
+   * per-model breakdown — folded from every chunk call's `LlmResult.usage`.
+   * Present only when the chunked LLM_Pass ran with usage data; absent in
+   * Degraded_Mode and on the legacy single-tier path. It is reported HERE, on
+   * the runner's own outcome, NOT on the public `RitualResult` — that shape is
+   * UNCHANGED (R13.4). The value validates against `UsageAggregateSchema`.
+   */
+  readonly soulsSpent?: UsageAggregate;
+  /**
+   * OPTIONAL ADDITIVE (design B.3, R13.1): per-chunk healer attribution —
+   * which chunks the LLM healed (`"llm"`) versus the deterministic rules
+   * (`"rules"`), with each change's redaction-safe reason. Reported on the
+   * outcome only; the public `RitualResult`/`FileResult` are UNCHANGED (R13.4).
+   */
+  readonly healerAttribution?: readonly HealerAttribution[];
 }
 
 /**
@@ -190,6 +255,55 @@ class BudgetReached {
 }
 
 // ---------------------------------------------------------------------------
+// Part B chunked LLM_Pass internals (design B.2/B.3/A.8).
+// ---------------------------------------------------------------------------
+
+/**
+ * The single mutable per-reading LLM call counter. `used` increases by one per
+ * model call across EVERY file; once `used >= max` the per-reading cap
+ * (`NECRO_LLM_MAX_CALLS_PER_READING`) is reached and remaining chunks keep
+ * their deterministic result (R36.1/R36.2).
+ */
+interface CallBudget {
+  used: number;
+  readonly max: number;
+}
+
+/** The kept outcome of one chunk: accept (adopt `after`) or keep-deterministic. */
+type ChunkOutcome =
+  | { readonly kind: "accept"; readonly after: string; readonly reason: string }
+  | { readonly kind: "rules"; readonly reason: string };
+
+/** Build a keep-deterministic outcome with a short redaction-safe reason. */
+function keep(reason: string): ChunkOutcome {
+  return { kind: "rules", reason };
+}
+
+/**
+ * Derive the pure `RouterSignals` for a chunk (design A.3): the residual count,
+ * a cheap token estimate (~4 chars/token over the context + diagnostics), and
+ * the difficulty flags read by substring inspection of the chunk context. No
+ * model call, no network — a pure read of the chunk.
+ */
+function deriveRouterSignals(chunk: ResidualChunk): RouterSignals {
+  const ctx = chunk.context;
+  const charCount = ctx.length + chunk.residuals.length * 32;
+  const tokenEstimate = Math.ceil(charCount / 4);
+  return {
+    tokenEstimate,
+    unresolvedDiagnostics: chunk.residuals.length,
+    difficulty: {
+      metaclass: /\bmetaclass\b|__metaclass__|\btype\s*\(/.test(ctx),
+      unicodeBytes: /\bunicode\b|\bbytes\b|\.encode\(|\.decode\(/.test(ctx),
+      dynamicImport: /__import__\s*\(|\bimportlib\b|\bimp\.load/.test(ctx),
+      // A chunk-level residual carries no cross-language type mapping; that
+      // flag is a Lovers PLAN concern (design A.3). Always false here.
+      crossLangTypeMapping: false,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // The local runner.
 // ---------------------------------------------------------------------------
 
@@ -204,12 +318,17 @@ export class LocalCovenRunner implements CovenRunner {
   readonly #totalBudgetMs: number;
   readonly #validateBudgetMs: number;
   readonly #sandboxTimeoutMs: number;
+  readonly #maxLlmCallsPerReading: number;
+  readonly #soulSource: SoulSource;
 
   constructor(registry: LanguagePairRegistry, options: CovenRunnerOptions = {}) {
     this.#registry = registry;
     this.#totalBudgetMs = options.totalBudgetMs ?? DEFAULT_TOTAL_BUDGET_MS;
     this.#validateBudgetMs = options.validateBudgetMs ?? DEFAULT_VALIDATE_BUDGET_MS;
     this.#sandboxTimeoutMs = options.sandboxTimeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS;
+    this.#maxLlmCallsPerReading =
+      options.maxLlmCallsPerReading ?? DEFAULT_MAX_LLM_CALLS_PER_READING;
+    this.#soulSource = options.soulSource ?? "ORACLE";
   }
 
   async run(
@@ -260,6 +379,16 @@ export class LocalCovenRunner implements CovenRunner {
     // overall budget is reached mid-phase (R10.4). Mutated in place (push only)
     // as SELECT masks and admits each candidate.
     const files: WorkingFile[] = [];
+
+    // Part B (design B.3) OPTIONAL ADDITIVE accounting, accumulated across the
+    // chunked LLM_Pass. These feed the souls-spent aggregate + per-chunk healer
+    // attribution reported on the `RitualOutcome` only — NEVER on the public
+    // `RitualResult`/`FileResult` (R13.4). `llmCallBudget` is a single mutable
+    // per-reading call counter honouring `NECRO_LLM_MAX_CALLS_PER_READING`
+    // across every file (R36.1/R36.2).
+    const usageRecords: UsageRecord[] = [];
+    const healerRows: HealerAttribution[] = [];
+    const llmCallBudget: CallBudget = { used: 0, max: this.#maxLlmCallsPerReading };
 
     try {
       // ---- SELECT ---------------------------------------------------------
@@ -317,7 +446,28 @@ export class LocalCovenRunner implements CovenRunner {
         // Degraded_Mode: skip the whole pass, retain every residual, and emit
         // EXACTLY ONE oracle-voice skip-note (R4.6, R13.3, R13.4).
         await maskedEmit.skipNote(DEGRADED_SKIP_NOTE);
+      } else if (grimoire.chunk !== undefined && ports.router !== undefined) {
+        // Part B (design B.2/B.3): the grimoire supports the chunked LLM_Pass
+        // AND a Model_Router is injected. Drive per-chunk residual diagnostics
+        // through the router + gate under the single-request deadline + the
+        // per-reading call cap, accumulating usage + healer attribution.
+        const chunkStep = grimoire.chunk;
+        for (const file of files) {
+          if (overBudget()) throw new BudgetReached();
+          await this.#runChunkedLlmPass(
+            chunkStep,
+            ports.llm,
+            ports.router,
+            file,
+            { deadline, nowMs: () => ports.clock.nowMs() },
+            llmCallBudget,
+            usageRecords,
+            healerRows,
+          );
+        }
       } else {
+        // Legacy single-tier path (older callers / tests with no router or no
+        // chunk step): unchanged per-residual loop.
         for (const file of files) {
           if (overBudget()) throw new BudgetReached();
           await this.#runLlmPass(grimoire, ports.llm, file);
@@ -370,6 +520,11 @@ export class LocalCovenRunner implements CovenRunner {
           demo: input.demo,
         },
         error: null,
+        // OPTIONAL ADDITIVE (design B.3): present only when the chunked
+        // LLM_Pass produced usage / attribution; absent otherwise so the
+        // outcome stays byte-compatible with today's. The public result shape
+        // above is UNCHANGED (R13.4).
+        ...this.#additiveAccounting(usageRecords, healerRows),
       };
     } catch (err) {
       if (err instanceof BudgetReached) {
@@ -471,6 +626,234 @@ export class LocalCovenRunner implements CovenRunner {
         reason: unavailable ? "llm_unavailable" : "llm_invalid_output",
       });
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // LLM_PASS (chunked, Part B) — per-chunk routing + gate + one retry (B.2/B.3).
+  // -------------------------------------------------------------------------
+
+  /**
+   * The Part B chunked LLM_Pass for a grimoire that exposes a `ChunkStep`
+   * (design B.2). Residuals are grouped into per-unit `ResidualChunk`s via
+   * `groupResiduals`, so the model never sees the whole file (R5.1/R11.*). Each
+   * chunk is:
+   *
+   *   1. ROUTED through the injected `ModelRouterPort.route(signals)` derived
+   *      from the chunk (residual count, a token estimate, and difficulty flags
+   *      read from the chunk context). FAST escalates to STRONG on the retry; a
+   *      STRONG start stays STRONG (R4.2).
+   *   2. SENT to the injected `LlmPort` with the grimoire-built request (minimal
+   *      masked AST-sliced context, stable system prompt first, temperature 0,
+   *      bounded max_tokens — handled by the shared template), under the single
+   *      request DEADLINE (`timeoutMs = min(cap, remaining - WRITE_RESERVE_MS)`,
+   *      design A.8 / R5.6).
+   *   3. VALIDATED with the `ChunkStep.outputSchema` (the strict
+   *      `ChunkEditSchema`) then the pure `accept` gate (oracle
+   *      `hasLegacyPythonNodes` + `parsePython` injected). A `confidence === 0`
+   *      DECLINE keeps the deterministic chunk with NO retry (R12.6).
+   *   4. On a zod OR gate REJECT: EXACTLY ONE retry carrying the exact error,
+   *      escalating FAST->STRONG, MAX CALLS PER UNIT = 2 (R4.1/R4.4). A retry is
+   *      SKIPPED straight to deterministic when too little time remains, or the
+   *      per-reading call cap is reached (R36.2/R36.3).
+   *
+   * On accept the chunk's spliced+hoisted `after` replaces the file content and
+   * the chunk's residuals are dropped (healed by `"llm"`). On decline / reject /
+   * unavailable / cap / budget the deterministic chunk is kept: its residuals
+   * are retained with the appropriate reason and the chunk is attributed to
+   * `"rules"`. Usage records and healer attribution accumulate into the caller's
+   * arrays (reported as OPTIONAL ADDITIVE outcome fields, never on the public
+   * result — R13.4).
+   */
+  async #runChunkedLlmPass(
+    step: NonNullable<Grimoire["chunk"]>,
+    llm: LlmPort,
+    router: ModelRouterPort,
+    file: WorkingFile,
+    deadline: { readonly deadline: number; nowMs(): number },
+    callBudget: CallBudget,
+    usageRecords: UsageRecord[],
+    healerRows: HealerAttribution[],
+  ): Promise<void> {
+    const pending = file.residuals;
+    // Group the file's residuals into per-unit chunks; the model only ever sees
+    // a chunk's own diagnostics + minimal context (R5.1). The default parser is
+    // the oracle `parsePython` the runner already armed.
+    const chunks = groupResiduals(file.path, file.after, pending);
+    // Residuals NOT captured by any chunk (groupResiduals only emits chunks for
+    // residuals it can place) are retained verbatim as deterministic "rules".
+    const captured = new Set<ResidualEntry>();
+    for (const chunk of chunks) for (const r of chunk.residuals) captured.add(r);
+    file.residuals = pending.filter((r) => !captured.has(r));
+
+    const diagnose: (tree: Tree) => boolean = (tree) => hasLegacyPythonNodes(tree);
+    const parse: (source: string) => Tree = (source) => parsePython(source);
+
+    // Process chunks in DESCENDING start-line order so that splicing an
+    // accepted chunk (which replaces its own line span) never shifts the line
+    // numbers of a not-yet-processed, earlier chunk. `groupResiduals` returns
+    // ascending order; reverse a shallow copy to keep later-processed (earlier)
+    // chunk spans valid against the evolving `file.after`.
+    const ordered = [...chunks].reverse();
+    for (const chunk of ordered) {
+      const outcome = await this.#runChunk(
+        step,
+        llm,
+        router,
+        file.after,
+        chunk,
+        deadline,
+        callBudget,
+        usageRecords,
+        diagnose,
+        parse,
+      );
+
+      if (outcome.kind === "accept") {
+        // The gate returns the full module source for this chunk; adopt it and
+        // drop this chunk's residuals (healed by the LLM).
+        file.after = outcome.after;
+        healerRows.push({
+          chunkId: chunk.chunkId,
+          path: file.path,
+          healer: "llm",
+          reason: maskSecretsInText(outcome.reason),
+        });
+      } else {
+        // Keep the deterministic chunk: retain its residuals verbatim, and
+        // attribute the chunk to the deterministic rules.
+        file.residuals.push(...chunk.residuals);
+        healerRows.push({
+          chunkId: chunk.chunkId,
+          path: file.path,
+          healer: "rules",
+          reason: maskSecretsInText(outcome.reason),
+        });
+      }
+    }
+  }
+
+  /**
+   * Run ONE chunk through the single unified retry policy (design A.8). Returns
+   * the kept outcome: an `accept` with the new module source, or a `rules`
+   * outcome (decline / reject-after-retry / unavailable / cap / budget) whose
+   * `reason` names why the deterministic chunk was kept. Honours the per-reading
+   * call cap and the single-request deadline; MAX CALLS PER UNIT = 2.
+   */
+  async #runChunk(
+    step: NonNullable<Grimoire["chunk"]>,
+    llm: LlmPort,
+    router: ModelRouterPort,
+    before: string,
+    chunk: ResidualChunk,
+    deadline: { readonly deadline: number; nowMs(): number },
+    callBudget: CallBudget,
+    usageRecords: UsageRecord[],
+    diagnose: (tree: Tree) => boolean,
+    parse: (source: string) => Tree,
+  ): Promise<ChunkOutcome> {
+    const signals = deriveRouterSignals(chunk);
+    let tier: ModelTier = router.route(signals);
+    let lastError = "";
+
+    // MAX CALLS PER UNIT = 2 (initial + at most one retry).
+    for (let attempt = 0; attempt < 2; attempt++) {
+      // Per-reading call cap (R36.1/R36.2): once reached every remaining chunk
+      // keeps its deterministic result.
+      if (callBudget.used >= callBudget.max) {
+        return keep("cap_reached");
+      }
+      // Single-request deadline (design A.8 / R36.3): the call's timeout is
+      // min(cap, remaining - WRITE_RESERVE_MS). When too little time remains,
+      // skip straight to the deterministic chunk (no partial call).
+      const remaining = deadline.deadline - deadline.nowMs();
+      const timeoutMs = Math.min(CHUNK_PER_CALL_CAP_MS, remaining - WRITE_RESERVE_MS);
+      if (timeoutMs <= 0) {
+        return keep(attempt === 0 ? "deadline" : "deadline_retry");
+      }
+
+      const model = router.resolveModel(tier);
+      const input: ChunkRequestInput = {
+        chunkId: chunk.chunkId,
+        path: chunk.path,
+        // The chunk context is untrusted repo source; mask it before it enters
+        // the prompt. The grimoire template neutralises delimiters + wraps it.
+        context: maskSecretsInText(chunk.context),
+        residualDiagnostics: chunk.residuals.map(
+          (r) => `line ${r.line}: ${r.construct} (${r.reason})`,
+        ),
+      };
+      const base = step.buildRequest(input);
+      const req = {
+        ...base,
+        model,
+        timeoutMs,
+        // Carry the EXACT prior error into the retry prompt (R4.1). The builder
+        // owns the base prompt; the retry appends the reason so the model sees
+        // why the first attempt was rejected.
+        prompt:
+          attempt === 0
+            ? base.prompt
+            : `${base.prompt}\n\nPREVIOUS ATTEMPT REJECTED: ${lastError}`,
+      };
+
+      callBudget.used += 1;
+      let text: string;
+      try {
+        const result = await llm.complete(req, { timeoutMs });
+        text = result.text;
+        if (result.usage !== undefined) usageRecords.push(result.usage);
+      } catch {
+        // Timeout / unavailable / breaker-open for THIS call. Do not retry on
+        // unavailability — keep the deterministic chunk (R4.5-style).
+        return keep("llm_unavailable");
+      }
+
+      const parsed = step.outputSchema.safeParse(safeJson(text));
+      if (!parsed.success) {
+        lastError = "schema validation failed";
+        // zod failure: one retry (escalate FAST->STRONG), else keep.
+        if (attempt === 0) {
+          tier = "STRONG";
+          continue;
+        }
+        return keep("llm_invalid_output");
+      }
+
+      const gate = step.accept(before, parsed.data, diagnose, parse);
+      if (gate.status === "accept") {
+        return { kind: "accept", after: gate.after, reason: "healed by the model" };
+      }
+      if (gate.status === "decline") {
+        // confidence 0: keep the deterministic chunk with NO retry (R12.6).
+        return keep("declined");
+      }
+      // reject: one retry carrying the exact reason (escalate FAST->STRONG).
+      lastError = gate.reason;
+      if (attempt === 0) {
+        tier = "STRONG";
+        continue;
+      }
+      return keep(gate.reason);
+    }
+
+    // Unreachable (the loop always returns), but keep the deterministic chunk.
+    return keep("no_transform");
+  }
+
+  /**
+   * Fold the Part B accounting into the OPTIONAL ADDITIVE outcome fields. When
+   * no chunk produced usage AND no attribution row exists, returns `{}` so the
+   * outcome stays byte-compatible with the legacy / degraded path (R13.4).
+   */
+  #additiveAccounting(
+    usageRecords: readonly UsageRecord[],
+    healerRows: readonly HealerAttribution[],
+  ): { soulsSpent?: UsageAggregate; healerAttribution?: readonly HealerAttribution[] } {
+    if (usageRecords.length === 0 && healerRows.length === 0) return {};
+    return {
+      soulsSpent: sumUsage(usageRecords, this.#soulSource),
+      healerAttribution: healerRows,
+    };
   }
 
   // -------------------------------------------------------------------------

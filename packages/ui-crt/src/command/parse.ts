@@ -1,7 +1,7 @@
 // Total, side-effect-free command parser for the CRT Terminal.
 //
 // Validates: Requirements R2.1, R2.2, R2.3, R2.4, R2.5, R2.6, R2.9, R2.10,
-// R2.11, R2.12, R2.16
+// R2.11, R2.12, R2.16; lovers-binding R14.1, R14.2, R25.1, R25.5, R25.6, R25.7
 //
 // `parseCommand` accepts every input string and returns a `Command` or `null`
 // (for an empty or whitespace-only entry) without ever throwing and without
@@ -12,6 +12,8 @@ import type {
   Command,
   CommandMotionArg,
   CommandSoundArg,
+  KeyOp,
+  ModelTierArg,
   ResurrectTarget,
   SpreadArg,
 } from "./types.js";
@@ -41,6 +43,38 @@ const OWNER_REPO_RE =
  */
 const GITHUB_URL_RE =
   /^(?:https?:\/\/)?(?:www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:[/#@?].*)?$/;
+
+/**
+ * The `lovers` target languages recognised today. `js` and `javascript` both
+ * normalise to the canonical `"javascript"` (lovers-binding R14.1); the
+ * language pair is parameterized so future targets can be added here, but any
+ * other token is rejected with `unknown`.
+ */
+const LOVERS_LANGS: Readonly<Record<string, "javascript">> = {
+  js: "javascript",
+  javascript: "javascript",
+};
+
+/** The three `key` operations (lovers-binding R25.1, design §D.2). */
+const KEY_OPS: readonly KeyOp[] = ["set", "status", "clear"];
+
+/** The two `model` tiers (lovers-binding R25.5, R25.6, design §A.3). */
+const MODEL_TIERS: readonly ModelTierArg[] = ["fast", "strong"];
+
+/**
+ * Safe OpenRouter model-id pattern (lovers-binding design decision 6, R25.7).
+ *
+ * Accepts `vendor/model` with an OPTIONAL leading `~` routing hint and an
+ * OPTIONAL `:tag` suffix (e.g. `:free`, `:nitro`), over a restricted charset,
+ * total length ≤ 128. Rejects whitespace, control chars, `..`, a bare vendor,
+ * and leading/trailing separators.
+ *
+ * Exported so task 11's server-side request schema validates the SAME pattern
+ * (`ModelOverridesSchema` in `apps/web`), keeping the client and server in sync.
+ */
+// vendor/model with optional leading ~ and optional :tag; total length capped at 128.
+export const MODEL_ID_RE =
+  /^(?=.{1,128}$)~?[a-z0-9]+(?:[._-][a-z0-9]+)*\/[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[a-z0-9]+(?:[._-][a-z0-9]+)*)?$/i;
 
 /**
  * Light recognition of a bare repo reference. Full validity is the server's
@@ -178,6 +212,42 @@ export function parseCommand(input: string): Command | null {
         return { kind: "sound", arg: arg as CommandSoundArg };
       }
       return unknown(trimmed);
+    }
+
+    case "lovers": {
+      // `lovers <file> <lang>` takes EXACTLY two args (R14.1). The language is
+      // matched case-insensitively and normalised to `"javascript"`; the file
+      // token keeps its ORIGINAL case because paths are case-sensitive.
+      if (args.length !== 2) return unknown(trimmed);
+      const targetLang = LOVERS_LANGS[args[1]!.toLowerCase()];
+      if (targetLang === undefined) return unknown(trimmed);
+      return { kind: "lovers", file: args[0]!, targetLang };
+    }
+
+    case "key": {
+      // `key set|status|clear` takes EXACTLY one op from the set (R25.1),
+      // matched case-insensitively.
+      if (args.length !== 1) return unknown(trimmed);
+      const op = args[0]!.toLowerCase();
+      if ((KEY_OPS as readonly string[]).includes(op)) {
+        return { kind: "key", op: op as KeyOp };
+      }
+      return unknown(trimmed);
+    }
+
+    case "model": {
+      // `model fast|strong <id>` takes EXACTLY two args: the tier (R25.5,
+      // R25.6, matched case-insensitively) and the `<id>` validated against the
+      // shared `MODEL_ID_RE` (R25.7). The id keeps its original case (the regex
+      // is case-insensitive and ids are opaque to the parser).
+      if (args.length !== 2) return unknown(trimmed);
+      const tier = args[0]!.toLowerCase();
+      if (!(MODEL_TIERS as readonly string[]).includes(tier)) {
+        return unknown(trimmed);
+      }
+      const id = args[1]!;
+      if (!MODEL_ID_RE.test(id)) return unknown(trimmed);
+      return { kind: "model", tier: tier as ModelTierArg, id };
     }
 
     default: {

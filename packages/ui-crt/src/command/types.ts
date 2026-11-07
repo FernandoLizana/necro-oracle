@@ -8,6 +8,15 @@
 // and its optional card-id/file-path argument; the server owns all semantic
 // validation.
 //
+// The `lovers`, `key` and `model` variants serve the lovers-binding spec
+// (R14.1, R14.2, R25.1, R25.5, R25.6, R25.7); they are additive and leave every
+// prior variant byte-identical. `lovers <file> <lang>` binds a resurrected
+// Python 3 file to a target language (only `javascript` today); `key
+// set|status|clear` drives the BYOK Soul_Source; `model <tier> <id>` sets a
+// session-only model override whose `<id>` is validated against the shared
+// `MODEL_ID_RE` (re-exported from `./parse.js` so the server validates the same
+// pattern).
+//
 // The `Command` union is the parsed, structured form of a single terminal
 // entry. It is produced by `parseCommand` (./parse.ts) and, for every variant
 // except `unknown`, rendered back to its canonical text form by `printCommand`
@@ -64,7 +73,23 @@ export type Command =
   | { readonly kind: "motion"; readonly arg?: CommandMotionArg }
   | { readonly kind: "demo"; readonly name?: string }
   | { readonly kind: "sound"; readonly arg?: CommandSoundArg }
+  | { readonly kind: "lovers"; readonly file: string; readonly targetLang: "javascript" }
+  | { readonly kind: "key"; readonly op: KeyOp }
+  | { readonly kind: "model"; readonly tier: ModelTierArg; readonly id: string }
   | { readonly kind: "unknown"; readonly raw: string };
+
+/**
+ * The `key` sub-command operations (lovers-binding design §D.2): `set` opens
+ * the masked `SoulKeyInput`, `status` reports the Soul_Source, `clear` drops
+ * the in-memory key.
+ */
+export type KeyOp = "set" | "status" | "clear";
+
+/**
+ * The two model tiers a `model <tier> <id>` override targets (lovers-binding
+ * design §A.3 Model_Router): the FAST diagnostic tier or the STRONG tier.
+ */
+export type ModelTierArg = "fast" | "strong";
 
 /**
  * Maximum length of a single terminal entry (R2.13). Enforced by the Terminal

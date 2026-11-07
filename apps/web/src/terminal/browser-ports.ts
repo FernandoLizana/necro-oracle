@@ -5,7 +5,10 @@
 //
 // `createBrowserPorts` assembles every side effect the Terminal reaches into
 // one `TerminalPorts` bundle, built from real browser globals:
-//   - `api`        — `createApiPort` over the system `fetch`.
+//   - `api`        — `createApiPort` over the system `fetch`, with the optional
+//                     BYOK user-key reader (lovers-binding task 11.9) so the
+//                     resurrect/lovers requests attach `X-Necro-User-Key` when
+//                     a key is set.
 //   - `storage`    — `window.localStorage`, wrapped in try/catch so a disabled
 //                     or full store never throws (only `necro.motion` /
 //                     `necro.sound` are ever written, enforced upstream, D12).
@@ -50,6 +53,7 @@ import type { PatchDownloadPort } from "@necro/ui-crt";
 import { loadDemoBundle } from "../demo/load-bundle.js";
 import { createApiPort } from "./api-client.js";
 import { createResurrectViewPort } from "./resurrect-view-port.js";
+import { createLoversViewPort } from "./lovers-view-port.js";
 
 /** The reduced-motion media query used by the `media` port. */
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -211,9 +215,15 @@ function createPatchDownloadPort(): PatchDownloadPort {
  * from the client `TerminalScreen` after mount, so every global reference is
  * live by the time it runs.
  */
-export function createBrowserPorts(): TerminalPorts {
+export function createBrowserPorts(
+  getUserKey?: () => string | null,
+): TerminalPorts {
   return {
-    api: createApiPort(globalThis.fetch.bind(globalThis)),
+    // The BYOK user-key reader (`SoulKeyApi.getKeyForRequest`) is threaded into
+    // the API port so `resurrect` attaches the `X-Necro-User-Key` header IFF a
+    // key is set for this tab (lovers-binding R41.1); omitted leaves the port
+    // attaching no header, so a BYOK-less mount is unchanged.
+    api: createApiPort(globalThis.fetch.bind(globalThis), getUserKey),
     demo: createDemoPort(),
     storage: createStoragePort(),
     media: createMediaPort(),
@@ -235,5 +245,14 @@ export function createBrowserPorts(): TerminalPorts {
     // initial route within the <= 250 KB gzipped budget (R9.1-R9.5, R14.5),
     // exactly like the demo / sound / background-theme / patch-download seams.
     resurrectView: createResurrectViewPort(),
+    // The lazy DMG Lovers split-view port (lovers-binding task 14.4). The same
+    // seam as `resurrectView`: this single live reference keeps
+    // `load-lovers-view.ts` reachable from the module graph, so the bundler
+    // emits the heavy `LoversView` (two pixel hearts + the three code panes +
+    // its scoped stylesheet) as its OWN non-initial chunk — fetched only the
+    // first time a `lovers` binding settles and the DMG view mounts, never at
+    // page load — keeping the terminal initial route within the <= 250 KB
+    // gzipped budget (R22.1, R31.1, R31.2).
+    loversView: createLoversViewPort(),
   };
 }

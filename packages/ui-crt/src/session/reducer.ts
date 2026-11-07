@@ -19,6 +19,8 @@
 // R18.3-R18.7, R18.14, R18.15, R19.11_
 
 import type {
+  LoversPhase,
+  LoversResponse,
   PlayableSpread,
   ReadingResponse,
   ResurrectionPhase,
@@ -33,6 +35,8 @@ import { parseCommand } from "../command/parse.js";
 import {
   MAX_ENTRY_LENGTH,
   type Command,
+  type KeyOp,
+  type ModelTierArg,
   type ResurrectTarget,
 } from "../command/types.js";
 
@@ -54,6 +58,8 @@ import { renderResurrectVitality } from "../render/resurrect-vitality.js";
 
 import {
   BOOT_PHRASE,
+  LOVERS_PHASE_VOICE,
+  PRE_BINDING_PHRASE,
   PRE_READING_PHRASE,
   PRE_RESURRECTION_PHRASE,
   RESURRECT_PHASE_VOICE,
@@ -397,6 +403,20 @@ function dispatchCommand(acc: Accumulator, command: Command): void {
     case "sound":
       doSound(acc, command.arg);
       return;
+    case "lovers":
+      // The `lovers` ritual request flow (precondition, streaming route, result
+      // rendering) is wired in task 11.6b / task 12; task 10.4 scopes only the
+      // Soul_Source + model-override + key-status session state. Until the
+      // ritual effect lands, a `lovers` entry is acknowledged in oracle voice so
+      // the parsed command is never silently swallowed.
+      doLovers(acc, command.file, command.targetLang);
+      return;
+    case "key":
+      doKey(acc, command.op);
+      return;
+    case "model":
+      doModel(acc, command.tier, command.id);
+      return;
     case "unknown":
       pushLabelled(acc, [unknownBlock(command.raw)]);
       return;
@@ -443,6 +463,7 @@ function doHome(acc: Accumulator): void {
     readings: {},
     lastSpread: null,
     lastRitual: null,
+    lastLovers: null,
     reveal: { queue: [], startedAtMs: null },
     cardReveal: { schedule: [], flippedCount: 0 },
     landingDismissed: false,
@@ -671,6 +692,161 @@ function doSound(acc: Accumulator, arg: "on" | "off" | undefined): void {
 }
 
 // ---------------------------------------------------------------------------
+// lovers — the Lovers binding ritual (lovers-binding R14.1, R14.4, task 14.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Begin a Lovers binding for the parsed `lovers <file> js` entry, mirroring
+ * `doResurrect` exactly. Refuses with an oracle-voice block when no completed
+ * reading is in scope — no summary, or no live/demo reading for the pinned ref
+ * (the same precondition `doResurrect` enforces for R1.6). Otherwise guards the
+ * single in-flight slot, opens a `lovers` request, pushes the pre-binding
+ * phrase, and emits one `api.lovers` effect carrying the pinned ref, the file
+ * to bind and the in-scope spread. The session model overrides ride along ONLY
+ * when the Soul_Source is `YOURS` (design §D.2 item 5); on ORACLE they are
+ * omitted so the reducer never forwards an override the server would ignore.
+ * The server owns all semantic validation (THE LOVERS drawn, file bindable,
+ * function/byte caps).
+ */
+function doLovers(acc: Accumulator, file: string, _targetLang: "javascript"): void {
+  if (acc.state.inflight !== null) {
+    pushLabelled(acc, [ritualUnderwayBlock()]);
+    return;
+  }
+
+  // A binding needs a completed reading in scope, exactly like a resurrection:
+  // a summary plus a held live reading, or the demo reading, for the in-scope
+  // spread (mirrors `doResurrect`'s precondition).
+  const summary = acc.state.summary;
+  const spread = inScopeResurrectSpread(acc.state);
+  if (summary === null || spread === null) {
+    pushLabelled(acc, [
+      oracleBlock(
+        "There is no reading to bind. Lay a spread with read before you bind.",
+      ),
+    ]);
+    return;
+  }
+
+  const requestId = acc.state.nextRequestId;
+  const inflight: InflightRequest = { id: requestId, kind: "lovers" };
+  acc.state = {
+    ...acc.state,
+    nextRequestId: requestId + 1,
+    inflight,
+  };
+  pushBlocks(acc, [oracleBlock(PRE_BINDING_PHRASE)]);
+  const pinned = formatPinnedRef(summary.ref);
+
+  // The session model overrides are honoured by the server only on YOURS, so
+  // the reducer forwards them only then (design §D.2 item 5); on ORACLE the
+  // effect omits `models` entirely.
+  const overrides = acc.state.sessionModelOverrides;
+  const hasOverride =
+    overrides.fast !== undefined || overrides.strong !== undefined;
+  const models =
+    acc.state.soulSource === "YOURS" && hasOverride
+      ? { ...overrides }
+      : undefined;
+
+  acc.effects.push(
+    models === undefined
+      ? { type: "api.lovers", requestId, pinned, file, spread }
+      : { type: "api.lovers", requestId, pinned, file, spread, models },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// key — the BYOK Soul_Source commands (lovers-binding R25.1-R25.4, D.2, D.6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reduce a `key set|status|clear` command. The reducer stays pure: it mirrors
+ * only the key STATUS (`soulKeyStatus = { keySet, last4 }`) and the
+ * `soulSource` flag, and NEVER the raw key — the key value lives solely in the
+ * `apps/web` `SoulKeyContext` ref (design §D.3). The reducer signals UI intent
+ * through `Effect` descriptors (exactly as `api.*` / `prefs.save` / `focus`
+ * are signalled), so it touches no DOM and no storage.
+ *
+ * - `set`    — signals the shell to open the masked `SoulKeyInput` via the
+ *              `byok.open-key-input` effect, plus an oracle-voice line stating
+ *              the key is memory-only for this tab (R25.2, R26.4). The reducer
+ *              does NOT receive the key value here; the shell later dispatches a
+ *              `byok.key-set` action carrying only `{ last4 }`.
+ * - `status` — renders set/not-set plus the last four from `soulKeyStatus`
+ *              (never the raw key) (R25.3).
+ * - `clear`  — resets `soulKeyStatus` to not-set and `soulSource` to `ORACLE`,
+ *              and signals the shell to drop the ref via `byok.clear-key`
+ *              (R25.4).
+ */
+function doKey(acc: Accumulator, op: KeyOp): void {
+  switch (op) {
+    case "set":
+      // Open the masked input; the raw key never travels through the reducer.
+      acc.effects.push({ type: "byok.open-key-input" });
+      pushLabelled(acc, [
+        oracleBlock(
+          "Whisper your key to the void. " +
+            "It is held in memory for this tab only and cleared on reload.",
+        ),
+      ]);
+      return;
+    case "status": {
+      const { keySet, last4 } = acc.state.soulKeyStatus;
+      const line = keySet
+        ? `A key is bound. SOUL SOURCE: YOURS; the last four runes are ${last4}.`
+        : "No key is bound. SOUL SOURCE: ORACLE; the oracle pays for this reading.";
+      pushLabelled(acc, [oracleBlock(line)]);
+      return;
+    }
+    case "clear":
+      // Reset the status mirror and Soul_Source; signal the shell to drop the
+      // ref that actually held the value. Idempotent when no key is set.
+      acc.state = {
+        ...acc.state,
+        soulKeyStatus: { keySet: false, last4: "" },
+        soulSource: "ORACLE",
+      };
+      acc.effects.push({ type: "byok.clear-key" });
+      pushLabelled(acc, [
+        oracleBlock(
+          "The key dissolves into the ether. SOUL SOURCE: ORACLE once more.",
+        ),
+      ]);
+      return;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// model — the session-only model override (lovers-binding R25.5-R25.8, D.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reduce a `model fast|strong <id>` command. The `<id>` is already
+ * `MODEL_ID_RE`-validated by the parser (an invalid id parses to `unknown`),
+ * so the reducer records it into `sessionModelOverrides` for THIS session only
+ * — it is never written to any storage (no `prefs.save` effect).
+ *
+ * An override is honoured by the server only when the Soul_Source is `YOURS`
+ * (design §D.2 item 5): the server-side honour/ignore is enforced in task 11.6.
+ * When the Soul_Source is still `ORACLE`, the reducer records the override but
+ * the oracle-voice confirmation states it is ignored until a key is bound, so
+ * the HUD/notice reflects that it has no effect on ORACLE.
+ */
+function doModel(acc: Accumulator, tier: ModelTierArg, id: string): void {
+  acc.state = {
+    ...acc.state,
+    sessionModelOverrides: { ...acc.state.sessionModelOverrides, [tier]: id },
+  };
+  const confirm = `The ${tier.toUpperCase()} vessel is renamed ${id} for this session.`;
+  const notice =
+    acc.state.soulSource === "YOURS"
+      ? confirm
+      : `${confirm} It stays dormant until you bind your own key; the oracle keeps its own vessels.`;
+  pushLabelled(acc, [oracleBlock(notice)]);
+}
+
+// ---------------------------------------------------------------------------
 // demo
 // ---------------------------------------------------------------------------
 
@@ -733,6 +909,7 @@ function installDemo(
     demoBundle: bundle,
     pendingDemo: name,
     lastRitual: null,
+    lastLovers: null,
     inflight: null,
   };
   // Now a demo session: the summary block carries the demo label (R18.5).
@@ -779,6 +956,7 @@ function stepSummoned(
     demoBundle: null,
     pendingDemo: null,
     lastRitual: null,
+    lastLovers: null,
     inflight: null,
   };
   const acc: Accumulator = { state: resolved, effects: [] };
@@ -869,6 +1047,44 @@ function stepResurrectResolved(
   // blocks from the decoded `RitualResult`, so the demo label is applied here.
   pushLabelled(acc, renderFileResults(action.result.files));
   pushLabelled(acc, [renderResurrectVitality(action.result)]);
+  return result(acc);
+}
+
+function stepLoversProgress(
+  state: SessionState,
+  action: Extract<Action, { type: "api.lovers.progress" }>,
+): StepResult {
+  if (!matchesInflight(state, action.requestId)) return noop(state);
+
+  // Exactly one status block per phase/skip-note; inflight (aria-busy) stays
+  // set until the terminal result resolves (mirrors `stepResurrectProgress`).
+  const block =
+    action.event.kind === "phase"
+      ? loversPhaseBlock(action.event.phase)
+      : loversSkipNoteBlock(action.event.note);
+  const acc: Accumulator = { state, effects: [] };
+  pushBlocks(acc, [block]);
+  return result(acc);
+}
+
+function stepLoversResolved(
+  state: SessionState,
+  action: Extract<Action, { type: "api.lovers.resolved" }>,
+): StepResult {
+  if (!matchesInflight(state, action.requestId)) return noop(state);
+
+  // Clear the in-flight marker and store the settled result so the view layer
+  // can mount the lazy DMG `LoversView` (R21.*, R22.1), mirroring how
+  // `stepResurrectResolved` stores `lastRitual` for the resurrection view.
+  const resolved: SessionState = {
+    ...state,
+    inflight: null,
+    lastLovers: action.result,
+  };
+  const acc: Accumulator = { state: resolved, effects: [] };
+  // Render the Lovers result summary into the log (the authoritative text),
+  // labelled for a demo session exactly as a reading / resurrection is.
+  pushLabelled(acc, [loversResultBlock(action.result)]);
   return result(acc);
 }
 
@@ -1002,6 +1218,31 @@ function stepSound(
   };
 }
 
+/**
+ * The shell reports that the masked `SoulKeyInput` accepted a key
+ * (lovers-binding R24.2, R25.2, D.3). The action carries ONLY the last four
+ * characters — never the raw key — so the reducer mirrors `soulKeyStatus` and
+ * flips `soulSource` to `YOURS`, leaving the key value in the `apps/web` ref
+ * alone. An oracle-voice confirmation names only the last four runes.
+ */
+function stepKeySet(
+  state: SessionState,
+  action: Extract<Action, { type: "byok.key-set" }>,
+): StepResult {
+  const resolved: SessionState = {
+    ...state,
+    soulKeyStatus: { keySet: true, last4: action.last4 },
+    soulSource: "YOURS",
+  };
+  const acc: Accumulator = { state: resolved, effects: [] };
+  pushLabelled(acc, [
+    oracleBlock(
+      `The key is bound. SOUL SOURCE: YOURS; the last four runes are ${action.last4}.`,
+    ),
+  ]);
+  return result(acc);
+}
+
 // ---------------------------------------------------------------------------
 // Block builders
 // ---------------------------------------------------------------------------
@@ -1061,6 +1302,62 @@ function resurrectSkipNoteBlock(note: string): BlockDraft {
   return { kind: "status", demo: false, lines: echo.lines };
 }
 
+/**
+ * One Progress_Line for a Lovers phase, kind `status`. The two
+ * `LOVERS_PHASE_VOICE` layers (mystical + technical) are rendered as one status
+ * block; the technical line carries the phase TOKEN verbatim so the client/e2e
+ * can key its progress display off it. Mirrors `resurrectPhaseBlock`.
+ */
+function loversPhaseBlock(phase: LoversPhase): BlockDraft {
+  const voice = LOVERS_PHASE_VOICE[phase];
+  const first = renderEcho(voice.mystical);
+  const second = renderEcho(voice.technical);
+  return {
+    kind: "status",
+    demo: false,
+    lines: [...first.lines, ...second.lines],
+  };
+}
+
+/** A Lovers skip-note as a status block (mirrors `resurrectSkipNoteBlock`). */
+function loversSkipNoteBlock(note: string): BlockDraft {
+  const echo = renderEcho(note);
+  return { kind: "status", demo: false, lines: echo.lines };
+}
+
+/**
+ * Render a settled Lovers binding as a single oracle block: a mystical line,
+ * then the technical facts — how many functions were bound, the path the
+ * accepted pair came from (`llm` vs `template`), and the souls spent attributed
+ * to the Soul_Source that paid. The authoritative summary lives here in the
+ * log; the DMG `LoversView` (mounted from `lastLovers`) shows the full split
+ * view. Pure Oracle_Voice, two layers, ASCII-only.
+ */
+function loversResultBlock(result: LoversResponse): BlockDraft {
+  const count = result.plan.functions.length;
+  const pathWord =
+    result.path === "llm" ? "the living tongue" : "the old rite";
+  const totalTokens =
+    result.soulsSpent.promptTokens + result.soulsSpent.completionTokens;
+  const whose = result.soulSource === "YOURS" ? "your key" : "the oracle";
+  const cost = `$${result.soulsSpent.costUsd.toFixed(4)}`;
+
+  const mystical = renderEcho(
+    "THE LOVERS are bound. Two hearts answer one contract.",
+  );
+  const technical = renderEcho(
+    `BOUND ${result.file} to JavaScript: ${count} function(s) via ${pathWord}.`,
+  );
+  const souls = renderEcho(
+    `Souls spent on ${whose}: ${totalTokens} tokens, ${cost}.`,
+  );
+  return {
+    kind: "oracle",
+    demo: false,
+    lines: [...mystical.lines, ...technical.lines, ...souls.lines],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Accumulator plumbing
 // ---------------------------------------------------------------------------
@@ -1116,6 +1413,10 @@ export function step(state: SessionState, action: Action): StepResult {
       return stepResurrectProgress(state, action);
     case "api.resurrect.resolved":
       return stepResurrectResolved(state, action);
+    case "api.lovers.progress":
+      return stepLoversProgress(state, action);
+    case "api.lovers.resolved":
+      return stepLoversResolved(state, action);
     case "api.failed":
       return stepFailed(state, action);
     case "demo.loaded":
@@ -1132,5 +1433,7 @@ export function step(state: SessionState, action: Action): StepResult {
       return stepMedia(state, action);
     case "sound":
       return stepSound(state, action);
+    case "byok.key-set":
+      return stepKeySet(state, action);
   }
 }

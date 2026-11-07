@@ -1,5 +1,5 @@
-// @necro/llm — static no-network import guard for the Mock provider path
-// (task 2.2).
+// @necro/llm — static no-network import guard for the Mock default path
+// (task 2.2) AND the lovers-binding provider-placement invariant (task 4.4).
 //
 // The Mock provider, the completion cache, and the budget helpers are the
 // network-free core of @necro/llm: the local runner, every unit/property test,
@@ -9,7 +9,25 @@
 // a regression that pulls in `fetch`, a Node network builtin, or an HTTP client
 // fails here rather than at runtime.
 //
-// For each scanned source file it asserts:
+// Task 4.4 widens the guard ADDITIVELY to assert the lovers-binding provider
+// placement invariant (Property 4; R1.8, R10.2, R10.3): network I/O is CONFINED
+// to the ONE OpenRouter provider (`providers/openrouter.ts`), and that provider
+// reaches the network only through an INJECTED `fetch` seam (`fetchImpl`), never
+// a forbidden network-module import nor a bare global `fetch(` call. Concretely
+// the guard now:
+//   - keeps the original `GUARDED_FILES` (mock/cache/budget) scan unchanged —
+//     the Mock DEFAULT path stays import-and-sink clean (R1.8);
+//   - scans the WHOLE `@necro/llm` src tree EXCEPT `providers/openrouter.ts`
+//     and test files, asserting every other module is network-import-and-sink
+//     clean, so a network import appearing anywhere but the OpenRouter provider
+//     is a real bug caught here (R10.2);
+//   - asserts the OpenRouter provider itself imports no forbidden network
+//     module and performs its network access through the injected `fetchImpl`
+//     seam — it declares `fetchImpl` as an option and makes NO bare global
+//     `fetch(` call at module scope (the single `fetch` token is the injected
+//     default `options.fetchImpl ?? fetch`, a reference, not a call) (R10.3).
+//
+// For each scanned source file the base scan asserts:
 //   1. no import of a network-capable module — a Node builtin (`node:net`,
 //      `node:http`, `node:https`, `node:tls`, `node:dgram`, `node:http2`,
 //      `node:dns`), the bare `net`/`http`/`https`/... aliases, or a known HTTP
@@ -19,9 +37,9 @@
 //
 // No import, no execution — offline, no network / LLM / sandbox.
 //
-// Validates: Requirements 4.7, 4.8, 14.4
+// Validates: Requirements 4.7, 4.8, 14.4, 1.8, 10.2, 10.3
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import ts from "typescript";
@@ -148,5 +166,112 @@ describe("R4.7, R4.8, R14.4: the Mock provider core imports no network module", 
     for (const rel of GUARDED_FILES) scanFile(rel, violations);
     const report = violations.map((v) => `  - ${v.file}: ${v.reason}`).join("\n");
     expect(violations, `@necro/llm network violations:\n${report}`).toEqual([]);
+  });
+});
+
+// --- Task 4.4: network is confined to the ONE OpenRouter provider ----------
+
+/** Absolute path to `packages/llm/src`, resolved relative to this file. */
+const SRC_DIR = fileURLToPath(new URL(".", import.meta.url));
+
+/**
+ * The single network-capable module: the OpenRouter provider. It is the ONLY
+ * @necro/llm source allowed to perform network I/O, and it does so through an
+ * injected `fetchImpl` seam (asserted separately below). It is therefore
+ * EXCLUDED from the tree-wide network-free scan.
+ */
+const OPENROUTER_FILE = "providers/openrouter.ts";
+
+/**
+ * Recursively enumerate every `.ts` source file under `packages/llm/src`
+ * (paths relative to that dir, POSIX separators), excluding test files
+ * (`*.test.ts`, `*.pbt.test.ts`, `*.e2e.ts`). Pure filesystem read — no import,
+ * no execution.
+ */
+function listSourceFiles(dir: string, base: string, acc: string[]): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = base === "" ? entry.name : `${base}/${entry.name}`;
+    if (entry.isDirectory()) {
+      listSourceFiles(`${dir}/${entry.name}`, rel, acc);
+      continue;
+    }
+    if (!entry.name.endsWith(".ts")) continue;
+    if (/\.(test|pbt\.test|e2e)\.ts$/.test(entry.name)) continue;
+    acc.push(rel);
+  }
+  return acc;
+}
+
+describe("Property 4 (R1.8, R10.2, R10.3): network is confined to the OpenRouter provider", () => {
+  it("keeps every @necro/llm source EXCEPT the OpenRouter provider network-import-and-sink clean", () => {
+    // Scan the whole src tree (minus the one provider + tests). If any other
+    // module imports a network module or calls a bare `fetch(`, that is a real
+    // provider-placement bug — network must live ONLY in the OpenRouter
+    // provider. The Mock default path (mock/cache/budget) is a subset of this
+    // set, so the network-free DEFAULT invariant (R1.8) holds here too.
+    const all = listSourceFiles(SRC_DIR, "", []).map((p) => p.replace(/\\/g, "/"));
+    const scanned = all.filter((rel) => rel !== OPENROUTER_FILE);
+
+    // Sanity: the sweep must actually reach the known network-free core and
+    // must NOT be scanning the OpenRouter provider (which legitimately fetches).
+    expect(scanned, "tree sweep missed the Mock provider core").toEqual(
+      expect.arrayContaining([...GUARDED_FILES]),
+    );
+    expect(scanned, "the OpenRouter provider must be excluded from the network-free sweep").not.toContain(
+      OPENROUTER_FILE,
+    );
+
+    const violations: Violation[] = [];
+    for (const rel of scanned) scanFile(rel, violations);
+    const report = violations.map((v) => `  - ${v.file}: ${v.reason}`).join("\n");
+    expect(
+      violations,
+      `@necro/llm network I/O escaped the OpenRouter provider:\n${report}`,
+    ).toEqual([]);
+  });
+
+  it("reaches the network in the OpenRouter provider ONLY through an injected fetch seam", () => {
+    // The one network-capable module is allowed to fetch — but only via an
+    // INJECTED `fetchImpl`, never a forbidden network-module import and never a
+    // bare global `fetch(` call. This proves R10.3: unit/property tests drive
+    // the provider with a recorded-fixture responder and open no socket.
+    const abs = fileURLToPath(new URL(OPENROUTER_FILE, import.meta.url));
+    const text = readFileSync(abs, "utf8");
+
+    // (a) No forbidden network-module import even here — the seam is a plain
+    //     function value, not an imported HTTP client or Node network builtin.
+    const info = ts.preProcessFile(text, true, true);
+    const badImports = info.importedFiles
+      .map((r) => r.fileName)
+      .filter((spec) => FORBIDDEN_IMPORTS.has(spec));
+    expect(
+      badImports,
+      `the OpenRouter provider imports a network module: ${badImports.join(", ")}`,
+    ).toEqual([]);
+
+    const code = stripCommentsAndStrings(text);
+
+    // (b) The injected seam is declared: `fetchImpl` is an option and the call
+    //     site invokes `fetchImpl(`, not a bare global `fetch(`.
+    expect(/\bfetchImpl\b/.test(code), "the OpenRouter provider declares no `fetchImpl` seam").toBe(true);
+    expect(
+      /\bfetchImpl\s*\(/.test(code),
+      "the OpenRouter provider does not call through the injected `fetchImpl` seam",
+    ).toBe(true);
+
+    // (c) No bare global `fetch(` CALL. The only `fetch` token is the injected
+    //     default `options.fetchImpl ?? fetch` — a reference, not a call — so
+    //     after blanking `fetchImpl` occurrences no `fetch(` sink remains.
+    const withoutSeam = code.replace(/\bfetchImpl\b/g, "          ");
+    expect(
+      /\bfetch\s*\(/.test(withoutSeam),
+      "the OpenRouter provider calls a bare global `fetch(` instead of the injected seam",
+    ).toBe(false);
+    for (const sink of ["XMLHttpRequest", "WebSocket", "EventSource"] as const) {
+      expect(
+        new RegExp(`\\b${sink}\\b`).test(code),
+        `the OpenRouter provider uses ${sink} instead of the injected fetch seam`,
+      ).toBe(false);
+    }
   });
 });

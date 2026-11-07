@@ -326,3 +326,168 @@ describe("R14.1/R14.5: resurrection client stays off the terminal initial route"
     );
   });
 });
+
+// Lovers_Binding (lovers-binding task 15.1, R22.1/R31.1): the DMG Lovers split
+// view and the client-side ZIP builder are TWO further lazy chunks that must
+// stay off the terminal initial route so the ≤ 250 KB gzipped budget (R16.1)
+// still holds. They are lazy-loaded through literal-path dynamic imports:
+//   - the view via `apps/web/src/terminal/load-lovers-view.ts`
+//     (`import(/* webpackChunkName: "lovers-view" */ "../components/LoversView.js")`)
+//   - the ZIP builder via `apps/web/src/terminal/load-zip-builder.ts`
+//     (`import(/* webpackChunkName: "lovers-zip" */ "./zip-builder.js")`)
+// so the bundler emits each as its OWN dynamic chunk — exactly like the demo
+// bundle, the sound engine, the resurrection view and the background-theme
+// engine. These offline assertions (synthetic manifests + chunk listings, no
+// real `.next` build, no network) pin that:
+//   1. `collectInitialRouteJs` NEVER pulls either lovers chunk into the initial
+//      route (they are dynamic, so Next does not list them in the manifests);
+//   2. `findSeparateChunks` locates the `lovers-view` and `lovers-zip` chunks as
+//      distinct chunks, each distinct from demo / sound / resurrection /
+//      background-theme AND from the initial route;
+//   3. the measured initial-route gzip total stays ≤ BUDGET_BYTES even when both
+//      lovers chunks are deliberately heavy, and counting either one eagerly
+//      WOULD blow the budget — which is exactly why they must stay separate.
+//
+// Validates: Requirements 22.1, 31.1, 16.1
+
+type SeparateChunksLovers = SeparateChunks & {
+  readonly loversView: string | null;
+  readonly loversZip: string | null;
+};
+
+describe("Lovers_Binding R22.1/R31.1: the Lovers view and ZIP builder are distinct lazy chunks", () => {
+  const LOVERS_VIEW_CHUNK = "static/chunks/lovers-view.<hash>.js";
+  const LOVERS_ZIP_CHUNK = "static/chunks/lovers-zip.<hash>.js";
+
+  it("locates lovers-view and lovers-zip as their own chunks, each distinct from the other six lazy chunks", async () => {
+    const mod = await loadScript();
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunksLovers;
+
+    const chunkNames = [
+      "static/chunks/webpack-aaa.js",
+      "static/chunks/app/page-eee.js",
+      "static/chunks/bundle.generated.<hash>.js",
+      "static/chunks/engine.<hash>.js",
+      "static/chunks/ResurrectionResult.<hash>.js",
+      "static/chunks/background-theme-engine.<hash>.js",
+      LOVERS_VIEW_CHUNK,
+      LOVERS_ZIP_CHUNK,
+    ];
+    const { demo, sound, resurrection, backgroundTheme, loversView, loversZip } =
+      findSeparateChunks(chunkNames);
+
+    // Both lovers chunks are positively identified by their name fragments.
+    expect(loversView).toBe(LOVERS_VIEW_CHUNK);
+    expect(loversZip).toBe(LOVERS_ZIP_CHUNK);
+
+    // All six dynamic chunks are distinct from one another.
+    expect(
+      new Set([demo, sound, resurrection, backgroundTheme, loversView, loversZip]).size,
+    ).toBe(6);
+
+    // In particular the lovers chunks never collapse into the demo / sound /
+    // resurrection / background-theme chunks.
+    expect(loversView).not.toBe(sound);
+    expect(loversView).not.toBe(resurrection);
+    expect(loversView).not.toBe(backgroundTheme);
+    expect(loversZip).not.toBe(loversView);
+    expect(loversZip).not.toBe(sound);
+  });
+
+  it("returns null for both lovers chunks when only initial-route files are present", async () => {
+    const mod = await loadScript();
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunksLovers;
+
+    const onlyInitial = ["static/chunks/webpack-aaa.js", "static/chunks/app/page-eee.js"];
+    const { loversView, loversZip } = findSeparateChunks(onlyInitial);
+    expect(loversView).toBeNull();
+    expect(loversZip).toBeNull();
+  });
+
+  it("does not steal the sound-engine chunk — lovers names contain no 'engine' fragment", async () => {
+    const mod = await loadScript();
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunksLovers;
+
+    // The sound engine is present alongside both lovers chunks: the sound field
+    // must still resolve to the engine chunk, and the lovers fields must each
+    // claim their own chunk (neither "lovers-view" nor "lovers-zip" contains the
+    // substring "engine").
+    const chunkNames = [
+      "static/chunks/engine.<hash>.js",
+      LOVERS_VIEW_CHUNK,
+      LOVERS_ZIP_CHUNK,
+    ];
+    const { sound, loversView, loversZip } = findSeparateChunks(chunkNames);
+    expect(sound).toBe("static/chunks/engine.<hash>.js");
+    expect(loversView).toBe(LOVERS_VIEW_CHUNK);
+    expect(loversZip).toBe(LOVERS_ZIP_CHUNK);
+  });
+
+  it("never pulls either lovers chunk into collectInitialRouteJs", async () => {
+    const mod = await loadScript();
+    const collectInitialRouteJs = mod["collectInitialRouteJs"] as (
+      app: unknown,
+      build: unknown,
+    ) => readonly string[];
+    const findSeparateChunks = mod["findSeparateChunks"] as (
+      chunkNames: readonly string[],
+    ) => SeparateChunksLovers;
+
+    // Like every other lazy chunk, Next never lists the lovers chunks in the
+    // app/build manifests, so they must be absent from the initial-route union.
+    const initial = collectInitialRouteJs(APP_MANIFEST, BUILD_MANIFEST);
+    expect(initial).not.toContain(LOVERS_VIEW_CHUNK);
+    expect(initial).not.toContain(LOVERS_ZIP_CHUNK);
+
+    // And both are positively identifiable as their own separate chunks,
+    // distinct from the initial-route files.
+    const allChunks = [...initial, LOVERS_VIEW_CHUNK, LOVERS_ZIP_CHUNK];
+    const { loversView, loversZip } = findSeparateChunks(allChunks);
+    expect(loversView).toBe(LOVERS_VIEW_CHUNK);
+    expect(loversZip).toBe(LOVERS_ZIP_CHUNK);
+    expect(new Set(initial).has(LOVERS_VIEW_CHUNK)).toBe(false);
+    expect(new Set(initial).has(LOVERS_ZIP_CHUNK)).toBe(false);
+  });
+
+  it("keeps the initial-route gzip total ≤ BUDGET_BYTES with both lovers chunks excluded", async () => {
+    const mod = await loadScript();
+    const { BUDGET_BYTES } = mod as { BUDGET_BYTES: number };
+    const collectInitialRouteJs = mod["collectInitialRouteJs"] as (
+      app: unknown,
+      build: unknown,
+    ) => readonly string[];
+
+    // Synthetic per-file gzip sizes for the initial route, plus deliberately
+    // heavy lovers chunks. The gate only sums the initial-route union; the
+    // lovers chunks are separate dynamic chunks and must NOT be counted.
+    const gzById: Record<string, number> = {
+      "static/chunks/webpack-aaa.js": 30_000,
+      "static/chunks/main-app-bbb.js": 80_000,
+      "static/chunks/app/layout-ccc.js": 20_000,
+      "static/chunks/app/page-eee.js": 40_000,
+      "static/chunks/681-ddd.js": 25_000,
+      "static/chunks/polyfills-fff.js": 15_000,
+      // The DMG split view (three panes + scoped CSS) and the ZIP machinery —
+      // either would blow the budget if eager.
+      [LOVERS_VIEW_CHUNK]: 90_000,
+      [LOVERS_ZIP_CHUNK]: 70_000,
+    };
+
+    const initial = collectInitialRouteJs(APP_MANIFEST, BUILD_MANIFEST);
+    const measured = initial.reduce((sum, f) => sum + (gzById[f] ?? 0), 0);
+
+    // Neither lovers chunk is in the initial route, so neither weight counts and
+    // the route stays within 250 KB.
+    expect(measured).toBeLessThanOrEqual(BUDGET_BYTES);
+    // Sanity: counting either lazy chunk eagerly WOULD exceed the budget, which
+    // is exactly why each must stay a separate chunk.
+    expect(measured + gzById[LOVERS_VIEW_CHUNK]!).toBeGreaterThan(BUDGET_BYTES);
+    expect(measured + gzById[LOVERS_ZIP_CHUNK]!).toBeGreaterThan(BUDGET_BYTES);
+  });
+});

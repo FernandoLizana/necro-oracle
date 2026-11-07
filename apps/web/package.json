@@ -18,6 +18,7 @@
     "@necro/config": "workspace:*",
     "@necro/coven": "workspace:*",
     "@necro/github": "workspace:*",
+    "@necro/grimoires-lovers-js": "workspace:*",
     "@necro/grimoires-py2to3": "workspace:*",
     "@necro/llm": "workspace:*",
     "@necro/oracle": "workspace:*",
@@ -35,10 +36,17 @@
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.55.1",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/jest-axe": "3.5.9",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "fast-check": "^3.23.1",
+    "jest-axe": "11.0.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

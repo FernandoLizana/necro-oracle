@@ -40,7 +40,12 @@ import { NecroError } from "@necro/oracle";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { LLM_STEP, OutputSchema } from "./index.js";
+import {
+  LLM_STEP,
+  OutputSchema,
+  UNTRUSTED_OPEN,
+  UNTRUSTED_CLOSE,
+} from "./index.js";
 
 // ---------------------------------------------------------------------------
 // Test-local harness: mirrors the runner's LLM_PASS step (design: "LLM_Pass").
@@ -308,11 +313,24 @@ describe("Mock provider happy path: deterministic no-op conversion, no residuals
   });
 });
 
-/** Pull the inner body from a buildRequest prompt (between the delimiters). */
+/**
+ * Pull the inner untrusted body from a buildRequest prompt — the span between
+ * the `UNTRUSTED_OPEN`/`UNTRUSTED_CLOSE` markers, mirroring the Mock provider's
+ * `defaultMockText`. The shared `py2to3.chunk` template now wraps the masked
+ * source inside a `chunkId`/diagnostics preamble, so the body is located by the
+ * markers (not by the first/last newline of the whole prompt).
+ */
 function extractBody(prompt: string): string {
-  const open = prompt.indexOf("\n");
-  const close = prompt.lastIndexOf("\n");
-  return open >= 0 && close > open ? prompt.slice(open + 1, close) : prompt;
+  const openIdx = prompt.indexOf(UNTRUSTED_OPEN);
+  if (openIdx === -1) return prompt;
+  const bodyStart = prompt.indexOf("\n", openIdx);
+  if (bodyStart === -1) return prompt;
+  const closeIdx = prompt.indexOf(UNTRUSTED_CLOSE, bodyStart);
+  const body =
+    closeIdx === -1
+      ? prompt.slice(bodyStart + 1)
+      : prompt.slice(bodyStart + 1, closeIdx);
+  return body.endsWith("\n") ? body.slice(0, -1) : body;
 }
 
 // ---------------------------------------------------------------------------

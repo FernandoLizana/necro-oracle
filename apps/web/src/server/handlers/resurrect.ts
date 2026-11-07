@@ -58,6 +58,7 @@ import {
   prefixDemoLine,
   type LedgerPort,
   type LlmPort,
+  type ModelRouterPort,
   type PhaseEmit,
   type RitualInput,
   type RitualPorts,
@@ -75,6 +76,7 @@ import {
 import type { ResurrectDeps } from "../deps.js";
 import { mapError } from "../error-map.js";
 import { redactDeep } from "../redact.js";
+import { parseUserKey, redactLine, USER_KEY_HEADER } from "../user-key.js";
 import { checkLimit, errorResponse, methodNotAllowed, readJsonBody } from "./guard.js";
 
 /**
@@ -119,6 +121,45 @@ const OVERALL_TIMEOUT_MESSAGE =
 const SANDBOX_BREAKER_SKIP_NOTE =
   "The deeper crypt is sealed to spare the coffers.\n" +
   "Sandbox spending is paused; validated with the Target_Parser alone.";
+
+/**
+ * Where the souls for this request are drawn from (lovers-binding D.4 / D.5):
+ *   - `ORACLE`: no user key — the server key / Mock default is used, the server
+ *     daily ceiling applies, and any LLM shortfall SOFT-degrades to the
+ *     deterministic layer with a NOTICE line (never an error screen).
+ *   - `YOURS`:  a valid user key — the server spend ceiling is SKIPPED (the
+ *     per-IP abuse limit is kept), the OpenRouter provider is built per request
+ *     from the user key, and a `401`/`402` on that key is the one HARD case
+ *     (typed oracle-voice error, no silent fallback to the server key).
+ */
+type SoulSource = "ORACLE" | "YOURS";
+
+// --- Soft-degrade NOTICE seam (task 11.6c owns the exact copy) -------------
+//
+// The route-owned soft-degrade conditions (soulSource = ORACLE): a shortfall in
+// the LLM layer is NEVER an error screen — the Ritual produces the deterministic
+// result and emits ONE oracle-voice NOTICE line (design "Degrade matrix"). The
+// control flow + the skip-note seam are THIS task (11.6a); the EXACT final copy
+// is task 11.6c. The strings below are the design's degrade-matrix lines used as
+// the seam placeholder so the control flow is complete and schema-valid today.
+// _Design: D.5 server-key soft-degrade, Degrade matrix._
+
+/** NOTICE: `OPENROUTER_API_KEY` absent and no user key — deterministic only. */
+const DEGRADE_NO_KEY_NOTICE =
+  "The oracle reads with its own eyes.\n" +
+  "No model configured; deterministic result only.";
+
+/** NOTICE: the LLM spend breaker is open — deterministic only (soft). */
+const DEGRADE_BREAKER_NOTICE =
+  "The circle is sealed to spare the coffers.\n" +
+  "Spend breaker open; deterministic result only.";
+
+// The HARD, typed BYOK auth failure (soulSource = YOURS, OpenRouter 401/402) is
+// a typed oracle-voice error with NO silent fallback to the server key — the
+// only fallback is the deterministic layer (design Error Handling / D.5). Its
+// control-flow seam lives in the YOURS branch below; the error is observable to
+// the route only once the per-chunk LLM_Pass threads provider errors outward
+// (task 5.4). The exact oracle-voice copy for that typed error is task 11.6c.
 
 /**
  * A `setTimeout`-backed `SetTimer` for production, where no fake clock is
@@ -205,9 +246,32 @@ export async function handleResurrect(
   }
   const request = parsedBody.data;
 
-  // The secret set redacted out of every outgoing line (R12.3, R13.2).
+  // 4b. BYOK user-key parse (lovers-binding D.4; R27.x). Three-way:
+  //   - absent  => soulSource ORACLE (server key / Mock default);
+  //   - valid   => soulSource YOURS (build/use a BYOK provider per request);
+  //   - malformed => terminate PRE-STREAM with the typed VALIDATION_FAILED
+  //                  oracle-voice error (the offending value is NEVER echoed).
+  // This runs PRE-STREAM, alongside the other guards, so a malformed key never
+  // reaches a 200 stream.
+  const parsedKey = parseUserKey(req.headers.get(USER_KEY_HEADER));
+  if ("ok" in parsedKey && parsedKey.ok === false) {
+    return errorResponse(
+      400,
+      parsedKey.error.code as NecroErrorCode,
+      parsedKey.error.userMessage,
+    );
+  }
+  const userKey: string | undefined =
+    "ok" in parsedKey && parsedKey.ok === true ? parsedKey.key : undefined;
+  const soulSource: SoulSource = userKey !== undefined ? "YOURS" : "ORACLE";
+
+  // The secret set redacted out of EVERY outgoing line (R12.3, R13.2, R27.2):
+  // the GitHub token, the legacy LLM key, the server `OPENROUTER_API_KEY`, and
+  // the per-request user key. `redactLine` scrubs the OpenRouter server key AND
+  // the user key; `redactDeep` passes handle the GitHub + legacy LLM keys.
   const githubToken = deps.env.get("GITHUB_TOKEN");
   const llmKey = deps.env.get("NECRO_LLM_API_KEY");
+  const openrouterKey = deps.env.get("OPENROUTER_API_KEY");
   const now = new Date(deps.clock.nowMs()).toISOString();
   const demo = request.demo === true;
 
@@ -224,9 +288,13 @@ export async function handleResurrect(
       // then terminates with a redacted Error_Line). Demo lines get the single
       // `[DEMO]` prefix at this one serialization choke point (R14.3).
       const enqueueValidated = (line: ResurrectStreamLine): boolean => {
+        // Redact the GitHub token and the legacy LLM key, THEN the OpenRouter
+        // server key AND the per-request user key (lovers-binding R27.2). The
+        // user key is never logged, cached, echoed, or placed in an error body.
         const redacted = redactDeep(line, githubToken);
         const reRedacted = redactDeep(redacted, llmKey);
-        const parsed = ResurrectStreamLineSchema.safeParse(reRedacted);
+        const scrubbed = redactLine(reRedacted, openrouterKey, userKey);
+        const parsed = ResurrectStreamLineSchema.safeParse(scrubbed);
         if (!parsed.success) return false;
         const serialized = JSON.stringify(parsed.data);
         const out = demo ? prefixDemoLine(serialized) : serialized;
@@ -323,6 +391,9 @@ export async function handleResurrect(
         request,
         now,
         demo,
+        soulSource,
+        userKey,
+        serverKeyPresent: openrouterKey !== undefined,
         emit,
         writeResult,
         terminateError,
@@ -355,10 +426,14 @@ async function runRitual(args: {
     ref: string;
     target?: string | undefined;
     spread: "fates" | "necropsy";
+    models?: { fast?: string | undefined; strong?: string | undefined } | undefined;
     demo?: true | undefined;
   };
   now: string;
   demo: boolean;
+  soulSource: SoulSource;
+  userKey: string | undefined;
+  serverKeyPresent: boolean;
   emit: PhaseEmit;
   writeResult: (line: ResurrectStreamLine) => void;
   terminateError: (err: unknown) => void;
@@ -370,6 +445,9 @@ async function runRitual(args: {
     request,
     now,
     demo,
+    soulSource,
+    userKey,
+    serverKeyPresent,
     emit,
     writeResult,
     terminateError,
@@ -468,15 +546,77 @@ async function runRitual(args: {
         if (isFinished()) return;
       }
 
+      // --- lovers-binding (task 11.6a): choose the LLM port for THIS request --
+      //
+      // The three-way soulSource control flow (design D.4 sequence / D.5):
+      //
+      //   YOURS   build the BYOK provider PER REQUEST from the user key (works
+      //           even with NO server key — item 8 / D.5). The server spend
+      //           breaker/ceiling is SKIPPED for YOURS (R24.2); the per-IP abuse
+      //           limit was already applied PRE-STREAM in `checkLimit` (R24.3).
+      //           The user key rides on the provider instance itself (its
+      //           `options.apiKey`), which is equivalent to passing
+      //           `LlmCallOptions.apiKey` for every call on that provider. A
+      //           BYOK `401`/`402` is the HARD case: a typed oracle-voice error,
+      //           never a silent fallback to the server key — the only fallback
+      //           is the deterministic layer.
+      //
+      //   ORACLE  use the server OpenRouter provider (`deps.llm`), subject to
+      //           the server spend breaker. A shortfall SOFT-degrades (NOTICE
+      //           line, never an error screen): an open breaker, or no provider
+      //           at all, simply omits the LlmPort so the runner runs the
+      //           deterministic layer and we emit ONE oracle-voice NOTICE.
+      //
+      // Model overrides (`request.models`) are honoured ONLY when YOURS
+      // (design D.2); the router's `resolveModel` closes over the env models and
+      // the per-request override is threaded through `LlmCallOptions.modelOverride`
+      // by the per-chunk LLM_Pass (task 5.4). On ORACLE the override is ignored
+      // with a NOTICE (exact copy is task 11.6c).
+      let llmForRequest: LlmPort | undefined;
+      if (soulSource === "YOURS") {
+        // userKey is defined whenever soulSource is YOURS (set in the handler).
+        llmForRequest =
+          deps.makeUserLlm !== undefined && userKey !== undefined
+            ? deps.makeUserLlm(userKey)
+            : deps.llm;
+        // YOURS deliberately IGNORES the server spend breaker (the user pays).
+      } else {
+        // ORACLE: the server provider, gated by the spend breaker. An open
+        // breaker OR an absent provider is a SOFT degrade, not a failure.
+        if (llmOpen) {
+          llmForRequest = undefined;
+          // SEAM (task 11.6c owns the exact copy): breaker-open soft degrade.
+          await emit.skipNote(DEGRADE_BREAKER_NOTICE);
+          if (isFinished()) return;
+        } else if (deps.llm === undefined) {
+          llmForRequest = undefined;
+          // SEAM (task 11.6c): no server key configured — deterministic only.
+          // Only announce when there is genuinely no server key, so the
+          // Degraded_Mode runner skip-note is not duplicated needlessly; the
+          // runner still emits its own Degraded skip-note when the pass is
+          // skipped. `serverKeyPresent` distinguishes "no key" from "key but
+          // breaker/other"; here the breaker is closed, so an absent provider
+          // means no key.
+          if (!serverKeyPresent) {
+            await emit.skipNote(DEGRADE_NO_KEY_NOTICE);
+            if (isFinished()) return;
+          }
+        } else {
+          llmForRequest = deps.llm;
+        }
+      }
+
       ports = buildPorts({
         clock: deps.clock,
         ledger: deps.makeLedger(),
-        // Open llm breaker => omit the LlmPort so the runner skips the LLM_Pass
-        // and emits its own Degraded skip-note (R11.3). Degraded_Mode (no key)
-        // leaves `deps.llm` undefined too — either way the pass is skipped.
-        llm: llmOpen ? undefined : deps.llm,
+        // The per-request LlmPort chosen above (BYOK / server / none). An absent
+        // port makes the runner skip the LLM_Pass and emit its Degraded
+        // skip-note (R11.3) — the deterministic layer is the only fallback.
+        llm: llmForRequest,
         // Open sandbox breaker => omit the SandboxPort (R11.4/R11.5).
         sandbox: sandboxOpen ? undefined : deps.sandbox,
+        // The pure injected ModelRouterPort (R35.4). Forwarded unchanged.
+        router: deps.router,
       });
     }
 
@@ -519,13 +659,17 @@ function buildPorts(args: {
   ledger: LedgerPort;
   llm: LlmPort | undefined;
   sandbox: SandboxPort | undefined;
+  router?: ModelRouterPort | undefined;
 }): RitualPorts {
   const base: { clock: RitualPorts["clock"]; ledger: LedgerPort } = {
     clock: args.clock,
     ledger: args.ledger,
   };
   const withLlm = args.llm === undefined ? base : { ...base, llm: args.llm };
-  return args.sandbox === undefined ? withLlm : { ...withLlm, sandbox: args.sandbox };
+  const withSandbox =
+    args.sandbox === undefined ? withLlm : { ...withLlm, sandbox: args.sandbox };
+  // Forward the pure router only when present (exactOptionalPropertyTypes).
+  return args.router === undefined ? withSandbox : { ...withSandbox, router: args.router };
 }
 
 /**

@@ -34,6 +34,19 @@
 //      (`MAX_THEME_GAIN`, `createBackgroundThemeEngine`, `scheduleLoop`) and by
 //      the `background-theme` name fragment.
 //
+//      (Lovers_Binding R22.1/R31.1) The DMG Lovers split VIEW and the
+//      client-side ZIP BUILDER are two FURTHER lazy chunks, loaded through
+//      `apps/web/src/terminal/load-lovers-view.ts`
+//      (`import("../components/LoversView.js")`, chunk `lovers-view`) and
+//      `apps/web/src/terminal/load-zip-builder.ts`
+//      (`import("./zip-builder.js")`, chunk `lovers-zip`). Each must be a
+//      separate, non-initial chunk distinct from the others so neither the
+//      split view nor the ZIP machinery enters the terminal initial route. The
+//      view also references `buildPairZip`, so the view's unique markers
+//      (`crt-lovers-download`, `DOWNLOAD PAIR`, `BINDING THE SCROLLS`) are
+//      matched before the ZIP markers (`application/zip`, `ZIP_MIME`,
+//      `buildPairZip`).
+//
 // The pure helpers (BUDGET_BYTES, FORBIDDEN_MARKERS, collectInitialRouteJs,
 // scanForbiddenMarkers, findSeparateChunks) are exported with NO side effects
 // so `apps/web/src/budget.test.ts` can exercise them offline against synthetic
@@ -155,8 +168,23 @@ export function scanForbiddenMarkers(fileText, markers = FORBIDDEN_MARKERS) {
  * that chunk. It is returned on the `backgroundTheme` field and must be a
  * separate, non-initial chunk distinct from demo / sound / resurrection.
  *
+ * Lovers_Binding (R22.1, R31.1) adds TWO further lazy chunks that must stay off
+ * the terminal initial route: the DMG Lovers split VIEW, lazy-loaded through
+ * `apps/web/src/terminal/load-lovers-view.ts`
+ * (`import(/* webpackChunkName: "lovers-view" *\/ "../components/LoversView.js")`),
+ * and the client-side ZIP BUILDER behind "Download pair", lazy-loaded through
+ * `apps/web/src/terminal/load-zip-builder.ts`
+ * (`import(/* webpackChunkName: "lovers-zip" *\/ "./zip-builder.js")`). The
+ * `webpackChunkName` magic comments name them, so a chunk name containing
+ * `lovers-view` is the Lovers view and one containing `lovers-zip` is the ZIP
+ * builder. They are returned on the `loversView` / `loversZip` fields and must
+ * each be a separate, non-initial chunk, distinct from one another and from the
+ * demo / sound / resurrection / background-theme chunks. Neither name contains
+ * `engine`, `bundle.generated`, `ResurrectionResult` or `background-theme`, so
+ * they never collide with the existing four fields.
+ *
  * @param {readonly string[]} chunkNames
- * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null; loversView: string | null; loversZip: string | null }}
  */
 export function findSeparateChunks(chunkNames) {
   const names = Array.isArray(chunkNames) ? chunkNames : [];
@@ -176,7 +204,12 @@ export function findSeparateChunks(chunkNames) {
     ) ?? null;
   const resurrection =
     names.find((n) => typeof n === "string" && /ResurrectionResult/i.test(n)) ?? null;
-  return { demo, sound, resurrection, backgroundTheme };
+  // Lovers_Binding chunks, matched by their `webpackChunkName` name fragments.
+  const loversView =
+    names.find((n) => typeof n === "string" && /lovers-view/.test(n)) ?? null;
+  const loversZip =
+    names.find((n) => typeof n === "string" && /lovers-zip/.test(n)) ?? null;
+  return { demo, sound, resurrection, backgroundTheme, loversView, loversZip };
 }
 
 // ── CLI-only helpers (filesystem; not part of the pinned pure contract) ───────
@@ -205,6 +238,31 @@ const RESURRECTION_CONTENT_MARKERS = [
   "renderResurrectVitality",
   "Residual_List",
 ];
+/**
+ * Markers that uniquely identify the Lovers split-VIEW chunk's *content*. The
+ * scoped `crt-lovers-*` class names and the "DOWNLOAD PAIR" control label are
+ * string literals that appear ONLY in `LoversView.tsx`
+ * (`apps/web/src/components/LoversView.tsx`), so the view chunk is detected
+ * distinctly from the ZIP-builder chunk it lazily reaches. Matched BEFORE the
+ * ZIP chunk below because the view also references `buildPairZip` (via
+ * `loadZipBuilder`), so its unique markers must claim the chunk first.
+ * (Lovers_Binding R22.1, R31.1)
+ */
+const LOVERS_VIEW_CONTENT_MARKERS = [
+  "crt-lovers-download",
+  "DOWNLOAD PAIR",
+  "BINDING THE SCROLLS",
+];
+/**
+ * Markers that uniquely identify the Lovers ZIP-BUILDER chunk's *content*. The
+ * exported `buildPairZip` / `ZIP_MIME` and the `application/zip` media type are
+ * string identifiers that live in `zip-builder.ts`
+ * (`apps/web/src/terminal/zip-builder.ts`). The view chunk also references
+ * `buildPairZip`, so the ZIP chunk is matched AFTER the view chunk's unique
+ * markers have had their chance to claim their own chunk.
+ * (Lovers_Binding R22.1, R31.1)
+ */
+const LOVERS_ZIP_CONTENT_MARKERS = ["application/zip", "ZIP_MIME", "buildPairZip"];
 
 /**
  * Recursively collect every `.js` file under `dir`, returning absolute paths.
@@ -238,13 +296,15 @@ function collectJsFiles(dir) {
  * @param {readonly string[]} chunkAbsPaths — absolute paths of candidate chunk files
  * @param {ReadonlySet<string>} initialRouteSet — POSIX names already in the initial route
  * @param {string} staticDir — absolute `.next/static` dir for relativising names
- * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null }}
+ * @returns {{ demo: string | null; sound: string | null; resurrection: string | null; backgroundTheme: string | null; loversView: string | null; loversZip: string | null }}
  */
 function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) {
   let demo = null;
   let sound = null;
   let resurrection = null;
   let backgroundTheme = null;
+  let loversView = null;
+  let loversZip = null;
   for (const abs of chunkAbsPaths) {
     const rel = toPosix(join("static", relative(staticDir, abs)));
     if (initialRouteSet.has(rel)) continue; // skip initial-route files
@@ -271,9 +331,25 @@ function findSeparateChunksByContent(chunkAbsPaths, initialRouteSet, staticDir) 
       RESURRECTION_CONTENT_MARKERS.some((m) => text.includes(m))
     ) {
       resurrection = rel;
+      continue;
+    }
+    // Lovers view BEFORE the ZIP builder: the view references `buildPairZip`, so
+    // its own unique markers must claim its chunk first (Lovers_Binding R22.1).
+    if (
+      loversView === null &&
+      LOVERS_VIEW_CONTENT_MARKERS.some((m) => text.includes(m))
+    ) {
+      loversView = rel;
+      continue;
+    }
+    if (
+      loversZip === null &&
+      LOVERS_ZIP_CONTENT_MARKERS.some((m) => text.includes(m))
+    ) {
+      loversZip = rel;
     }
   }
-  return { demo, sound, resurrection, backgroundTheme };
+  return { demo, sound, resurrection, backgroundTheme, loversView, loversZip };
 }
 
 /** Normalise OS path separators to POSIX for stable manifest-style names. */
@@ -385,18 +461,23 @@ export function runBudgetGate(webDir) {
 
   // Try name-based first (covers builds that embed the source name), then fall
   // back to a content scan (Next may name lazy chunks by numeric module id).
-  let { demo, sound, resurrection, backgroundTheme } = findSeparateChunks(chunkNames);
+  let { demo, sound, resurrection, backgroundTheme, loversView, loversZip } =
+    findSeparateChunks(chunkNames);
   if (
     demo === null ||
     sound === null ||
     resurrection === null ||
-    backgroundTheme === null
+    backgroundTheme === null ||
+    loversView === null ||
+    loversZip === null
   ) {
     const byContent = findSeparateChunksByContent(staticJs, initialSet, staticDir);
     demo = demo ?? byContent.demo;
     sound = sound ?? byContent.sound;
     resurrection = resurrection ?? byContent.resurrection;
     backgroundTheme = backgroundTheme ?? byContent.backgroundTheme;
+    loversView = loversView ?? byContent.loversView;
+    loversZip = loversZip ?? byContent.loversZip;
   }
 
   if (demo === null) {
@@ -456,6 +537,51 @@ export function runBudgetGate(webDir) {
     failed = true;
   } else {
     console.log(`check-web-budget: OK — background-theme engine is a separate chunk (${backgroundTheme}).`);
+  }
+
+  // The Lovers split VIEW must be a separate, non-initial chunk so the DMG
+  // pixel ritual + three code panes + scoped stylesheet never load at page
+  // open — it is fetched only when a `lovers` ritual produces a result.
+  // (Lovers_Binding R22.1, R31.1)
+  if (loversView === null) {
+    console.error("check-web-budget: FAIL — lovers-view chunk not found as a separate chunk.");
+    failed = true;
+  } else if (initialSet.has(loversView)) {
+    console.error(`check-web-budget: FAIL — lovers view ${loversView} is in the initial route, not a lazy chunk.`);
+    failed = true;
+  } else if (
+    loversView === demo ||
+    loversView === sound ||
+    loversView === resurrection ||
+    loversView === backgroundTheme
+  ) {
+    console.error("check-web-budget: FAIL — lovers view resolved to the same chunk as the demo bundle, sound engine, resurrection view or background-theme engine.");
+    failed = true;
+  } else {
+    console.log(`check-web-budget: OK — lovers view is a separate chunk (${loversView}).`);
+  }
+
+  // The client-side ZIP BUILDER behind "Download pair" must be a FURTHER
+  // separate, non-initial chunk, distinct from the Lovers view, so the ZIP
+  // machinery is fetched only when a user actually downloads a pair.
+  // (Lovers_Binding R22.1, R31.1)
+  if (loversZip === null) {
+    console.error("check-web-budget: FAIL — lovers-zip chunk not found as a separate chunk.");
+    failed = true;
+  } else if (initialSet.has(loversZip)) {
+    console.error(`check-web-budget: FAIL — lovers ZIP builder ${loversZip} is in the initial route, not a lazy chunk.`);
+    failed = true;
+  } else if (
+    loversZip === demo ||
+    loversZip === sound ||
+    loversZip === resurrection ||
+    loversZip === backgroundTheme ||
+    loversZip === loversView
+  ) {
+    console.error("check-web-budget: FAIL — lovers ZIP builder resolved to the same chunk as the demo bundle, sound engine, resurrection view, background-theme engine or lovers view.");
+    failed = true;
+  } else {
+    console.log(`check-web-budget: OK — lovers ZIP builder is a separate chunk (${loversZip}).`);
   }
 
   return failed ? 1 : 0;

@@ -23,6 +23,12 @@ const monorepoRoot = path.join(__dirname, "../../");
 // same real files the oracle parser loads at runtime (it resolves the grammar
 // with `createRequire(import.meta.url).resolve("tree-sitter-python/...wasm")`).
 const require = createRequire(import.meta.url);
+// Resolver anchored at @necro/oracle so tree-sitter-javascript (a dep of oracle,
+// not of apps/web) resolves to its real pnpm virtual-store path (lovers-binding
+// task 7.2 / 15.3). Mirrors the approach check-wasm-trace.mjs uses.
+const requireOracle = createRequire(
+  path.join(__dirname, "../../packages/oracle/src/index.ts"),
+);
 
 // Tree-sitter WASM file tracing (decision D11, task 1.2 / Q8b).
 //
@@ -44,11 +50,14 @@ const require = createRequire(import.meta.url);
 const WASM_TRACING_GLOBS = [
   "node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm",
   "node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm",
+  "node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
   "node_modules/tree-sitter-python/*.wasm",
   "node_modules/web-tree-sitter/*.wasm",
+  "node_modules/tree-sitter-javascript/*.wasm",
   // nested copies resolved via @necro/oracle's own node_modules under pnpm
   "node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
   "node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
+  "node_modules/.pnpm/**/node_modules/tree-sitter-javascript/*.wasm",
 ];
 
 // The two WASM specifiers the oracle parser resolves at runtime. Resolving them
@@ -61,6 +70,7 @@ const WASM_TRACING_GLOBS = [
 const WASM_TRACING_SPECIFIERS = [
   "tree-sitter-python/tree-sitter-python.wasm",
   "web-tree-sitter/web-tree-sitter.wasm",
+  "tree-sitter-javascript/tree-sitter-javascript.wasm",
 ];
 
 /**
@@ -71,21 +81,34 @@ const WASM_TRACING_SPECIFIERS = [
  * cannot be resolved, so a missing optional package never breaks the build.
  */
 function resolvedWasmRelPath(spec: string): string | null {
-  try {
-    const abs = require.resolve(spec);
-    if (!existsSync(abs)) return null;
-    return path.relative(monorepoRoot, abs).split(path.sep).join("/");
-  } catch {
-    console.warn(`[next.config] could not resolve ${spec} for tracing`);
-    return null;
+  // Try both resolvers: apps/web-anchored first (covers python grammar and
+  // web-tree-sitter), then oracle-anchored (covers tree-sitter-javascript, which
+  // is a dep of @necro/oracle rather than apps/web). A resolved real path is
+  // authoritative — it cannot be absent at build time unlike a glob (lovers-binding
+  // task 7.2 / 15.3).
+  for (const r of [require, requireOracle]) {
+    try {
+      const abs = r.resolve(spec);
+      if (!existsSync(abs)) continue;
+      return path.relative(monorepoRoot, abs).split(path.sep).join("/");
+    } catch {
+      // try the next resolver
+    }
   }
+  console.warn(`[next.config] could not resolve ${spec} for tracing`);
+  return null;
 }
 
 /**
- * Build the `outputFileTracingIncludes` map. Both `/api/readings` and
- * `/api/resurrect` parse Python and therefore need BOTH WASM files packaged
- * into their serverless function, so both routes get the SAME include list:
- * the resolved REAL paths first (authoritative), then the globs as a fallback.
+ * Build the `outputFileTracingIncludes` map. `/api/readings` and
+ * `/api/resurrect` parse Python; `/api/lovers` parses BOTH Python (the
+ * resurrected heart) AND JavaScript (the generated beloved), so every route
+ * needs the grammar + runtime WASM packaged into its serverless function. All
+ * three routes get the SAME include list — the resolved REAL paths first
+ * (authoritative: python grammar + web-tree-sitter runtime + javascript
+ * grammar), then the globs as a fallback. Adding the javascript grammar to the
+ * shared list only ADDS a real file to the python-only routes, which is a
+ * harmless superset.
  *
  * Exported so the config can be asserted by a fast unit test without running a
  * full `next build`.
@@ -99,6 +122,18 @@ export function buildWasmTracingIncludes(): Record<string, string[]> {
   return {
     "/api/readings": includes,
     "/api/resurrect": includes,
+    // Lovers parses BOTH python (heart) and javascript (beloved), so it needs
+    // all three WASM: python grammar + runtime + javascript grammar.
+    // The JS grammar is a dep of @necro/oracle (not apps/web), so the
+    // apps/web-anchored require cannot resolve it in the shared `includes`.
+    // Explicit literal globs relative to apps/web (the directory Next resolves
+    // outputFileTracingIncludes paths against) guarantee the JS WASM is
+    // traced regardless (lovers-binding task 7.2 / 15.3).
+    "/api/lovers": [
+      ...includes,
+      "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
+      "../../node_modules/tree-sitter-javascript/*.wasm",
+    ],
   };
 }
 
@@ -133,9 +168,10 @@ const nextConfig: NextConfig = {
 
   // Trace the monorepo root so pnpm's virtual store is in scope for tracing.
   outputFileTracingRoot: monorepoRoot,
-  // Both /api/readings and /api/resurrect parse Python and need the grammar +
-  // runtime WASM packaged into their lambdas (resolved real paths first, globs
-  // as fallback). See buildWasmTracingIncludes above.
+  // /api/readings and /api/resurrect parse Python; /api/lovers parses BOTH
+  // Python and JavaScript. Each needs the grammar + runtime WASM packaged into
+  // its lambda (resolved real paths first, globs as fallback). See
+  // buildWasmTracingIncludes above.
   outputFileTracingIncludes: wasmTracingIncludes,
 
   // Externalise the WASM-loading packages on the server build via webpack.

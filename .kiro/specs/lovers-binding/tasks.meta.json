@@ -1,0 +1,1295 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Widen `LlmPort`, add `ModelRouterPort`, and extend the LLM contract additively": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773077
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071786076
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072066026
+      }
+    ],
+    "1.2 Add the `UsageRecord`/`UsageAggregate` models and `sumUsage` fold in `@necro/llm`": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773140
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071787480
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072067450
+      }
+    ],
+    "1.4 Add `PROMPT_VERSION`": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773180
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071788421
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072068364
+      }
+    ],
+    "1.5 Add OpenRouter/model/ceiling/cap env keys to `@necro/config`": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773216
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071789874
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072069766
+      }
+    ],
+    "2.1 Implement the pure Model_Router, resolveModel, and signal extraction": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773279
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072396078
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072705604
+      }
+    ],
+    "2.3 Implement strict structured-output parsing and zod->JSON-schema mechanics": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773315
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072397019
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072708092
+      }
+    ],
+    "2.5 Implement the single-source-of-truth prompt templates with delimiter neutralisation": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773359
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072715233
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073685912
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773391
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090672004
+      }
+    ],
+    "4.1 Implement `createOpenRouterLlmPort` behind an injectable fetch": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773428
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073714027
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074269431
+      }
+    ],
+    "5.1 Implement pure residual chunking": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773463
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072398424
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072706987
+      }
+    ],
+    "5.3 Add the `ChunkEditSchema` and the deterministic chunk gate to py2to3": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773499
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073715426
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074270931
+      }
+    ],
+    "5.4 Wire per-chunk routing, the gate, and the one unified retry into the runner's LLM_Pass": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773542
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074756121
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075309478
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773573
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090676784
+      }
+    ],
+    "7.1 Implement `parseJavascript` in `@necro/oracle`": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773614
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071790631
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072070816
+      }
+    ],
+    "7.2 Trace the JavaScript + Python grammar WASM into `/api/lovers` and ABI-pin tree-sitter-javascript": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773648
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072399816
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072703259
+      }
+    ],
+    "8.1 Add the Lovers zod models in `@necro/coven`": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773722
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072400595
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072704638
+      }
+    ],
+    "8.2 Add deterministic `extractPlan` and scaffold the `lovers-js` grimoire with its LLM steps": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773763
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073716871
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074272378
+      }
+    ],
+    "8.3 Implement the pure deterministic AST-template bridge fallback": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773798
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074279838
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074734852
+      }
+    ],
+    "8.4 Implement the Lovers validation gate with deny-list and name equality": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773839
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074757069
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075306667
+      }
+    ],
+    "8.5 Add the three landing-repo golden fixtures": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773877
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074758456
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075307581
+      }
+    ],
+    "8.6 Implement the LoversRunner driving PLAN -> GENERATE -> VALIDATE -> EMIT": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773915
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075322573
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075969015
+      }
+    ],
+    "9. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773956
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090676869
+      }
+    ],
+    "10.1 Parse `lovers`, `key`, and `model` commands": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071773996
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072090350
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072387364
+      }
+    ],
+    "10.4 Add Soul_Source and session-model-override state (session only)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774040
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072716187
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073687294
+      }
+    ],
+    "10.6 Implement the Soul_Source HUD indicator and lovers chips": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774077
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074281096
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074734154
+      }
+    ],
+    "11. Implement the lovers route, user-key transport, and BYOK container (apps/web)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774113
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090990444
+      }
+    ],
+    "11.6a Wire `deps.llm`/BYOK/redaction into composition + the resurrect route": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774157
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074759419
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075310347
+      }
+    ],
+    "11.6b Implement the lovers handler/route with precondition, BYOK, overrides, and soft-degrade": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774191
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075987343
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076950085
+      }
+    ],
+    "11.1 Add the lovers request, the models override field, and stream/wire schemas": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774229
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074282172
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074731787
+      }
+    ],
+    "11.2 Implement `user-key.ts` parse/validate/redaction/cache-key exclusion": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774266
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072717609
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073688245
+      }
+    ],
+    "11.4 Implement the non-persistable SoulKeyContext": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774305
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072718536
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073689643
+      }
+    ],
+    "11.5 Implement the masked SoulKeyInput": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774363
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072719602
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073690495
+      }
+    ],
+    "11.9 Attach the user-key header on the browser resurrect/lovers clients and wire SoulKey into the shell": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774410
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075323748
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075970131
+      }
+    ],
+    "12.1 Add the lazy-load seams for the view and the ZIP builder": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774461
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073717609
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074273296
+      }
+    ],
+    "12.2 Implement the LoversView DMG split view": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774498
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074283014
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074732839
+      }
+    ],
+    "13. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774544
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090994575
+      }
+    ],
+    "15.1 Assert the budget and distinct lazy chunks (impl + property)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774581
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081802183
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082427661
+      }
+    ],
+    "15.3 Run the full no-regression + budget + WASM-trace gate (incl. do-no-harm assertions)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774621
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084695807
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090667696
+      }
+    ],
+    "16.2 Update the docs in the same change": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774663
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084262599
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084687752
+      }
+    ],
+    "17. Final checkpoint - full suite green and no regression": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794071774718
+      },
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090998823
+      }
+    ],
+    "1. Establish port, schema, prompt-version, and env foundations": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072069807
+      }
+    ],
+    "1.3 Write property test for the usage accounting fold": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072091304
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072389556
+      }
+    ],
+    "1.6 Write unit tests for the new env keys": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072092116
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072388807
+      }
+    ],
+    "7. Add the oracle JavaScript grammar and trace its WASM into the lovers route": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794072703334
+      }
+    ],
+    "2. Implement the pure LLM core": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794073685992
+      }
+    ],
+    "4. Implement the OpenRouter provider (injectable fetch, outside the no-network guard)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074269499
+      }
+    ],
+    "12. Implement the DMG Lovers view and client-side ZIP (lazy chunks)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074732878
+      }
+    ],
+    "10. Implement the command parsing, session state, and HUD (ui-crt)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794074734190
+      }
+    ],
+    "5. Implement the Resurrection LLM_Pass chunking and validation gate (Part B)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075309515
+      }
+    ],
+    "8. Implement the Lovers grimoire and the LoversRunner (Part C)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075969066
+      }
+    ],
+    "11.6c Add the degrade-matrix NOTICE lines for both routes": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794075970171
+      }
+    ],
+    "2.2 Write property tests for the Model_Router and resolveModel": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076970721
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076979402
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077336598
+      }
+    ],
+    "2.4 Write property test for structured-output one-retry fallback and mechanics": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076971653
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076980340
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077337999
+      }
+    ],
+    "2.6 Write tests for delimiter wrapping/escaping and injection-cannot-pass-validation": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076973052
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076981747
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077338918
+      }
+    ],
+    "4.2 Write golden-fixture tests for the provider keyed per PROMPT_VERSION": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076974458
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076983180
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077334254
+      }
+    ],
+    "4.3 Write property test for secrets never appearing in provider output": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076975430
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794076983836
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077335646
+      }
+    ],
+    "5.2 Write property test for residual chunks never containing the whole file": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077344065
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077351435
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079945350
+      }
+    ],
+    "5.5 Write property test for the chunk validation gate": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077344971
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077352880
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079946704
+      }
+    ],
+    "5.6 Write property test for Part B never degrading already-converted code": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077346401
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077353828
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079944371
+      }
+    ],
+    "8.7 Write property test for the one unified retry policy": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077347309
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077355224
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079947664
+      }
+    ],
+    "8.8 Write property test for every planned function on both sides": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077348193
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794077355919
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079948517
+      }
+    ],
+    "8.9 Write property test for both sides parsing and the contract validating": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079957101
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079999359
+      }
+    ],
+    "8.11 Write property test for deterministic fallback with path reported": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079958389
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080395449
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080834462
+      }
+    ],
+    "8.13 Write property tests for the deny-list scan and the jsBeloved client role": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079959785
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080397836
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080836855
+      }
+    ],
+    "8.14 Write property test for Lovers grounding and caps": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794079960430
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080398555
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080837741
+      }
+    ],
+    "8.10 Write property test for the contract round-trip (ajv JS-only, optional python CI)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080389383
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080394038
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080833280
+      }
+    ],
+    "8.12 Write unit test for language-pair parameterization": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080390325
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080396438
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080835627
+      }
+    ],
+    "10.2 Write property test for the safe model-id pattern": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080847476
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080860313
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081268235
+      }
+    ],
+    "10.3 Write unit tests for the lovers/key/model parser and chips": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080849014
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080858340
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081269622
+      }
+    ],
+    "10.5 Write unit test for session model overrides never persisting": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080850267
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080859294
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081270574
+      }
+    ],
+    "12.3 Write property test for DMG palette purity on the Lovers view": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080851248
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080855982
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081272865
+      }
+    ],
+    "11.3 Write property test for cache-key exclusion of the user key": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080852290
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794080856941
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081271979
+      }
+    ],
+    "11.7 Write property test for the Lovers precondition": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081279204
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081285679
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081775304
+      }
+    ],
+    "11.8 Write property tests for BYOK limits and auth-failure fallback": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081280153
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081286622
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081776518
+      }
+    ],
+    "11.10 Write property tests for wiring, overrides, header attachment, and soft-degrade": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081281396
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081287749
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081777588
+      }
+    ],
+    "14.1 Write the structural import-ban guard for the key container": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081786267
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081798761
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082430001
+      }
+    ],
+    "14.2 Write runtime spy property tests for key no-persistence and non-leakage": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081787885
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081800173
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082431288
+      }
+    ],
+    "14.5 Write axe zero-violation tests for the new surfaces": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081789067
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794081801261
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082429093
+      }
+    ],
+    "14. BYOK security tests and accessibility of the new surfaces": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082429145
+      }
+    ],
+    "14.3 Write the BYOK end-to-end suite (OPENROUTER_API_KEY unset, provider throws)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082466170
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082472821
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794083000509
+      }
+    ],
+    "14.4 Write the lovers flow end-to-end suite (OPENROUTER_API_KEY unset, provider throws)": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082467293
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794082995249
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794083917779
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794083922791
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084239936
+      }
+    ],
+    "4.4 Extend the existing no-network guard to cover the Mock default and provider placement": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084253663
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084260429
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084686300
+      }
+    ],
+    "16.1 Add screenshot baselines for the Lovers view and HUD modes": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084254663
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084261835
+      },
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084688774
+      }
+    ],
+    "16. Screenshot baselines and documentation": [
+      {
+        "executionId": "35f54277-9b7f-4f8f-9fb6-36f5a6beb68c",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794084687801
+      }
+    ],
+    "15. No-regression, budget, and WASM-trace gate": [
+      {
+        "executionId": "661062cd-be73-4e2e-9723-cbbe9f05b6b6",
+        "chatSessionId": "sess_d9877363-4698-44de-ae73-2a0129b218c2",
+        "timestamp": 1794090667755
+      }
+    ]
+  }
+}

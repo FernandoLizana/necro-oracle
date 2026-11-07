@@ -6,6 +6,20 @@ export type {
   ApiPort,
   DemoBundle,
   DemoPort,
+  LoversFunction,
+  LoversModelOverrides,
+  LoversPair,
+  LoversParam,
+  LoversPhase,
+  LoversPlan,
+  LoversProgress,
+  LoversProgressEvent,
+  LoversRequestArgs,
+  LoversResponse,
+  LoversReturns,
+  LoversTypeMapEntry,
+  LoversUsageAggregate,
+  LoversUsageByModel,
   PlayableSpread,
   ProgressEvent,
   ReadProgress,
@@ -39,7 +53,9 @@ export {
   BOOT_PHRASE,
   DEMO_LABEL,
   EXTERNAL_SKIP_NOTE,
+  LOVERS_PHASE_VOICE,
   PHASE_VOICE,
+  PRE_BINDING_PHRASE,
   PRE_READING_PHRASE,
   PRE_RESURRECTION_PHRASE,
   RESURRECT_PHASE_VOICE,
@@ -116,11 +132,16 @@ export type {
   CommandMotionArg,
   CommandSoundArg,
   ExplainTarget,
+  KeyOp,
+  ModelTierArg,
   ResurrectTarget,
   SpreadArg,
 } from "./command/types.js";
 export { MAX_ENTRY_LENGTH } from "./command/types.js";
-export { parseCommand } from "./command/parse.js";
+// `MODEL_ID_RE` is the single source of truth for the safe OpenRouter model-id
+// pattern; task 11's server request schema (`apps/web`) reuses it so the client
+// and server validate the SAME pattern (lovers-binding R25.7).
+export { MODEL_ID_RE, parseCommand } from "./command/parse.js";
 export { printCommand } from "./command/print.js";
 
 // Render — the block/line output model and the only Evidence_Link builder.
@@ -235,8 +256,14 @@ export {
   hudModel,
   landingVisible,
   previewModel,
+  soulSourceHudModel,
 } from "./landing/landing-model.js";
-export type { HudModel, PreviewModel } from "./landing/landing-model.js";
+export type {
+  HudModel,
+  PreviewModel,
+  SoulSourceHudModel,
+  SoulsSpent,
+} from "./landing/landing-model.js";
 
 // Session — command history, the bounded output log, and the pinned reference.
 export {
@@ -264,6 +291,7 @@ export { isDemoSession, resolveSeed } from "./session/demo-seed.js";
 // authoritative; visual-necromancy task 16.1).
 export {
   currentVisualReading,
+  loversEligible,
   visualCardIndex,
   visualCards,
   type VisualCard,
@@ -280,7 +308,10 @@ export type {
   Effect,
   InflightRequest,
   RevealState,
+  SessionModelOverrides,
   SessionState,
+  SoulKeyStatus,
+  SoulSource,
 } from "./session/state.js";
 export { step } from "./session/reducer.js";
 
@@ -321,6 +352,14 @@ export {
   ResurrectResultView,
   type ResurrectResultViewProps,
 } from "./components/ResurrectResultView.js";
+// The port-driven DMG Lovers split-view mount (lovers-binding task 14.4). It
+// mounts the concrete `apps/web` `LoversView` lazily through the `loversView`
+// port so that chunk stays live and off the initial route; the authoritative
+// result summary stays in the Output_Log.
+export {
+  LoversResultView,
+  type LoversResultViewProps,
+} from "./components/LoversResultView.js";
 export { Screen, type ScreenProps } from "./components/Screen.js";
 export {
   OutputLog,
@@ -362,6 +401,13 @@ export {
   type CommandLineProps,
 } from "./components/CommandLine.js";
 export { ButtonRow, type ButtonRowProps } from "./components/ButtonRow.js";
+// Soul_Source HUD indicator (lovers-binding task 10.6, R24.4, D.6): the
+// always-present terminal-chrome line stating the active Soul_Source, driven by
+// `soulSourceHudModel(state)`, with the documented souls-spent attribution seam.
+export {
+  SoulSourceHud,
+  type SoulSourceHudProps,
+} from "./components/SoulSourceHud.js";
 export {
   ROT_FRAME_COUNT,
   RotReveal,

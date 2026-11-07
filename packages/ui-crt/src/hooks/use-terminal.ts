@@ -80,6 +80,17 @@ export interface TerminalController {
   readonly onInputKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   /** Prefill the input with `summon ` and focus it (the SUMMON button). */
   readonly prefillSummon: () => void;
+  /**
+   * Prefill the input with `model ` and focus it (the MODEL chip), without
+   * submitting — `model <tier> <id>` needs arguments (lovers-binding task 10.6).
+   */
+  readonly prefillModel: () => void;
+  /**
+   * Prefill the input with `lovers <file> ` and focus it (the LOVERS chip),
+   * without submitting, for the resurrectable `file` the host resolved via
+   * `loversEligible(state)` (lovers-binding R14.3, task 10.6).
+   */
+  readonly prefillLovers: (file: string) => void;
   /** Toggle sound from the SOUND button (counts as a gesture). */
   readonly toggleSound: () => void;
   /**
@@ -89,6 +100,14 @@ export interface TerminalController {
    * patch, so this performs the client-side download when clicked.
    */
   readonly downloadPatch: () => void;
+  /**
+   * Report that the masked Soul_Key input accepted a key (lovers-binding
+   * R24.2, R25.2, R41.2). Dispatches the `byok.key-set` action carrying ONLY
+   * the last four characters, so the reducer mirrors `soulKeyStatus` and flips
+   * `soulSource` to `YOURS` while the raw key stays in the host's
+   * `SoulKeyContext` ref alone — it never reaches this hook or the reducer.
+   */
+  readonly reportKeySet: (last4: string) => void;
   /**
    * How many characters of the block with the given id are revealed right now,
    * or `null` when the block is not animating (show the full text).
@@ -193,6 +212,23 @@ export interface UseTerminalOptions {
    * fullscreen wiring (the terminal behaves exactly as the Spec 05 terminal).
    */
   readonly onExplain?: (target: ExplainTarget) => void;
+  /**
+   * Notified when the reducer emits the `byok.open-key-input` effect — i.e.
+   * `key set` was submitted (lovers-binding R25.2, R41.2, design §D.2/§D.3).
+   * The host (`apps/web`) opens the masked `SoulKeyInput` over the terminal so
+   * the raw key goes ONLY into the `apps/web` `SoulKeyContext` ref, never
+   * through this pure hook or the reducer. Omitted means no BYOK input wiring
+   * (the effect is a no-op), so a host without BYOK behaves exactly as before.
+   */
+  readonly onOpenKeyInput?: () => void;
+  /**
+   * Notified when the reducer emits the `byok.clear-key` effect — i.e.
+   * `key clear` was submitted (lovers-binding R25.4, R26.*, design §D.3). The
+   * host drops the raw key from the `SoulKeyContext` ref
+   * (`SoulKeyApi.clearKey()`); the reducer has already reset its own status
+   * mirror + Soul_Source. Omitted means no BYOK wiring (the effect is a no-op).
+   */
+  readonly onClearKey?: () => void;
 }
 
 /** Drive the whole terminal from the injected ports. */
@@ -222,6 +258,15 @@ export function useTerminal(
 
   // The AbortController backing the single in-flight request (R3.6, R3.11).
   const abortRef = useRef<AbortController | null>(null);
+
+  // Stable refs to the latest BYOK seam callbacks so the stable `performEffect`
+  // can invoke them without being torn down when the host re-renders (R41.2).
+  // The raw key never flows through these — the host opens the masked input and
+  // clears its own ref; this hook only relays the "open" / "clear" intents.
+  const onOpenKeyInputRef = useRef(options.onOpenKeyInput);
+  onOpenKeyInputRef.current = options.onOpenKeyInput;
+  const onClearKeyRef = useRef(options.onClearKey);
+  onClearKeyRef.current = options.onClearKey;
 
   const { prefersReduced } = useMotion(ports.media);
 
@@ -319,6 +364,49 @@ export function useTerminal(
           return;
         }
 
+        case "api.lovers": {
+          // Perform the Lovers binding exactly as `api.resurrect`: arm the
+          // single-inflight AbortController, stream the NDJSON lovers route
+          // through `ports.api.lovers`, dispatch one `api.lovers.progress` per
+          // phase/skip-note line, then `api.lovers.resolved` on completion or
+          // `api.failed` on reject (lovers-binding R19.1-R19.4, task 14.4).
+          const controller = new AbortController();
+          abortRef.current = controller;
+          const { requestId } = effect;
+          void ports.api
+            .lovers(
+              {
+                ref: effect.pinned,
+                file: effect.file,
+                spread: effect.spread,
+                models: effect.models,
+              },
+              controller.signal,
+              (event) => {
+                dispatchRef.current({
+                  type: "api.lovers.progress",
+                  requestId,
+                  event,
+                });
+              },
+            )
+            .then((result) => {
+              dispatchRef.current({
+                type: "api.lovers.resolved",
+                requestId,
+                result,
+              });
+            })
+            .catch((error) => {
+              dispatchRef.current({
+                type: "api.failed",
+                requestId,
+                error: toErrorEnvelope(error),
+              });
+            });
+          return;
+        }
+
         case "api.abort":
           abortRef.current?.abort();
           abortRef.current = null;
@@ -352,6 +440,20 @@ export function useTerminal(
         case "sound.start":
         case "sound.release":
         case "sound.apply":
+          return;
+
+        // BYOK (lovers-binding R25.2, R25.4, R41.2): the reducer describes the
+        // intent to open / clear the Soul_Key input as an Effect and NEVER
+        // touches the DOM or the key value itself. The host (`apps/web`) mounts
+        // the masked `SoulKeyInput` and owns the `SoulKeyContext` ref; here we
+        // only relay the intent to the injected seam. When no seam is wired the
+        // effect is a silent no-op, so a BYOK-less host is unchanged.
+        case "byok.open-key-input":
+          onOpenKeyInputRef.current?.();
+          return;
+
+        case "byok.clear-key":
+          onClearKeyRef.current?.();
           return;
       }
     },
@@ -703,6 +805,35 @@ export function useTerminal(
     dispatch({ type: "submit", raw: "summon", source: "button" });
   }, [dispatch]);
 
+  // Prefill the Command_Line with an argument-bearing command prefix and focus
+  // it, WITHOUT submitting (lovers-binding task 10.6). Unlike SUMMON — whose
+  // bare `summon` is itself a usable command the reducer acts on — `model` and
+  // `lovers` require arguments, so these affordances only PREFILL + focus and
+  // let the user complete and submit the line. A no-op when the input is not
+  // mounted. This never dispatches, so no stray oracle block is printed.
+  const prefill = useCallback((text: string) => {
+    const input = inputRef.current;
+    if (input !== null) {
+      input.value = text;
+      input.focus();
+    }
+  }, []);
+
+  const prefillModel = useCallback(() => {
+    // The MODEL chip prefills `model ` and focuses the input (needs <tier> <id>).
+    prefill("model ");
+  }, [prefill]);
+
+  const prefillLovers = useCallback(
+    (file: string) => {
+      // The LOVERS chip prefills `lovers <file> ` and focuses the input, so the
+      // user confirms / edits the target before binding (R14.3). The file is the
+      // resurrectable path the host resolved via `loversEligible(state)`.
+      prefill(`lovers ${file} `);
+    },
+    [prefill],
+  );
+
   const toggleSound = useCallback(() => {
     // Clicking SOUND is a gesture; flip to the opposite preference (R3.12).
     const next = stateRef.current.sound.preference === "on" ? "off" : "on";
@@ -721,6 +852,17 @@ export function useTerminal(
       performEffect(effect);
     }
   }, [performEffect]);
+
+  const reportKeySet = useCallback(
+    (last4: string) => {
+      // The masked input accepted a key; the host already stored the raw value
+      // in its `SoulKeyContext` ref. Carry ONLY the last four characters into
+      // the reducer so it mirrors the status + flips Soul_Source to YOURS, with
+      // the key value never reaching this hook or the pure reducer (R41.2, D3).
+      dispatch({ type: "byok.key-set", last4 });
+    },
+    [dispatch],
+  );
 
   const revealedCountFor = useCallback(
     (blockId: number, fullLength: number): number | null => {
@@ -758,8 +900,11 @@ export function useTerminal(
     submit,
     onInputKeyDown,
     prefillSummon,
+    prefillModel,
+    prefillLovers,
     toggleSound,
     downloadPatch,
+    reportKeySet,
     revealedCountFor,
     engineFailed,
     bootFrameForRender,

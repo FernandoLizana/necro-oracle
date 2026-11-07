@@ -83,6 +83,42 @@ export interface ApiPort {
     signal: AbortSignal,
     onProgress: ResurrectProgress,
   ): Promise<RitualResponse>;
+  /**
+   * Consume the NDJSON lovers stream for a `lovers` command: POST the pinned
+   * ref, the file to bind, the in-scope spread and the optional session model
+   * overrides, call `onProgress` for every phase and skip-note line as it
+   * arrives, then resolve with the validated final `LoversResponse`. Rejects
+   * with `NecroError`, exactly like `resurrect` (lovers-binding R19.1, R19.3).
+   */
+  lovers(
+    args: LoversRequestArgs,
+    signal: AbortSignal,
+    onProgress: LoversProgress,
+  ): Promise<LoversResponse>;
+}
+
+/**
+ * Consume the NDJSON lovers stream for a `lovers` command: POST the pinned ref,
+ * the file to bind and the in-scope spread, call `onProgress` for every phase
+ * and skip-note line as it arrives, then resolve with the validated final
+ * `LoversResponse`. Rejects with `NecroError`, exactly like `resurrect`
+ * (lovers-binding R19.1, R19.3). Added to `ApiPort` below.
+ */
+export interface LoversRequestArgs {
+  /** The commit-pinned ref (`owner/name@<40-hex>`) of the in-scope reading. */
+  readonly ref: string;
+  /** The repo-relative file to bind (the resurrected Python 3 source). */
+  readonly file: string;
+  /** The in-scope spread (`celtic` is rejected server-side, like resurrect). */
+  readonly spread: PlayableSpread;
+  /** Optional BYOK model overrides, honoured by the route only on YOURS. */
+  readonly models?: LoversModelOverrides | undefined;
+}
+
+/** The optional BYOK model overrides threaded from the session to the route. */
+export interface LoversModelOverrides {
+  readonly fast?: string | undefined;
+  readonly strong?: string | undefined;
 }
 
 /** A validated, memoised bundle of demo readings keyed by demo name. */
@@ -232,5 +268,123 @@ export interface RitualResponse {
   readonly vitalityDelta: number | null;
   readonly changedCards: readonly ChangedCard[];
   readonly degraded: boolean;
+  readonly demo: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Lovers stream protocol (render inputs)  (lovers-binding, task 14.4)
+//
+// The browser view of the Lovers_Route NDJSON stream — the four ordered phases,
+// the phase/skip-note progress events the client surfaces as it reads, and the
+// full `LoversResponse` the terminal resolves with. These are plain TypeScript
+// mirrors of the `@necro/coven` `LoversResultSchema` wire shape — restated here
+// (exactly as `ReadingResponse` mirrors the oracle Reading and `RitualResponse`
+// mirrors the coven RitualResult) so `@necro/ui-crt` and the browser lovers
+// client stay browser-safe and never import `@necro/coven`, whose barrel pulls
+// node-only modules. The matching, source-of-truth wire schema is
+// `LoversResultSchema` in `@necro/coven`; the web route validates every line
+// against it server-side, and the browser client re-validates against a
+// pure-zod mirror (`apps/web/src/protocol/lovers-wire.ts`) kept in lockstep with
+// this type by a compile-time conformance assertion.
+//
+// _Requirements: R19.1, R19.3, R40.1_
+// ---------------------------------------------------------------------------
+
+/** The four ordered Lovers phases surfaced to the client (design C.5). */
+export type LoversPhase = "PLAN" | "GENERATE" | "VALIDATE" | "BIND";
+
+/**
+ * One decoded NDJSON progress line of the Lovers_Route stream, client view: a
+ * phase line or a skip-note line. Mirrors `ResurrectProgressEvent`, over the
+ * four lovers phases.
+ */
+export type LoversProgressEvent =
+  | { readonly kind: "phase"; readonly phase: LoversPhase }
+  | { readonly kind: "skip-note"; readonly note: string };
+
+/** Callback the client invokes for every lovers phase/skip-note line. */
+export type LoversProgress = (event: LoversProgressEvent) => void;
+
+/** One planned function parameter (mirrors coven `LoversParam`). */
+export interface LoversParam {
+  readonly name: string;
+  readonly pyType: string;
+  readonly jsonType: string;
+  readonly jsType: string;
+  readonly required: boolean;
+}
+
+/** The planned return-value type info (mirrors coven `LoversReturns`). */
+export interface LoversReturns {
+  readonly pyType: string;
+  readonly jsonType: string;
+  readonly jsType: string;
+}
+
+/** One planned function (mirrors coven `LoversFunction`). */
+export interface LoversFunction {
+  readonly name: string;
+  readonly params: readonly LoversParam[];
+  readonly returns: LoversReturns;
+  readonly bindable: boolean;
+  readonly skipReason?: string | undefined;
+  readonly edgeCases: readonly string[];
+}
+
+/** One Python->JSON->JS type-mapping row (mirrors coven `LoversTypeMapEntry`). */
+export interface LoversTypeMapEntry {
+  readonly py: string;
+  readonly json: string;
+  readonly js: string;
+}
+
+/** The plan the pair was generated from (mirrors coven `LoversPlan`). */
+export interface LoversPlan {
+  readonly functions: readonly LoversFunction[];
+  readonly typeMap: readonly LoversTypeMapEntry[];
+}
+
+/** The full assembled pair (mirrors coven `LoversPair`). */
+export interface LoversPair {
+  readonly jsBeloved: string;
+  readonly contractSchema: string;
+  readonly pythonTests: string;
+  readonly jsTests: string;
+  readonly pythonHeart: string;
+}
+
+/** One per-model usage subtotal (mirrors coven `UsageAggregate.byModel[]`). */
+export interface LoversUsageByModel {
+  readonly model: string;
+  readonly promptTokens: number;
+  readonly completionTokens: number;
+  readonly costUsd: number;
+}
+
+/** The reading-level "souls spent" aggregate (mirrors coven `UsageAggregate`). */
+export interface LoversUsageAggregate {
+  readonly promptTokens: number;
+  readonly completionTokens: number;
+  readonly costUsd: number;
+  readonly soulSource: "ORACLE" | "YOURS";
+  readonly byModel: readonly LoversUsageByModel[];
+}
+
+/**
+ * The full terminal `LoversResult` the lovers stream resolves with,
+ * browser-safe mirror of the `@necro/coven` `LoversResultSchema`. Mirrored here
+ * rather than imported so ui-crt keeps no `@necro/coven` dependency — exactly as
+ * `RitualResponse` mirrors the coven RitualResult. The web route validates the
+ * real wire shape; the browser `lovers-wire.ts` re-validates against a pure-zod
+ * mirror kept conformant to THIS type by a compile-time assertion.
+ */
+export interface LoversResponse {
+  readonly file: string;
+  readonly targetLang: "javascript";
+  readonly pair: LoversPair;
+  readonly plan: LoversPlan;
+  readonly path: "llm" | "template";
+  readonly soulsSpent: LoversUsageAggregate;
+  readonly soulSource: "ORACLE" | "YOURS";
   readonly demo: boolean;
 }

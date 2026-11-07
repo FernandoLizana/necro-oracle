@@ -9,14 +9,16 @@
 // _Requirements: R13.1, R13.2, R13.3, R13.5, R13.7_
 
 /** The rate-limited API routes. */
-export type RouteName = "summon" | "readings" | "resurrect";
+export type RouteName = "summon" | "readings" | "resurrect" | "lovers";
 
 /**
  * Per-IP-per-hour request limits (design.md "Rate limiter"). `resurrect` is the
  * heaviest route (it drives a full Ritual), so it carries the tightest per-hour
- * budget (R11.1).
+ * budget (R11.1). `lovers` (lovers-binding R19.2) reuses the SAME per-IP abuse
+ * chain and is equally heavy (summon + resurrect + a two-step LLM pipeline), so
+ * it carries the same tight per-hour budget as `resurrect`.
  */
-export const LIMITS = { summon: 20, readings: 10, resurrect: 5 } as const;
+export const LIMITS = { summon: 20, readings: 10, resurrect: 5, lovers: 5 } as const;
 
 /** One rate-limit question: which route, which (hashed) IP, and the shared daily ceiling. */
 export interface RateLimitRequest {

@@ -38,17 +38,22 @@ import { useTerminal } from "../hooks/use-terminal.js";
 import { BOOT_PHRASE } from "../voice/phrases.js";
 import { loadCardArt } from "../render/load-card-art.js";
 import type { CardArtTable } from "../render/ascii-card.js";
-import { visualCards, visualCardIndex } from "../session/visual-reading.js";
+import {
+  visualCards,
+  visualCardIndex,
+  loversEligible,
+} from "../session/visual-reading.js";
 import type { ArcanaAsset } from "../arcana/manifest.js";
 import type { Size } from "../arcana/integer-scale.js";
 import type { ExplainTarget } from "../command/types.js";
 import type { VisualCard } from "../session/visual-reading.js";
-import { landingVisible } from "../landing/landing-model.js";
+import { landingVisible, soulSourceHudModel } from "../landing/landing-model.js";
 import { Screen } from "./Screen.js";
 import { OutputLog } from "./OutputLog.js";
 import { Landing } from "./Landing.js";
 import { CommandLine } from "./CommandLine.js";
 import { ButtonRow } from "./ButtonRow.js";
+import { SoulSourceHud } from "./SoulSourceHud.js";
 import { BootOverlay } from "./BootOverlay.js";
 import { SeerPortrait } from "./SeerPortrait.js";
 import { CardReveal } from "./CardReveal.js";
@@ -57,6 +62,7 @@ import { FullscreenCardView } from "./FullscreenCardView.js";
 import { NecronomiconRitual } from "./NecronomiconRitual.js";
 import { RotOverlay } from "./RotOverlay.js";
 import { ResurrectResultView } from "./ResurrectResultView.js";
+import { LoversResultView } from "./LoversResultView.js";
 import { VitalityCounter } from "./VitalityCounter.js";
 import { ritualTimeline } from "../arcana/ritual-timeline.js";
 import type { ResurrectFileResult } from "../protocol.js";
@@ -100,6 +106,31 @@ export interface TerminalProps {
    * public file itself (dependency rules).
    */
   readonly manifest?: ReadonlyMap<string, ArcanaAsset>;
+  /**
+   * BYOK Soul_Key wiring seam (lovers-binding R41.2, design §D.2/§D.3). The
+   * host (`apps/web`) supplies a render function for the MASKED Soul_Key input;
+   * the Terminal mounts it ONLY while the input is open (opened by the reducer's
+   * `byok.open-key-input` effect, i.e. `key set`) and hands it:
+   *   - `onKeySet(last4)` — call after the input stored the raw key in the
+   *     host's `SoulKeyContext` ref; it dispatches `byok.key-set` carrying only
+   *     the last four characters (never the raw value), flipping Soul_Source to
+   *     YOURS (R24.2, R25.2).
+   *   - `onClose()` — call to dismiss the input (the host calls it after a
+   *     submit or cancel; the Terminal closes it).
+   * The raw key NEVER enters `@necro/ui-crt`: this component only knows whether
+   * the input is open and the last-four mirror. Omitted (the default) means no
+   * BYOK input — `key set` then opens nothing and the terminal is unchanged.
+   */
+  readonly keyInput?: (args: {
+    readonly onKeySet: (last4: string) => void;
+    readonly onClose: () => void;
+  }) => React.ReactNode;
+  /**
+   * Notified when `key clear` is submitted (the reducer's `byok.clear-key`
+   * effect), so the host drops the raw key from its `SoulKeyContext` ref
+   * (`SoulKeyApi.clearKey()`). Omitted means no BYOK wiring (a no-op).
+   */
+  readonly onClearKey?: () => void;
 }
 
 /** A sensible default spread region before the row measures itself (cards clamp to scale 1 below logical). */
@@ -181,7 +212,45 @@ export function Terminal({
   bootSignal,
   ritualForce,
   manifest = EMPTY_MANIFEST,
+  keyInput,
+  onClearKey,
 }: TerminalProps): React.JSX.Element {
+  // Whether the masked Soul_Key input is open (lovers-binding R25.2, R41.2).
+  // The reducer's `byok.open-key-input` effect flips this true; a submit /
+  // cancel flips it false via `onClose`. The raw key never lives here — only
+  // this open/closed flag. A BYOK-less host leaves `keyInput` undefined, so the
+  // input never mounts regardless of this flag.
+  const [keyInputOpen, setKeyInputOpen] = useState(false);
+
+  // Stable BYOK seam callbacks threaded into `useTerminal` so the reducer's
+  // `byok.open-key-input` / `byok.clear-key` effects open the masked input /
+  // clear the host ref. `onClearKey` is mirrored through a ref so the stable
+  // callback always reaches the latest host handler without re-subscribing.
+  const onClearKeyRef = useRef(onClearKey);
+  onClearKeyRef.current = onClearKey;
+  const openKeyInput = useCallback(() => {
+    setKeyInputOpen(true);
+  }, []);
+  const clearKeyInput = useCallback(() => {
+    // Close any open input and relay the clear intent to the host's ref.
+    setKeyInputOpen(false);
+    onClearKeyRef.current?.();
+  }, []);
+  const closeKeyInput = useCallback(() => {
+    setKeyInputOpen(false);
+  }, []);
+  // A stable ref to the controller's `reportKeySet`, assigned just after the
+  // `useTerminal` destructure below, so the stable `onKeySetAndClose` can
+  // dispatch `byok.key-set` without depending on a fresh callback each render.
+  const reportKeySetRef = useRef<(last4: string) => void>(() => {
+    // Replaced with the live `reportKeySet` right after `useTerminal` runs.
+  });
+  // Dispatch `byok.key-set` with ONLY the last-four mirror after the masked
+  // input stored the raw key in the host ref, then close the input (R41.2).
+  const onKeySetAndClose = useCallback((last4: string) => {
+    reportKeySetRef.current(last4);
+    setKeyInputOpen(false);
+  }, []);
   // The live rot-then-rebirth playing state, reported up by `RotOverlay` (the
   // single `useRot` owner). It feeds the ambient Resurrection_Animation hum
   // gate inside `useTerminal` so the low drone hums only while the animation is
@@ -220,6 +289,8 @@ export function Terminal({
     ritualForce,
     resurrectionPlaying,
     onExplain,
+    onOpenKeyInput: openKeyInput,
+    onClearKey: clearKeyInput,
   });
   const {
     state,
@@ -230,8 +301,11 @@ export function Terminal({
     submit,
     onInputKeyDown,
     prefillSummon,
+    prefillModel,
+    prefillLovers,
     toggleSound,
     downloadPatch,
+    reportKeySet,
     revealedCountFor,
     engineFailed,
     bootFrameForRender,
@@ -239,6 +313,10 @@ export function Terminal({
     visualSeed,
     ritualForce: ritualForceSignal,
   } = terminal;
+
+  // Keep the stable `onKeySetAndClose` pointed at the live `reportKeySet`
+  // without re-creating the callback each render (lovers-binding R41.2).
+  reportKeySetRef.current = reportKeySet;
 
   // The DOWNLOAD PATCH affordance is mounted through `ResurrectResultView`
   // below (gated on a settled `ritual`): once a resurrection Ritual has resolved
@@ -273,6 +351,11 @@ export function Terminal({
   // card text stays in the log (design D1, R4.6, R12.2).
   const cards = visualCards(state);
   cardsRef.current = cards;
+
+  // The lovers-binding eligibility signal (lovers-binding R14.3): `{ file }`
+  // while THE LOVERS (VI) was drawn AND a resurrectable file is in scope, else
+  // `null`. It gates whether the conditional LOVERS chip + hint are offered.
+  const lovers = loversEligible(state);
 
   // Whether the pixel-art Spread_View replaces the ASCII CardReveal: only when
   // a manifest covering every drawn card is supplied (Arcana_Visions). Without
@@ -648,11 +731,35 @@ export function Terminal({
           onSubmit={(raw) => submit(raw, "enter")}
           onKeyDown={onInputKeyDown}
         />
+        {/* The MASKED Soul_Key input (lovers-binding R25.2, R41.2, §D.2/§D.3).
+            It is HOST-SUPPLIED (`apps/web`'s `SoulKeyInput`, which writes the
+            raw key only into the `apps/web` `SoulKeyContext` ref) and mounted
+            here ONLY while `key set` has opened it. The raw key never enters
+            `@necro/ui-crt`: this component passes down `onKeySet(last4)` — which
+            dispatches `byok.key-set` with only the last four characters — and
+            `onClose`. A BYOK-less host leaves `keyInput` undefined, so nothing
+            mounts and `key set` is a no-op. */}
+        {keyInput !== undefined && keyInputOpen
+          ? keyInput({ onKeySet: onKeySetAndClose, onClose: closeKeyInput })
+          : null}
+        {/* The always-present Soul_Source HUD indicator (lovers-binding R24.4,
+            D.6): `SOUL SOURCE: ORACLE` / `SOUL SOURCE: YOURS` driven purely by
+            `state.soulSource`, with the souls-spent attribution seam. An
+            `aria-live` status so a source change is announced once. */}
+        <SoulSourceHud model={soulSourceHudModel(state)} />
         <ButtonRow
           submit={submit}
           prefillSummon={prefillSummon}
           toggleSound={toggleSound}
           soundOn={state.sound.preference === "on"}
+          prefillModel={prefillModel}
+          // The LOVERS chip is offered ONLY while THE LOVERS (VI) was drawn AND
+          // a resurrectable file is in scope (R14.3). `loversEligible` resolves
+          // the pure gate + the file; when it is `null` the prop is omitted so
+          // the chip does not render. Prefills `lovers <file> ` like SUMMON.
+          {...(lovers !== null
+            ? { loversPrefill: () => prefillLovers(lovers.file) }
+            : {})}
         />
         {/* The resurrection result view's patch-download control. Mounted
             through the `resurrectView` port (oracle-landing-polish, Part B bug
@@ -670,6 +777,21 @@ export function Terminal({
             patch={ritual.patch}
             ritualId={ritual.ritualId}
             onDownload={downloadPatch}
+          />
+        ) : null}
+        {/* The DMG Lovers split view (lovers-binding R22.1, R31.1). Mounted
+            through the `loversView` port exactly as the resurrection result view
+            is mounted through `resurrectView`: once a `lovers` binding settles
+            (`state.lastLovers`), the concrete `LoversView` is lazily loaded from
+            its own `lovers-view` chunk and renders the Python / contract / JS
+            split + Download pair here — the piece not already in the
+            authoritative log — keeping that chunk off the initial route. When no
+            port is wired (every `@necro/ui-crt` unit test) nothing mounts and
+            the log summary stands alone. */}
+        {state.lastLovers !== null ? (
+          <LoversResultView
+            port={ports.loversView}
+            result={state.lastLovers}
           />
         ) : null}
       </Screen>

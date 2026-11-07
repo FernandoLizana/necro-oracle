@@ -12,7 +12,7 @@
 // Everything here is total and pure: no clock, DOM, network, audio or storage.
 // Degenerate inputs clamp or fall through rather than throwing.
 
-import type { SessionState } from "../session/state.js";
+import type { SessionState, SoulSource } from "../session/state.js";
 import type { ArcanaAsset } from "../arcana/manifest.js";
 import type { LandingRow } from "./repos.js";
 
@@ -62,6 +62,67 @@ export interface HudModel {
  */
 export function hudModel(_state: SessionState): HudModel {
   return { label: "NECRO-ORACLE", soulHearts: SOUL_HEARTS, py2Curse: "ACTIVE" };
+}
+
+/**
+ * The Soul_Source_HUD view-model (lovers-binding R24.4, design §D.6). It distils
+ * the session's `soulSource` into the fixed HUD line text and the active-source
+ * attribution the screen-only `SoulSourceHud` renders.
+ *
+ * `mode` is the required MODE indicator (R24.4): `ORACLE` vs `YOURS`, driven
+ * purely by `state.soulSource`. `label` is the accessible, human-readable HUD
+ * text (`SOUL SOURCE: ORACLE` / `SOUL SOURCE: YOURS`).
+ *
+ * `soulsSpent` is the souls-spent (tokens / cost) attribution for the ACTIVE
+ * source. The resurrection / lovers RESULT carries the real `soulsSpent`
+ * `UsageAggregate` (coven `RitualResult` / `LoversResult`), but that live number
+ * is not yet mirrored into ui-crt `SessionState` — so this field is `null`
+ * today and the HUD renders the MODE indicator alone (which R24.4 requires).
+ * The field is the documented SEAM: once a `{ costUsd, tokens }` figure is
+ * threaded into session state (e.g. an additive `lastSouls` slice fed from the
+ * settled ritual/lovers result), this model surfaces it attributed to `mode`
+ * and the HUD shows it with zero further component changes.
+ */
+export interface SoulSourceHudModel {
+  /** The required MODE indicator (R24.4): the active Soul_Source. */
+  readonly mode: SoulSource;
+  /** The accessible HUD line text (`SOUL SOURCE: ORACLE` / `... YOURS`). */
+  readonly label: `SOUL SOURCE: ${SoulSource}`;
+  /**
+   * The souls-spent attribution for the active source, or `null` when no live
+   * figure is wired into session state yet (the documented seam above). When
+   * present it is already attributed to `mode`.
+   */
+  readonly soulsSpent: SoulsSpent | null;
+}
+
+/**
+ * The souls-spent figure the HUD attributes to the active Soul_Source (the
+ * documented seam target). A redaction-safe, display-only pair: the US-dollar
+ * cost and the total tokens for the active source's reading. Mirrors the
+ * coven `UsageAggregate` fields the HUD would show, restated here as a plain
+ * browser-safe type so `@necro/ui-crt` keeps no `@necro/coven` dependency.
+ */
+export interface SoulsSpent {
+  /** Total US-dollar cost spent on the active source for this reading. */
+  readonly costUsd: number;
+  /** Total tokens (prompt + completion) spent on the active source. */
+  readonly tokens: number;
+}
+
+/**
+ * Build the Soul_Source_HUD view-model (R24.4, §D.6). Total and pure: the MODE
+ * indicator is driven entirely by `state.soulSource`; `soulsSpent` is `null`
+ * until a live figure is wired into session state (the documented seam on
+ * `SoulSourceHudModel`). The returned `label` is the exact accessible HUD text.
+ */
+export function soulSourceHudModel(state: SessionState): SoulSourceHudModel {
+  const mode = state.soulSource;
+  return {
+    mode,
+    label: `SOUL SOURCE: ${mode}`,
+    soulsSpent: null,
+  };
 }
 
 /**

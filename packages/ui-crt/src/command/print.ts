@@ -43,5 +43,13 @@ export function printCommand(cmd: Exclude<Command, { kind: "unknown" }>): string
       return cmd.name === undefined ? "demo" : `demo ${cmd.name}`;
     case "sound":
       return cmd.arg === undefined ? "sound" : `sound ${cmd.arg}`;
+    case "lovers":
+      // The stored `targetLang` is already the canonical `"javascript"`; the
+      // file keeps its original case.
+      return `lovers ${cmd.file} ${cmd.targetLang}`;
+    case "key":
+      return `key ${cmd.op}`;
+    case "model":
+      return `model ${cmd.tier} ${cmd.id}`;
   }
 }

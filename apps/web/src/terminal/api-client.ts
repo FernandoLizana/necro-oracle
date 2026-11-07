@@ -14,11 +14,24 @@
 // is rethrown verbatim; the 55 s timeout does not, and is mapped to
 // `networkError()` (NETWORK_TIMEOUT).
 //
-// _Requirements: R5.4, R5.10, R6.8, R6.9, R6.17, R6.18, R11.4, R11.5, R11.6, R11.7_
+// BYOK (lovers-binding task 11.9): `createApiPort` takes an OPTIONAL
+// `getUserKey` reader — the `SoulKeyApi.getKeyForRequest` of the `apps/web`
+// `SoulKeyContext` ref (design §D.3/D.4). When a key is set, `resurrect`
+// attaches it in the dedicated `X-Necro-User-Key` header; when no key is set
+// (`getUserKey` returns `null`, or no reader was injected) NO header is
+// attached. The raw key value flows ONLY into the header and is NEVER logged
+// (R41.1). The `summon`/`read` paths target `/api/summon` and `/api/readings`,
+// which are not BYOK routes, so they never attach the header (R27.1: the key
+// goes to the resurrect and lovers routes only).
+//
+// _Requirements: R5.4, R5.10, R6.8, R6.9, R6.17, R6.18, R11.4, R11.5, R11.6, R11.7, R41.1_
 
 import { NecroError } from "@necro/oracle/client";
 import type {
   ApiPort,
+  LoversProgress,
+  LoversRequestArgs,
+  LoversResponse,
   PlayableSpread,
   ReadProgress,
   ReadingResponse,
@@ -39,9 +52,46 @@ import {
   RitualResultWireSchema,
 } from "../protocol/resurrect-wire.js";
 import { createNdjsonParser } from "./ndjson.js";
+import { createLoversClient } from "./lovers-client.js";
 
 /** The internal per-request client timeout composed with the caller's signal. */
 const CLIENT_TIMEOUT_MS = 55_000;
+
+/**
+ * The dedicated BYOK transport header (lovers-binding R27.1, R41.1). Declared
+ * with the wire/display spelling `X-Necro-User-Key` here rather than imported
+ * from `server/user-key.ts`, so the browser bundle keeps the client boundary
+ * (R16.4): the client imports only `@necro/ui-crt` + sibling browser modules,
+ * never a server module. Header names are matched case-insensitively, so the
+ * server's lowercase `USER_KEY_HEADER` lookup reads this value unchanged.
+ */
+const USER_KEY_HEADER = "X-Necro-User-Key" as const;
+
+/**
+ * A reader of the current BYOK user key — the `SoulKeyApi.getKeyForRequest` of
+ * the `apps/web` `SoulKeyContext` ref (design §D.3). Returns the raw key when
+ * one is set for this tab, or `null` when none is set. The value flows only
+ * into the `X-Necro-User-Key` header and is NEVER logged (R41.1).
+ */
+export type UserKeyReader = () => string | null;
+
+/**
+ * Build the request headers for a BYOK route, starting from `base` and adding
+ * the `X-Necro-User-Key` header IFF `getUserKey` returns a non-empty key
+ * (R41.1). When no reader is injected, or it returns `null`/`""`, no header is
+ * added — the request carries no key at all. The key is placed only in the
+ * header object and is never logged or echoed.
+ */
+function withUserKeyHeader(
+  base: Record<string, string>,
+  getUserKey: UserKeyReader | undefined,
+): Record<string, string> {
+  const key = getUserKey?.() ?? null;
+  if (key === null || key.length === 0) {
+    return base;
+  }
+  return { ...base, [USER_KEY_HEADER]: key };
+}
 
 /**
  * Compose the caller's abort signal with a fresh 55 s client timeout. Either
@@ -78,7 +128,10 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
-export function createApiPort(fetchImpl: typeof fetch): ApiPort {
+export function createApiPort(
+  fetchImpl: typeof fetch,
+  getUserKey?: UserKeyReader,
+): ApiPort {
   async function summon(
     repo: string,
     signal: AbortSignal,
@@ -267,10 +320,16 @@ export function createApiPort(fetchImpl: typeof fetch): ApiPort {
       try {
         res = await fetchImpl("/api/resurrect", {
           method: "POST",
-          headers: {
-            "content-type": "application/json",
-            accept: "application/x-ndjson",
-          },
+          // Attach the BYOK user key in the dedicated header IFF one is set for
+          // this tab (R27.1, R41.1); omit it entirely otherwise. The raw key
+          // lives only in the header object here — never logged.
+          headers: withUserKeyHeader(
+            {
+              "content-type": "application/json",
+              accept: "application/x-ndjson",
+            },
+            getUserKey,
+          ),
           body: JSON.stringify(body),
           signal: timeout.signal,
         });
@@ -358,5 +417,21 @@ export function createApiPort(fetchImpl: typeof fetch): ApiPort {
     }
   }
 
-  return { summon, read, resurrect };
+  // The Lovers binding client (lovers-binding task 14.4). Built from the shared
+  // `createLoversClient`, threaded with the SAME `getUserKey` reader used for
+  // `resurrect`, so `lovers` attaches `X-Necro-User-Key` IFF a key is set for
+  // this tab and never otherwise (R27.1, R41.1). The returned function's
+  // signature is `(args, signal, onProgress) => Promise<LoversResponse>`, which
+  // is exactly the `ApiPort.lovers` shape, so it is exposed directly.
+  const loversClient = createLoversClient(fetchImpl, getUserKey);
+
+  function lovers(
+    args: LoversRequestArgs,
+    signal: AbortSignal,
+    onProgress: LoversProgress,
+  ): Promise<LoversResponse> {
+    return loversClient(args, signal, onProgress);
+  }
+
+  return { summon, read, resurrect, lovers };
 }

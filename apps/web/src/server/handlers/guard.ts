@@ -183,17 +183,24 @@ export async function readJsonBody(req: Request): Promise<BodyResult> {
  * header (integer seconds) and the Oracle-voice `RATE_LIMITED` envelope. On
  * allow, resolves `null` so the handler proceeds. This runs BEFORE any GitHub
  * work (R13.1). The chain never rejects, so no try/catch is needed here.
+ *
+ * `dailyCeilingOverride` (lovers-binding R20.1): the Lovers_Route applies its
+ * SEPARATE server daily ceiling from `NECRO_LOVERS_DAILY_CEILING` here, reusing
+ * the same per-IP abuse chain (keyed by the `"lovers"` route) and the shared
+ * daily-counter infrastructure. When omitted, the shared
+ * `NECRO_DAILY_REQUEST_CEILING` applies (the resurrect/summon/readings routes).
  */
 export async function checkLimit(
   req: Request,
   deps: RouteDeps,
   route: RouteName,
+  dailyCeilingOverride?: number,
 ): Promise<Response | null> {
   const ipId = clientIp(req, deps.env);
   const decision = await deps.limiter.check({
     route,
     ipId,
-    dailyCeiling: deps.env.get("NECRO_DAILY_REQUEST_CEILING"),
+    dailyCeiling: dailyCeilingOverride ?? deps.env.get("NECRO_DAILY_REQUEST_CEILING"),
   });
   if (decision.allowed) return null;
 

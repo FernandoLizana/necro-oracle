@@ -25,6 +25,7 @@ import {
 } from "@necro/coven";
 
 import { FIXERS } from "./fixers/index.js";
+import { CHUNK_STEP } from "./llm/chunk-step.js";
 import { LLM_STEP } from "./llm/index.js";
 import { validate } from "./validate.js";
 
@@ -39,6 +40,27 @@ export const GRIMOIRE_ID = "py2to3";
  * The `llm` field is typed as `LlmStep<unknown>` on the `Grimoire` interface;
  * the concrete placeholder step is assigned here and widened to that contract.
  */
+// --- Part B — chunked LLM_Pass structured edit schema + gate (task 5.3) ------
+//
+// ADDITIVE re-exports: the strict `ChunkEditSchema` (purpose `py2to3.chunk`)
+// and the pure `acceptChunk` gate + its result types. These do not change the
+// existing grimoire shape or behaviour; the runner (task 5.4) consumes them.
+export {
+  ChunkEditSchema,
+  acceptChunk,
+  PYTHON3_STDLIB_MODULES,
+  type ChunkEdit,
+  type ChunkGateResult,
+  type ChunkRejectReason,
+  type DiagnoseFn,
+  type ParseFn,
+} from "./chunk-gate.js";
+
+// The declarative chunked LLM step the runner drives in Part B (task 5.4). It
+// delegates its prompt to the shared `py2to3.chunk` template and plugs the pure
+// `acceptChunk` gate into the coven `ChunkStep` contract.
+export { CHUNK_STEP } from "./llm/chunk-step.js";
+
 export const py2to3Grimoire: Grimoire = {
   id: GRIMOIRE_ID,
   pair: PYTHON2_TO_PYTHON3,
@@ -46,6 +68,10 @@ export const py2to3Grimoire: Grimoire = {
   outputSchema: FileResultSchema,
   fixers: FIXERS,
   llm: LLM_STEP,
+  // Part B (task 5.4): the chunked LLM_Pass step. The runner drives it ONLY
+  // when a `ModelRouterPort` is also injected; otherwise the legacy single-tier
+  // `llm` step runs, so this is purely additive (design B.2).
+  chunk: CHUNK_STEP,
   validate,
   divergenceAllowlist: [],
 };

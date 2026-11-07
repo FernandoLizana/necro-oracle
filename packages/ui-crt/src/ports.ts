@@ -99,6 +99,21 @@ export type PatchDownloadPort = (
  */
 export type ResurrectViewPort = () => Promise<unknown>;
 
+/**
+ * Lazily yields the DMG Lovers split-view component from its own bundler chunk
+ * (lovers-binding R22.1, R31.1). This port exists for the SAME reason as
+ * `ResurrectViewPort`: the heavy `LoversView` (two pixel hearts + the three
+ * code panes + its scoped stylesheet) is reached only through a literal-path
+ * dynamic import on first use and lands in its own lazily-loaded chunk, keeping
+ * the terminal initial route within the <= 250 KB gzipped budget (R31.1,
+ * R31.2). The component type is deliberately `unknown` here so `@necro/ui-crt`
+ * never imports the concrete `apps/web` `LoversView` type (dependency
+ * direction); `apps/web` supplies the concrete port
+ * (`() => Promise<LoversViewComponent>`), assignable to this structural shape
+ * because `Promise<T>` is assignable to `Promise<unknown>`.
+ */
+export type LoversViewPort = () => Promise<unknown>;
+
 /** The full set of ports the Terminal is constructed with. */
 export interface TerminalPorts {
   readonly api: ApiPort;
@@ -139,4 +154,16 @@ export interface TerminalPorts {
    * never depends on the concrete `apps/web` component type.
    */
   readonly resurrectView?: ResurrectViewPort | undefined;
+  /**
+   * Lazily loads the DMG Lovers split-view component chunk (lovers-binding
+   * R22.1, R31.1). OPTIONAL and default-absent, exactly like `resurrectView`:
+   * when omitted, the Lovers view is simply never mounted through the port, so
+   * a host (and every `@necro/ui-crt` unit test) that passes no `loversView`
+   * type-checks and behaves exactly as before. Production wires
+   * `createLoversViewPort()`; the single reference keeps the loader in the
+   * module graph so the bundler emits the `LoversView` as a distinct,
+   * non-initial chunk. Typed structurally (`() => Promise<unknown>`) so this
+   * package never depends on the concrete `apps/web` component type.
+   */
+  readonly loversView?: LoversViewPort | undefined;
 }

@@ -58,6 +58,7 @@ export {
 export {
   initParser,
   parsePython,
+  parseJavascript,
   queryPython,
   hasLegacyPythonNodes,
   type Tree,

@@ -49,13 +49,18 @@
 //
 // _Requirements: R16.4, R18.8, R2.3, R3.1_
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { Terminal } from "@necro/ui-crt";
 import type { TerminalPorts } from "@necro/ui-crt";
 
 import { createBrowserPorts } from "../terminal/browser-ports.js";
 import { ARCANA_MANIFEST } from "../terminal/arcana-manifest.js";
+import {
+  SoulKeyProvider,
+  useSoulKey,
+} from "../terminal/soul-key-context.js";
+import { SoulKeyInput } from "./SoulKeyInput.js";
 
 /** The idle-prefetch fallback delay for browsers without requestIdleCallback. */
 const IDLE_FALLBACK_MS = 2000;
@@ -99,12 +104,79 @@ function readRitualForce(): boolean {
   );
 }
 
-/** The live CRT terminal, constructed with the real browser ports. */
-export default function TerminalScreen(): React.JSX.Element {
-  // Build the ports exactly once for the life of the mount. `useMemo` with an
-  // empty dep list runs the factory on the client after hydration, so the
-  // browser globals it reads are live.
-  const ports: TerminalPorts = useMemo(() => createBrowserPorts(), []);
+/**
+ * The live CRT terminal shell, constructed with the real browser ports and the
+ * BYOK Soul_Key wiring (lovers-binding task 11.9, §D.3/§D.6, R41.1/R41.2).
+ *
+ * It consumes the non-persistable `SoulKeyApi` from the `SoulKeyProvider` that
+ * `TerminalScreen` wraps it in, and:
+ *   - threads `getKeyForRequest` into `createBrowserPorts` so the `resurrect`
+ *     (and lovers) client attaches the `X-Necro-User-Key` header IFF a key is
+ *     set for this tab, never otherwise (R41.1);
+ *   - supplies the masked `SoulKeyInput` as the Terminal's `keyInput` render
+ *     prop — mounted only when `key set` opens it — routing the raw key into
+ *     the context ref and dispatching `byok.key-set` with only the last four
+ *     characters (R41.2); and
+ *   - handles `key clear` through `onClearKey` -> `SoulKeyApi.clearKey()`.
+ * The SOUL SOURCE HUD is already rendered inside `<Terminal>` from the reducer's
+ * `soulSource` (ui-crt task 10.6), so it needs no wiring here.
+ */
+function TerminalShell(): React.JSX.Element {
+  // The non-persistable in-memory key container (the raw key lives only in its
+  // ref, never React state; design §D.3). Stable across the mount.
+  const soulKey = useSoulKey();
+
+  // A stable reader of the current key for the API port (R41.1). `getUserKey`
+  // reads the ref each request; it returns `null` when no key is set so the
+  // port attaches no header.
+  const getUserKey = useCallback(
+    (): string | null => soulKey.getKeyForRequest(),
+    [soulKey],
+  );
+
+  // A stable ref to the latest user-key reader, so the one-time `useMemo` port
+  // construction (empty deps) always reaches the live reader without rebuilding
+  // the ports when the context identity changes on a set/clear status update.
+  const getUserKeyRef = useRef(getUserKey);
+  getUserKeyRef.current = getUserKey;
+  const ports: TerminalPorts = useMemo(
+    // Build the ports exactly once; the port reads the key through the stable
+    // ref each request, so a key set/clear never rebuilds the ports.
+    () => createBrowserPorts(() => getUserKeyRef.current()),
+    [],
+  );
+
+  // The Terminal's `keyInput` render prop (lovers-binding R41.2). Mounted by
+  // `<Terminal>` only while the masked input is open; it writes the raw key
+  // ONLY into the `SoulKeyContext` ref via `soulKey.setKey` and reports the
+  // last-four mirror up through `onKeySet` (which dispatches `byok.key-set`).
+  // The reducer already prints the oracle-voice `key set` confirmation when it
+  // opens the input, so the masked input's own `onConfirm` lines are not
+  // re-logged here — the key value is never in those lines regardless.
+  const renderKeyInput = useCallback(
+    (args: {
+      readonly onKeySet: (last4: string) => void;
+      readonly onClose: () => void;
+    }): React.ReactNode => (
+      <SoulKeyInput
+        api={{ setKey: soulKey.setKey }}
+        onKeySet={(mirror) => args.onKeySet(mirror.last4)}
+        onConfirm={() => {
+          // The reducer already emitted the oracle-voice `key set` confirmation
+          // when it opened the input; the masked input's own confirmation lines
+          // are intentionally not re-logged here. The key value is never in
+          // these lines, so dropping them keeps the log key-free either way.
+        }}
+        onClose={args.onClose}
+      />
+    ),
+    [soulKey],
+  );
+
+  // `key clear` -> drop the raw key from the context ref (R25.4, R26.*).
+  const onClearKey = useCallback((): void => {
+    soulKey.clearKey();
+  }, [soulKey]);
 
   // Read the external `?boot=skip` flag once per mount. The Playwright runner
   // sets it to land on the ready terminal without waiting out the boot; a
@@ -146,6 +218,23 @@ export default function TerminalScreen(): React.JSX.Element {
       bootSignal={bootSignal}
       ritualForce={ritualForce}
       manifest={ARCANA_MANIFEST}
+      keyInput={renderKeyInput}
+      onClearKey={onClearKey}
     />
+  );
+}
+
+/**
+ * The Terminal_Route client mount point. It wraps the live terminal shell in
+ * the non-persistable `SoulKeyProvider` (lovers-binding §D.3) so the BYOK user
+ * key lives in one in-memory ref for the tab, then renders `TerminalShell`.
+ * Wrapping here keeps the provider above the whole terminal, so the API port's
+ * per-request key reader and the masked input share the one container.
+ */
+export default function TerminalScreen(): React.JSX.Element {
+  return (
+    <SoulKeyProvider>
+      <TerminalShell />
+    </SoulKeyProvider>
   );
 }

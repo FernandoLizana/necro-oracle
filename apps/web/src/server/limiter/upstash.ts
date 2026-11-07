@@ -80,6 +80,11 @@ export function createUpstashLimiter(opts: {
     limiter: Ratelimit.slidingWindow(LIMITS.resurrect, "1 h"),
     prefix: "necro:rl:resurrect",
   });
+  const lovers = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(LIMITS.lovers, "1 h"),
+    prefix: "necro:rl:lovers",
+  });
   const global = new Ratelimit({
     redis,
     limiter: Ratelimit.fixedWindow(dailyCeiling, "1 d"),
@@ -90,6 +95,7 @@ export function createUpstashLimiter(opts: {
     summon,
     readings,
     resurrect,
+    lovers,
   };
 
   function retryAfterSeconds(reset: number): number {
