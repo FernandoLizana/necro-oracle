@@ -848,3 +848,53 @@ describe("handleResurrect — transport + redaction", () => {
     expect(clock.pending()).toBe(0);
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// PROD HOTFIX - demo error framing: a demo-mode error line MUST be a valid JSON
+// protocol frame; the [DEMO] marker rides INSIDE the payload (userMessage),
+// never as a prefix on the whole NDJSON line (which produced `[DEMO] {...}`,
+// invalid JSON the client could not parse).
+// ---------------------------------------------------------------------------
+
+describe("handleResurrect - demo error line stays a valid JSON frame (prod hotfix)", () => {
+  it("a demo:true error line parses as JSON and carries [DEMO] inside userMessage, not as a line prefix", async () => {
+    // A demo request with NO loadDemoInput/demoLlm wired triggers the typed
+    // 'Demo mode is not available here' UPSTREAM_UNAVAILABLE error, emitted on
+    // the demo path (demo === true) through the one serialization choke point.
+    const deps = makeDeps();
+    const res = await handleResurrect(postJson({ ...validBody(), demo: true }), deps);
+    expect(res.status).toBe(200);
+
+    const raw = await readBodyText(res);
+    const rawLines = raw.split("\n").filter((l) => l.trim().length > 0);
+    expect(rawLines.length).toBeGreaterThan(0);
+
+    // (1) EVERY raw line is valid JSON (the bug produced `[DEMO] {...}`).
+    for (const line of rawLines) {
+      expect(() => JSON.parse(line), `invalid JSON frame: ${line}`).not.toThrow();
+      // (2) No line is prefixed with the marker before its JSON object.
+      expect(line.startsWith("[DEMO] ")).toBe(false);
+      expect(line.trimStart().startsWith("{")).toBe(true);
+    }
+
+    // (3) The terminal error is a well-formed envelope whose userMessage carries
+    // the [DEMO] marker INSIDE the payload.
+    const parsed = rawLines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    const errorLine = parsed.find((l) => "error" in l) as
+      | { error: { code: string; userMessage: string } }
+      | undefined;
+    expect(errorLine, "a terminal { error } line must be present").toBeDefined();
+    expect(errorLine!.error.code).toBe("UPSTREAM_UNAVAILABLE");
+    expect(errorLine!.error.userMessage.startsWith("[DEMO] ")).toBe(true);
+    // The marker is applied exactly once.
+    expect(errorLine!.error.userMessage.match(/\[DEMO\] /g)).toHaveLength(1);
+
+    // (4) And the schema-validating reader (which JSON.parses each line) does
+    // not throw - i.e. the whole stream is well-formed protocol.
+    const { lines } = await readStream(
+      await handleResurrect(postJson({ ...validBody(), demo: true }), makeDeps()),
+    );
+    expect(lines.some((l) => "error" in l)).toBe(true);
+  });
+});

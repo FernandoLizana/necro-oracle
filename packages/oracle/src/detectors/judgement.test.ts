@@ -23,7 +23,7 @@
 //        reversed; PRECEDENCE over R5.2
 //   R5.4 one Evidence item per construct type, path + line of first occurrence
 //   R5.5 no python files AND no python manifests → null
-//   R5.6 linkedGrimoireIds = ["py2to3","pyproject"] (asserted via grimoires)
+//   R5.6 linkedGrimoireIds = ["py2to3","pyproject","lovers-js"] (asserted via grimoires)
 //   exclusions: files under vendor/.tox/node_modules/site-packages ignored
 
 import { describe, expect, it } from "vitest";
@@ -119,9 +119,9 @@ describe("detectJudgement: py2 syntax draws the card (R5.1)", () => {
     expect(draw.evidence.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("sets linkedGrimoireIds via grimoires = ['py2to3','pyproject'] (R5.6)", () => {
+  it("sets linkedGrimoireIds via grimoires = ['py2to3','pyproject','lovers-js'] (R5.6; lovers reachability)", () => {
     const draw = expectDraw(judgementOf({ "app.py": 'print "legacy"\n' }));
-    expect(draw.grimoires).toEqual(["py2to3", "pyproject"]);
+    expect(draw.grimoires).toEqual(["py2to3", "pyproject", "lovers-js"]);
   });
 });
 

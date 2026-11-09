@@ -48,16 +48,26 @@ const requireOracle = createRequire(
 // packaged into the `/api/readings` serverless function. The globs below cover
 // both the pnpm virtual store and any hoisted/nested copy.
 const WASM_TRACING_GLOBS = [
-  "node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm",
-  "node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm",
-  "node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
-  "node_modules/tree-sitter-python/*.wasm",
-  "node_modules/web-tree-sitter/*.wasm",
-  "node_modules/tree-sitter-javascript/*.wasm",
-  // nested copies resolved via @necro/oracle's own node_modules under pnpm
-  "node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
-  "node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
-  "node_modules/.pnpm/**/node_modules/tree-sitter-javascript/*.wasm",
+  // The oracle resolves each grammar via createRequire(packages/oracle/dist/...)
+  // which goes THROUGH packages/oracle/node_modules/<grammar> (a pnpm symlink)
+  // to the real file in the virtual store. BOTH must be traced or the runtime
+  // require.resolve fails with PARSER_INIT_FAILED (the prod hotfix root cause).
+  // Every glob is apps/web-RELATIVE (../../ to the monorepo root), because Next
+  // resolves outputFileTracingIncludes relative to apps/web, NOT the trace root
+  // (same gotcha the ../../fixtures demo glob already works around).
+  "../../packages/oracle/node_modules/tree-sitter-python/*.wasm",
+  "../../packages/oracle/node_modules/tree-sitter-javascript/*.wasm",
+  "../../packages/oracle/node_modules/web-tree-sitter/*.wasm",
+  "../../node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm",
+  "../../node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm",
+  "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
+  "../../node_modules/tree-sitter-python/*.wasm",
+  "../../node_modules/web-tree-sitter/*.wasm",
+  "../../node_modules/tree-sitter-javascript/*.wasm",
+  // nested copies resolved via any package's own node_modules under pnpm
+  "../../node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
+  "../../node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
+  "../../node_modules/.pnpm/**/node_modules/tree-sitter-javascript/*.wasm",
 ];
 
 // The two WASM specifiers the oracle parser resolves at runtime. Resolving them
@@ -86,11 +96,12 @@ function resolvedWasmRelPath(spec: string): string | null {
   // is a dep of @necro/oracle rather than apps/web). A resolved real path is
   // authoritative — it cannot be absent at build time unlike a glob (lovers-binding
   // task 7.2 / 15.3).
-  for (const r of [require, requireOracle]) {
+  // Oracle-anchored FIRST: the exact resolution the parser runs at runtime.
+  for (const r of [requireOracle, require]) {
     try {
       const abs = r.resolve(spec);
       if (!existsSync(abs)) continue;
-      return path.relative(monorepoRoot, abs).split(path.sep).join("/");
+      return path.relative(__dirname, abs).split(path.sep).join("/");
     } catch {
       // try the next resolver
     }
@@ -140,6 +151,7 @@ export function buildWasmTracingIncludes(): Record<string, string[]> {
     // traced regardless (lovers-binding task 7.2 / 15.3).
     "/api/lovers": [
       ...includes,
+      "../../packages/oracle/node_modules/tree-sitter-javascript/*.wasm",
       "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
       "../../node_modules/tree-sitter-javascript/*.wasm",
       ...DEMO_FIXTURE_GLOBS,

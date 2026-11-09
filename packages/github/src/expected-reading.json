@@ -30,7 +30,8 @@
       "summary": "Python 2 syntax haunts the code; the runtime cannot rise on a modern interpreter without resurrection.",
       "grimoires": [
         "py2to3",
-        "pyproject"
+        "pyproject",
+        "lovers-js"
       ]
     },
     {
@@ -228,7 +229,8 @@
         "summary": "Python 2 syntax haunts the code; the runtime cannot rise on a modern interpreter without resurrection.",
         "grimoires": [
           "py2to3",
-          "pyproject"
+          "pyproject",
+          "lovers-js"
         ]
       }
     },

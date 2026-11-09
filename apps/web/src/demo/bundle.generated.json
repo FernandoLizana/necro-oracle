@@ -295,7 +295,8 @@
             ],
             "grimoires": [
               "py2to3",
-              "pyproject"
+              "pyproject",
+              "lovers-js"
             ],
             "orientation": "upright",
             "severity": 3,
@@ -459,7 +460,8 @@
               ],
               "grimoires": [
                 "py2to3",
-                "pyproject"
+                "pyproject",
+                "lovers-js"
               ],
               "orientation": "upright",
               "severity": 3,
@@ -550,7 +552,8 @@
             ],
             "grimoires": [
               "py2to3",
-              "pyproject"
+              "pyproject",
+              "lovers-js"
             ],
             "orientation": "upright",
             "severity": 3,
@@ -694,7 +697,8 @@
               ],
               "grimoires": [
                 "py2to3",
-                "pyproject"
+                "pyproject",
+                "lovers-js"
               ],
               "orientation": "upright",
               "severity": 3,

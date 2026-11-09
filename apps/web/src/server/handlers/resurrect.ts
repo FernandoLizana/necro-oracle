@@ -54,6 +54,7 @@
 
 import {
   createDemoPorts,
+  DEMO_PREFIX,
   prefixDemoLine,
   type LedgerPort,
   type LlmPort,
@@ -72,6 +73,27 @@ import {
   ResurrectStreamLineSchema,
   type ResurrectStreamLine,
 } from "../../protocol/resurrect-stream.js";
+
+/**
+ * Apply the Demo_Mode marker INSIDE a stream line (prod hotfix). The `[DEMO] `
+ * marker must never prefix the whole NDJSON line -- that yields `[DEMO] {...}`,
+ * invalid JSON the client cannot parse. Instead it rides on the free-text
+ * fields the client renders verbatim: a skip-note's `note` and an error's
+ * `userMessage`. A phase line carries only an enum and the result wire already
+ * carries `demo: true`, so neither is touched. Applied once; never double-marks
+ * a field already carrying the marker.
+ */
+function markDemoLine(line: ResurrectStreamLine): ResurrectStreamLine {
+  const mark = (text: string): string =>
+    text.startsWith(DEMO_PREFIX) ? text : prefixDemoLine(text);
+  if ("skip" in line && typeof line.note === "string") {
+    return { ...line, note: mark(line.note) };
+  }
+  if ("error" in line) {
+    return { ...line, error: { ...line.error, userMessage: mark(line.error.userMessage) } };
+  }
+  return line;
+}
 import type { ResurrectDeps } from "../deps.js";
 import { mapError } from "../error-map.js";
 import { redactDeep, redactSecrets } from "../redact.js";
@@ -308,9 +330,14 @@ export async function handleResurrect(
         const canaried = redactDeep(scrubbed, NECRO_CANARY);
         const parsed = ResurrectStreamLineSchema.safeParse(canaried);
         if (!parsed.success) return false;
-        const serialized = JSON.stringify(parsed.data);
-        const out = demo ? prefixDemoLine(serialized) : serialized;
-        controller.enqueue(encoder.encode(out + "\n"));
+        // Demo marker goes INSIDE the payload (on the free-text fields the
+        // client surfaces), NEVER as a prefix on the whole line: prefixing the
+        // serialized JSON produced `[DEMO] {...}`, which is invalid JSON and
+        // broke the client parser on every demo resurrect frame (prod hotfix).
+        // The line itself stays a valid protocol frame.
+        const labelled = demo ? markDemoLine(parsed.data) : parsed.data;
+        const serialized = JSON.stringify(labelled);
+        controller.enqueue(encoder.encode(serialized + "\n"));
         return true;
       };
 

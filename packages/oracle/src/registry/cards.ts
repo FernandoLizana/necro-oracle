@@ -25,7 +25,7 @@ const CARD_DEFINITIONS: ReadonlyArray<CardDefinition> = [
     reversedMeaning:
       "Half-risen, it straddles two worlds. The code leans on six, __future__ imports, or 2to3 shims, carrying one foot in Python 2 and one in Python 3.",
     weight: 20,
-    linkedGrimoireIds: ["py2to3", "pyproject"],
+    linkedGrimoireIds: ["py2to3", "pyproject", "lovers-js"],
   },
   {
     id: "tower",

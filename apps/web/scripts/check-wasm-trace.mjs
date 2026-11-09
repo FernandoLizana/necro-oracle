@@ -1,167 +1,192 @@
 // apps/web/scripts/check-wasm-trace.mjs
 //
-// Post-build acceptance gate for the tree-sitter WASM tracing fix, extended for
-// the Lovers binding (lovers-binding, task 7.2).
+// REAL post-build acceptance gate for the tree-sitter WASM tracing (prod
+// hotfix). The old gate only checked that a file NAMED tree-sitter-python.wasm
+// existed somewhere in the trace - it never verified the oracle could RESOLVE
+// it. On Vercel the oracle resolves each grammar with
+// createRequire(packages/oracle/dist/parser/...).resolve("tree-sitter-python/
+// tree-sitter-python.wasm"), which goes THROUGH packages/oracle/node_modules/
+// <grammar> (a pnpm symlink) to the real file in the virtual store. If either
+// is missing from the trace, the resolution fails with PARSER_INIT_FAILED -
+// exactly the production failure - yet a name-only check still passes.
 //
-// Production bug (fix-wasm-tracing, task 1): `POST /api/readings` failed at
-// READING with PARSER_INIT_FAILED on Vercel because `tree-sitter-python.wasm`
-// was not traced into the serverless function — the glob-only
-// `outputFileTracingIncludes` emitted a HOISTED path that does not exist on
-// disk, while the real file lives only in pnpm's virtual store. `/api/resurrect`
-// had the same latent gap.
-//
-// This script reads the @vercel/nft trace (`route.js.nft.json`) for each route,
-// resolves each traced entry relative to the nft.json's own directory, keeps
-// only entries that END IN `.wasm` AND actually exist on disk, and asserts that
-// the set of existing wasm BASENAMES for each route includes every wasm that
-// route needs:
-//   - `/api/readings` + `/api/resurrect` parse Python  => runtime + python grammar;
-//   - `/api/lovers` parses BOTH Python AND JavaScript   => runtime + python
-//     grammar + javascript grammar (all three).
-//
-// ABI pin (R44.2): it ALSO loads the tree-sitter-javascript grammar WASM once
-// against the installed web-tree-sitter runtime, failing fast on an ABI
-// mismatch (a transitive bump that drifts LANGUAGE_VERSION away from the
-// runtime). It exits 0 only when every route packages its required wasm AND the
-// JS grammar loads; otherwise it names the offending route + missing file (or
-// the ABI failure) and exits 1.
+// This gate, for each of readings / resurrect / lovers:
+//   1. reads the @vercel/nft trace (route.js.nft.json),
+//   2. copies EXACTLY the traced files into a temp dir, preserving their layout
+//      relative to the outputFileTracingRoot (the monorepo root),
+//   3. from <tmp>/packages/oracle/dist/parser it RESOLVES
+//      tree-sitter-python/tree-sitter-python.wasm (and, for lovers,
+//      tree-sitter-javascript/...wasm) via createRequire, then actually loads
+//      the web-tree-sitter runtime + grammar and PARSES a one-line snippet.
+// It fails with a clear message if any resolve / load / parse fails, and exits
+// 1. It exits 0 only when every route can genuinely initialise its parser from
+// its own traced file set. Temp dirs live under the OS temp dir, never the repo.
 
 import { createRequire } from "node:module";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, basename, resolve } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-// scripts/ lives at apps/web/scripts, so .next is one level up.
-const nextDir = resolve(scriptDir, "..", ".next");
+const webDir = resolve(scriptDir, "..");
+const nextDir = resolve(webDir, ".next");
+// outputFileTracingRoot in next.config.ts is the monorepo root (apps/web/../../).
+const traceRoot = resolve(webDir, "..", "..");
 
-const WEB_TREE_SITTER = "web-tree-sitter.wasm";
-const PYTHON_GRAMMAR = "tree-sitter-python.wasm";
-const JS_GRAMMAR = "tree-sitter-javascript.wasm";
-
-/**
- * The routes that must package tree-sitter WASM, each with the exact set of
- * wasm basenames it needs. `/api/lovers` parses both languages, so it needs all
- * three; the Python routes need the runtime + python grammar.
- */
-const ROUTE_REQUIREMENTS = {
-  readings: [WEB_TREE_SITTER, PYTHON_GRAMMAR],
-  resurrect: [WEB_TREE_SITTER, PYTHON_GRAMMAR],
-  lovers: [WEB_TREE_SITTER, PYTHON_GRAMMAR, JS_GRAMMAR],
+// Each route and the grammar specifiers the oracle must resolve from its traced
+// copy. Lovers parses BOTH Python and JavaScript.
+const ROUTES = {
+  readings: ["tree-sitter-python/tree-sitter-python.wasm"],
+  resurrect: ["tree-sitter-python/tree-sitter-python.wasm"],
+  lovers: [
+    "tree-sitter-python/tree-sitter-python.wasm",
+    "tree-sitter-javascript/tree-sitter-javascript.wasm",
+  ],
 };
 
-/**
- * Return the set of EXISTING wasm basenames traced for a route, or null when
- * the route's nft.json is absent.
- */
-function existingTracedWasm(route) {
-  const nftPath = resolve(
-    nextDir,
-    "server",
-    "app",
-    "api",
-    route,
-    "route.js.nft.json",
-  );
-  if (!existsSync(nftPath)) return null;
+function msg(cause) {
+  return cause instanceof Error ? cause.message : String(cause);
+}
 
+/** The parsed nft trace for a route, or files:null when its nft.json is absent. */
+function readTrace(route) {
+  const nftPath = resolve(
+    nextDir, "server", "app", "api", route, "route.js.nft.json",
+  );
+  if (!existsSync(nftPath)) return { nftPath, dir: null, files: null };
   const nft = JSON.parse(readFileSync(nftPath, "utf8"));
-  const nftDir = dirname(nftPath);
-  const found = new Set();
-  for (const entry of nft.files ?? []) {
-    if (!entry.endsWith(".wasm")) continue;
-    // Trace entries are relative to the nft.json's own directory.
-    const abs = resolve(nftDir, entry);
-    if (existsSync(abs)) found.add(basename(abs));
-  }
-  return found;
+  return { nftPath, dir: dirname(nftPath), files: nft.files ?? [] };
 }
 
 /**
- * Load the tree-sitter-javascript grammar once against the installed
- * web-tree-sitter runtime to fail fast on an ABI mismatch (R44.2). Mirrors the
- * oracle's load path: Parser.init() -> Language.load(file://...wasm) ->
- * new Parser().setLanguage(...) -> parse a trivial program. Returns an error
- * message string on failure, or null on success.
+ * Rebuild a route's traced file set under a fresh OS-temp dir, preserving each
+ * file's path RELATIVE TO the monorepo trace root, so <tmp>/packages/oracle/...
+ * and <tmp>/node_modules/.pnpm/... land where the oracle's resolution expects.
  */
-async function checkJsGrammarAbi() {
-  try {
-    const require = createRequire(import.meta.url);
-    const { Language, Parser } = await import("web-tree-sitter");
-    await Parser.init();
-    // Resolve the JS grammar the SAME way the oracle does at runtime: anchor a
-    // require at @necro/oracle's own entry (its createRequire(import.meta.url)),
-    // so we validate the exact file the /api/lovers lambda will load, including
-    // pnpm's virtual-store path.
-    const oracleEntry = require.resolve("@necro/oracle");
-    const oracleRequire = createRequire(oracleEntry);
-    const wasmPath = oracleRequire.resolve(
-      "tree-sitter-javascript/tree-sitter-javascript.wasm",
-    );
-    const language = await Language.load(pathToFileURL(wasmPath));
-    const parser = new Parser();
-    // An ABI mismatch surfaces here: setLanguage rejects a grammar whose
-    // LANGUAGE_VERSION is incompatible with the runtime.
-    parser.setLanguage(language);
-    const tree = parser.parse("const x = 1;");
-    if (!tree || tree.rootNode.type !== "program") {
-      return `JS grammar produced an unexpected root node: ${tree?.rootNode?.type ?? "none"}`;
+function materializeTrace(route, trace) {
+  const tmp = mkdtempSync(join(tmpdir(), "necro-wasm-" + route + "-"));
+  for (const entry of trace.files) {
+    const abs = resolve(trace.dir, entry);
+    const rel = relative(traceRoot, abs);
+    if (rel.startsWith("..") || rel.includes(":")) continue; // outside the root
+    if (!existsSync(abs)) continue; // dangling entry -> caught at resolve time
+    const dest = join(tmp, rel);
+    mkdirSync(dirname(dest), { recursive: true });
+    try {
+      cpSync(abs, dest, { recursive: true, dereference: true });
+    } catch {
+      // ignore one un-copyable entry; a genuinely missing wasm is caught below
     }
-    tree.delete?.();
-    parser.delete?.();
-    return null;
-  } catch (cause) {
-    return `JS grammar failed to load against the installed web-tree-sitter (ABI mismatch?): ${
-      cause instanceof Error ? cause.message : String(cause)
-    }`;
   }
+  return tmp;
+}
+
+/**
+ * From the materialised trace, resolve each grammar the SAME way the oracle
+ * does (createRequire anchored at the traced tree-sitter.js), load it against
+ * the traced web-tree-sitter runtime, and parse a snippet. Returns null on
+ * success or an error message.
+ */
+async function verifyRouteParser(route, tmp, specifiers) {
+  const parserFile = join(
+    tmp, "packages", "oracle", "dist", "parser", "tree-sitter.js",
+  );
+  if (!existsSync(parserFile)) {
+    return "the traced oracle parser is missing at packages/oracle/dist/parser/tree-sitter.js";
+  }
+  const oracleRequire = createRequire(parserFile);
+
+  let Language;
+  let Parser;
+  try {
+    const wtsEntry = oracleRequire.resolve("web-tree-sitter");
+    const mod = await import(pathToFileURL(wtsEntry).href);
+    ({ Language, Parser } = mod);
+    await Parser.init();
+  } catch (cause) {
+    return "could not load the traced web-tree-sitter runtime: " + msg(cause);
+  }
+
+  for (const spec of specifiers) {
+    let wasmPath;
+    try {
+      wasmPath = oracleRequire.resolve(spec);
+    } catch (cause) {
+      return 'the traced oracle CANNOT resolve "' + spec +
+        '" (the exact prod PARSER_INIT_FAILED cause): ' + msg(cause);
+    }
+    if (!existsSync(wasmPath)) {
+      return '"' + spec + '" resolved to ' + wasmPath + " but that file is not in the trace";
+    }
+    try {
+      const language = await Language.load(pathToFileURL(wasmPath));
+      const parser = new Parser();
+      parser.setLanguage(language);
+      const snippet = spec.includes("javascript") ? "const x = 1;" : "x = 1\n";
+      const tree = parser.parse(snippet);
+      if (!tree || !tree.rootNode) {
+        return 'parsing with "' + spec + '" produced no tree';
+      }
+      tree.delete?.();
+      parser.delete?.();
+    } catch (cause) {
+      return 'the traced "' + spec + '" failed to load/parse (ABI or missing file?): ' + msg(cause);
+    }
+  }
+  return null;
 }
 
 let ok = true;
-
-for (const [route, required] of Object.entries(ROUTE_REQUIREMENTS)) {
-  const found = existingTracedWasm(route);
-  if (found === null) {
-    console.error(
-      `FAIL /api/${route}: trace file not found ` +
-        `(expected .next/server/app/api/${route}/route.js.nft.json). ` +
-        `Run the web build first.`,
-    );
-    ok = false;
-    continue;
+const tmpDirs = [];
+try {
+  for (const [route, specifiers] of Object.entries(ROUTES)) {
+    const trace = readTrace(route);
+    if (trace.files === null) {
+      console.error(
+        "FAIL /api/" + route + ": trace file not found (" +
+          relative(webDir, trace.nftPath) + "). Run the web build first.",
+      );
+      ok = false;
+      continue;
+    }
+    const tmp = materializeTrace(route, trace);
+    tmpDirs.push(tmp);
+    const err = await verifyRouteParser(route, tmp, specifiers);
+    if (err) {
+      console.error("FAIL /api/" + route + ": " + err);
+      ok = false;
+    } else {
+      console.log(
+        "OK   /api/" + route +
+          ": the traced lambda resolves + initialises its parser (" +
+          specifiers.join(" + ") + ").",
+      );
+    }
   }
-  const missing = required.filter((name) => !found.has(name));
-  if (missing.length > 0) {
-    console.error(
-      `FAIL /api/${route}: missing real wasm in trace: ${missing.join(", ")}. ` +
-        `Existing traced wasm: [${[...found].join(", ") || "none"}].`,
-    );
-    ok = false;
-  } else {
-    console.log(
-      `OK   /api/${route}: packages ${required.join(" + ")} ` +
-        `(existing traced wasm: [${[...found].join(", ")}]).`,
-    );
+} finally {
+  for (const d of tmpDirs) {
+    try { rmSync(d, { recursive: true, force: true }); } catch { /* best effort */ }
   }
-}
-
-// ABI load-check for the JavaScript grammar (R44.2) — independent of the build.
-const abiError = await checkJsGrammarAbi();
-if (abiError) {
-  console.error(`FAIL ABI: ${abiError}`);
-  ok = false;
-} else {
-  console.log(
-    `OK   ABI: ${JS_GRAMMAR} loads against the installed web-tree-sitter runtime.`,
-  );
 }
 
 if (!ok) {
   console.error(
-    "\nWASM trace check FAILED — a required grammar wasm is not packaged, " +
-      "or the JS grammar is ABI-incompatible with the runtime.",
+    "\nWASM trace check FAILED - at least one route's traced serverless " +
+      "function cannot resolve/initialise its tree-sitter parser " +
+      "(this is the production PARSER_INIT_FAILED).",
   );
   process.exit(1);
 }
-console.log("\nWASM trace check PASSED for all routes (incl. JS grammar ABI).");
+console.log(
+  "\nWASM trace check PASSED - every route's traced files genuinely " +
+    "resolve, load and parse with their tree-sitter grammar(s).",
+);
 process.exit(0);

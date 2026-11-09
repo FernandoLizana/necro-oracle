@@ -16,7 +16,7 @@
 //        reversed; PRECEDENCE over R5.2
 //   R5.4 one Evidence item per construct type, path + line of first occurrence
 //   R5.5 no python files AND no python manifests → null
-//   R5.6 linkedGrimoireIds = ["py2to3","pyproject"] (exposed via grimoires)
+//   R5.6 linkedGrimoireIds = ["py2to3","pyproject","lovers-js"] (exposed via grimoires)
 
 import type { CardDraw, Evidence } from "../registry/schema.js";
 import { detectPythonVersion, type Manifest } from "../parser/manifest.js";
@@ -29,7 +29,7 @@ import type { Node } from "web-tree-sitter";
 // --- constants -----------------------------------------------------------
 
 /** Grimoires that can address a dead-runtime verdict (R5.6). */
-const JUDGEMENT_GRIMOIRES = ["py2to3", "pyproject"] as const;
+const JUDGEMENT_GRIMOIRES = ["py2to3", "pyproject", "lovers-js"] as const;
 
 /**
  * Path fragments for vendored / toolchain trees whose Python files are never

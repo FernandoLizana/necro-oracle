@@ -14,7 +14,8 @@
       ],
       "grimoires": [
         "py2to3",
-        "pyproject"
+        "pyproject",
+        "lovers-js"
       ],
       "orientation": "reversed",
       "severity": 1,
@@ -125,7 +126,8 @@
         ],
         "grimoires": [
           "py2to3",
-          "pyproject"
+          "pyproject",
+          "lovers-js"
         ],
         "orientation": "reversed",
         "severity": 1,

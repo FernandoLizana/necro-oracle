@@ -450,3 +450,37 @@ describe("handleLovers (lovers-binding task 11.6b)", () => {
     ).toHaveLength(0);
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// PROD HOTFIX - demo error framing: a demo-mode lovers error line MUST be a
+// valid JSON protocol frame (lovers already emits valid JSON; this locks it so
+// a future [DEMO] line-prefix regression like the resurrect one is caught).
+// ---------------------------------------------------------------------------
+
+describe("handleLovers - demo error line stays a valid JSON frame (prod hotfix)", () => {
+  it("a demo:true error line parses as JSON and is never prefixed with [DEMO] before its object", async () => {
+    // A demo request with NO demoLlm/loadDemoLovers wired triggers the typed
+    // 'No replay is kept in this crypt' UPSTREAM_UNAVAILABLE error on the demo
+    // path. The signal card must be present so the precondition passes and the
+    // run reaches the demo branch.
+    const deps = makeDeps({ card: "__lovers_signal__" });
+    const res = await handleLovers(loversRequest({ ...VALID_BODY, demo: true }), deps);
+    expect(res.status).toBe(200);
+
+    const text = await res.text();
+    const rawLines = text.split("\n").filter((l) => l.trim().length > 0);
+    expect(rawLines.length).toBeGreaterThan(0);
+    for (const line of rawLines) {
+      expect(() => JSON.parse(line), `invalid JSON frame: ${line}`).not.toThrow();
+      expect(line.startsWith("[DEMO] ")).toBe(false);
+      expect(line.trimStart().startsWith("{")).toBe(true);
+    }
+    const parsed = rawLines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    const errorLine = parsed.find((l) => "error" in l) as
+      | { error: { code: string; userMessage: string } }
+      | undefined;
+    expect(errorLine, "a terminal { error } line must be present").toBeDefined();
+    expect(errorLine!.error.code).toBe("UPSTREAM_UNAVAILABLE");
+  });
+});
