@@ -212,6 +212,11 @@ export function PixelCard({
   asciiFallback,
 }: PixelCardProps): React.JSX.Element {
   const [imageFailed, setImageFailed] = useState(false);
+  // Hide the image until it finishes loading to prevent the card background
+  // colour (phosphor green) from flashing as a solid block before the WebP
+  // arrives. The image is kept in the DOM (not unmounted) so the browser does
+  // not restart the load; it is simply invisible until `onLoad` fires.
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const glitch = glitchProfile(model.severity);
   // Same gate `AsciiCardView` uses: full motion AND a severity that glitches.
@@ -289,6 +294,8 @@ export function PixelCard({
           src={src}
           alt={model.altText}
           loading={loading}
+          data-loaded={imageLoaded ? "true" : "false"}
+          onLoad={() => setImageLoaded(true)}
           onError={() => setImageFailed(true)}
         />
       )}

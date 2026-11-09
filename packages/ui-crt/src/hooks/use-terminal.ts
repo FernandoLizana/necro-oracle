@@ -734,13 +734,36 @@ export function useTerminal(
   });
 
   // -------------------------------------------------------------------------
-  // Auto-scroll: the log is the one scroll container; scroll to end on growth.
+  // Auto-scroll (sticky-bottom): scroll to the newest line on log growth,
+  // UNLESS the user has deliberately scrolled up. The threshold is 2px to
+  // absorb sub-pixel rounding on high-DPI displays.
   // -------------------------------------------------------------------------
+  // Whether the user has manually scrolled away from the bottom. A ref (not
+  // state) so the flag never triggers a re-render and the effect runs only
+  // when `state.log` changes, exactly as before.
+  const userScrolledUpRef = useRef(false);
+
   useLayoutEffect(() => {
     const log = logRef.current;
     if (log === null) return;
+    // If the user scrolled up, respect that and do not force-scroll down.
+    if (userScrolledUpRef.current) return;
     log.scrollTop = log.scrollHeight;
   }, [state.log]);
+
+  // Detect the user scrolling up: when the gap between scrollTop and the
+  // scrollable bottom exceeds 2 px, the user has scrolled up. When they
+  // reach the bottom again, reset the flag so auto-scroll resumes.
+  useEffect(() => {
+    const log = logRef.current;
+    if (log === null) return;
+    const onScroll = (): void => {
+      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight <= 2;
+      userScrolledUpRef.current = !atBottom;
+    };
+    log.addEventListener("scroll", onScroll, { passive: true });
+    return () => log.removeEventListener("scroll", onScroll);
+  }, []);
 
   // -------------------------------------------------------------------------
   // View handlers.

@@ -48,6 +48,18 @@ const DIFF_MARKER: Readonly<Record<ResurrectDiffLine["kind"], string>> = {
 };
 
 /**
+ * Maximum number of context lines to render around each changed hunk. A diff
+ * of an unchanged file whose `before` is printed in full as context-only lines
+ * would dump the entire source into the terminal ? the UX bug observed in the
+ * demo video (pytarl.py printed in full before the diff and results). We cap
+ * runs of pure-context lines at this value so only the surrounding context
+ * around actual changes is shown; any excess is collapsed with a "... N lines"
+ * indicator. This cap applies only to context lines; add/remove lines are
+ * always shown.
+ */
+const MAX_CONTEXT_LINES = 3;
+
+/**
  * Reduce `text` to printable ASCII: strip ANSI/control/bidi sequences via the
  * shared sanitiser, then replace every remaining code point outside the
  * printable-ASCII range (U+0020–U+007E) with `?`. Line feeds are already gone
@@ -103,8 +115,36 @@ export function renderFileResult(file: ResurrectFileResult): BlockDraft {
 
   lines.push(...textLines(`FILE ${file.path}`));
 
-  for (const line of file.diff) {
-    lines.push(...diffLines(line));
+  // Render the diff, capping consecutive context-only runs to MAX_CONTEXT_LINES
+  // so a large unchanged file does not dump its entire source into the terminal
+  // (UX fix: source dump bug observed in the demo video). Consecutive context
+  // lines beyond the cap are replaced by a single "... N unchanged lines" note.
+  let i = 0;
+  while (i < file.diff.length) {
+    const line = file.diff[i]!;
+    if (line.kind !== "context") {
+      // Add/remove: always shown.
+      lines.push(...diffLines(line));
+      i += 1;
+    } else {
+      // Measure the consecutive context run starting at i.
+      let runLen = 0;
+      while (i + runLen < file.diff.length && file.diff[i + runLen]!.kind === "context") {
+        runLen += 1;
+      }
+      // Show at most MAX_CONTEXT_LINES from the run; collapse the rest.
+      const shown = Math.min(runLen, MAX_CONTEXT_LINES);
+      for (let k = 0; k < shown; k++) {
+        lines.push(...diffLines(file.diff[i + k]!));
+      }
+      const collapsed = runLen - shown;
+      if (collapsed > 0) {
+        lines.push(
+          ...textLines(`  ... ${collapsed} unchanged line${collapsed !== 1 ? "s" : ""}`),
+        );
+      }
+      i += runLen;
+    }
   }
 
   if (file.residuals.length === 0) {

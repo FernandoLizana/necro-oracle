@@ -108,6 +108,18 @@
   height: calc(var(--arcana-logical-h) * var(--arcana-scale) * 1px);
 }
 
+/*
+ * Green-flash fix: hide the pixel card image while it is still loading so the
+ * card background colour (--crt-fg, phosphor green) does not flash as a solid
+ * block before the WebP arrives. The image remains in the DOM -- it is not
+ * unmounted -- so the browser does not restart the load. The PixelCard
+ * component sets data-loaded="false" initially and data-loaded="true" in the
+ * onLoad handler; this rule hides the placeholder box.
+ */
+.crt .crt-pixel-card-img[data-loaded="false"] {
+  opacity: 0;
+}
+
 /* ------------------------------------------------------------------------ */
 /* Text_Bands + Diagnosis_Caption: phosphor DOM text (R1.6, R1.7, R1.8).     */
 /*                                                                           */
@@ -149,9 +161,13 @@
   font-size: calc(12 * var(--arcana-scale) * 1px);
 }
 
-/* Footer band: logical rows [147,160] => 13 rows tall, pinned to the bottom. */
+/* Footer band: logical rows [147,160] => 13 rows tall, anchored to the image.
+ * Using `top` (= logical image height - 13 rows) instead of `bottom: 0` so the
+ * band sits at the image's bottom edge, not the card's bottom edge (which
+ * includes the caption height). `bottom: 0` would push the band down into the
+ * caption and overlap it at any scale -- the caption overlap bug. */
 .crt .crt-pixel-band[data-band="footer"] {
-  bottom: 0;
+  top: calc((var(--arcana-logical-h) - 13) * var(--arcana-scale) * 1px);
   height: calc(13 * var(--arcana-scale) * 1px);
   justify-content: center;
   color: var(--crt-fg-dim);
