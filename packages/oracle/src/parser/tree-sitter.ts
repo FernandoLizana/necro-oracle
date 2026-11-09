@@ -67,8 +67,27 @@ let jsLanguageSingleton: Language | null = null;
  * no network access (R3.1, R21.6).
  */
 async function grammarWasmUrl(specifier: string): Promise<URL> {
+  const { existsSync } = await import("node:fs");
+  const { fileURLToPath, pathToFileURL } = await import("node:url");
+
+  // 1. Prefer the dereferenced real file copied to dist/grammars/ at build
+  //    time by scripts/copy-grammars.mjs. When this file exists it has NO
+  //    symlink in its path, so Vercel can package it without complaint.
+  //    The grammar file name is the last segment of the specifier, e.g.
+  //    "tree-sitter-python/tree-sitter-python.wasm" -> "tree-sitter-python.wasm".
+  const grammarFileName = specifier.split("/").pop()!;
+  const distGrammarUrl = new URL(
+    "../grammars/" + grammarFileName,
+    import.meta.url,
+  );
+  const distGrammarPath = fileURLToPath(distGrammarUrl);
+  if (existsSync(distGrammarPath)) {
+    return distGrammarUrl;
+  }
+
+  // 2. Fall back to createRequire resolution so tests (which run against
+  //    packages/oracle/src/ before a build) and local dev still work.
   const { createRequire } = await import("node:module");
-  const { pathToFileURL } = await import("node:url");
   const require = createRequire(import.meta.url);
   const wasmPath = require.resolve(specifier);
   return pathToFileURL(wasmPath);

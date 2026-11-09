@@ -48,26 +48,21 @@ const requireOracle = createRequire(
 // packaged into the `/api/readings` serverless function. The globs below cover
 // both the pnpm virtual store and any hoisted/nested copy.
 const WASM_TRACING_GLOBS = [
-  // The oracle resolves each grammar via createRequire(packages/oracle/dist/...)
-  // which goes THROUGH packages/oracle/node_modules/<grammar> (a pnpm symlink)
-  // to the real file in the virtual store. BOTH must be traced or the runtime
-  // require.resolve fails with PARSER_INIT_FAILED (the prod hotfix root cause).
-  // Every glob is apps/web-RELATIVE (../../ to the monorepo root), because Next
-  // resolves outputFileTracingIncludes relative to apps/web, NOT the trace root
-  // (same gotcha the ../../fixtures demo glob already works around).
-  "../../packages/oracle/node_modules/tree-sitter-python/*.wasm",
-  "../../packages/oracle/node_modules/tree-sitter-javascript/*.wasm",
-  "../../packages/oracle/node_modules/web-tree-sitter/*.wasm",
-  "../../node_modules/.pnpm/tree-sitter-python@*/node_modules/tree-sitter-python/*.wasm",
+  // Grammar WASM files are copied to packages/oracle/dist/grammars/ as REAL
+  // (dereferenced) files by packages/oracle/scripts/copy-grammars.mjs at
+  // oracle build time. Using this real path -- no symlink in any path segment
+  // -- avoids the Vercel packaging error:
+  //   "The framework produced an invalid deployment package for a Serverless
+  //    Function. Typically this means that the framework produces files in
+  //    symlinked directories."
+  // All grammar globs point here. apps/web-relative (../../ to monorepo root).
+  "../../packages/oracle/dist/grammars/*.wasm",
+  // The web-tree-sitter runtime WASM is loaded by the runtime itself via
+  // new URL("web-tree-sitter.wasm", import.meta.url) -- NOT by createRequire --
+  // so it must still come from its own package location in the .pnpm store.
+  // The .pnpm store path has NO symlink in it (only packages/*/node_modules
+  // symlinks were the problem). Glob over the versioned store path.
   "../../node_modules/.pnpm/web-tree-sitter@*/node_modules/web-tree-sitter/*.wasm",
-  "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
-  "../../node_modules/tree-sitter-python/*.wasm",
-  "../../node_modules/web-tree-sitter/*.wasm",
-  "../../node_modules/tree-sitter-javascript/*.wasm",
-  // nested copies resolved via any package's own node_modules under pnpm
-  "../../node_modules/.pnpm/**/node_modules/tree-sitter-python/*.wasm",
-  "../../node_modules/.pnpm/**/node_modules/web-tree-sitter/*.wasm",
-  "../../node_modules/.pnpm/**/node_modules/tree-sitter-javascript/*.wasm",
 ];
 
 // The two WASM specifiers the oracle parser resolves at runtime. Resolving them
@@ -77,10 +72,11 @@ const WASM_TRACING_GLOBS = [
 // braces fallback, but a glob that matches nothing (or a hoisted path Next
 // emits that does not exist) is what let `tree-sitter-python.wasm` slip out of
 // the `/api/readings` lambda in production. A resolved real path cannot.
+// Grammar WASMs come from dist/grammars (glob above). Only web-tree-sitter
+// still needs explicit resolution: it is loaded by the runtime itself via
+// new URL(...import.meta.url), so @vercel/nft must trace its exact real path.
 const WASM_TRACING_SPECIFIERS = [
-  "tree-sitter-python/tree-sitter-python.wasm",
   "web-tree-sitter/web-tree-sitter.wasm",
-  "tree-sitter-javascript/tree-sitter-javascript.wasm",
 ];
 
 /**
@@ -91,12 +87,10 @@ const WASM_TRACING_SPECIFIERS = [
  * cannot be resolved, so a missing optional package never breaks the build.
  */
 function resolvedWasmRelPath(spec: string): string | null {
-  // Try both resolvers: apps/web-anchored first (covers python grammar and
-  // web-tree-sitter), then oracle-anchored (covers tree-sitter-javascript, which
-  // is a dep of @necro/oracle rather than apps/web). A resolved real path is
-  // authoritative — it cannot be absent at build time unlike a glob (lovers-binding
-  // task 7.2 / 15.3).
-  // Oracle-anchored FIRST: the exact resolution the parser runs at runtime.
+  // web-tree-sitter may be hoisted at the app level (require) or only under
+  // oracle (requireOracle). Try oracle-anchored first for consistency, then
+  // app-anchored. Grammar WASMs are no longer resolved here -- they live in
+  // dist/grammars/ after the oracle postbuild step.
   for (const r of [requireOracle, require]) {
     try {
       const abs = r.resolve(spec);
@@ -142,20 +136,10 @@ export function buildWasmTracingIncludes(): Record<string, string[]> {
   return {
     "/api/readings": includes,
     "/api/resurrect": [...includes, ...DEMO_FIXTURE_GLOBS],
-    // Lovers parses BOTH python (heart) and javascript (beloved), so it needs
-    // all three WASM: python grammar + runtime + javascript grammar.
-    // The JS grammar is a dep of @necro/oracle (not apps/web), so the
-    // apps/web-anchored require cannot resolve it in the shared `includes`.
-    // Explicit literal globs relative to apps/web (the directory Next resolves
-    // outputFileTracingIncludes paths against) guarantee the JS WASM is
-    // traced regardless (lovers-binding task 7.2 / 15.3).
-    "/api/lovers": [
-      ...includes,
-      "../../packages/oracle/node_modules/tree-sitter-javascript/*.wasm",
-      "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
-      "../../node_modules/tree-sitter-javascript/*.wasm",
-      ...DEMO_FIXTURE_GLOBS,
-    ],
+    // Lovers parses BOTH python (heart) and javascript (beloved). Both grammar
+    // WASMs are in dist/grammars/ (the shared glob above), so no extra js-specific
+    // globs are needed here -- the dist/grammars/*.wasm glob covers both.
+    "/api/lovers": [...includes, ...DEMO_FIXTURE_GLOBS],
   };
 }
 

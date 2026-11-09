@@ -1,31 +1,35 @@
 // apps/web/scripts/check-wasm-trace.mjs
 //
-// REAL post-build acceptance gate for the tree-sitter WASM tracing (prod
-// hotfix). The old gate only checked that a file NAMED tree-sitter-python.wasm
-// existed somewhere in the trace - it never verified the oracle could RESOLVE
-// it. On Vercel the oracle resolves each grammar with
-// createRequire(packages/oracle/dist/parser/...).resolve("tree-sitter-python/
-// tree-sitter-python.wasm"), which goes THROUGH packages/oracle/node_modules/
-// <grammar> (a pnpm symlink) to the real file in the virtual store. If either
-// is missing from the trace, the resolution fails with PARSER_INIT_FAILED -
-// exactly the production failure - yet a name-only check still passes.
+// REAL post-build acceptance gate for the tree-sitter WASM tracing.
 //
-// This gate, for each of readings / resurrect / lovers:
-//   1. reads the @vercel/nft trace (route.js.nft.json),
-//   2. copies EXACTLY the traced files into a temp dir, preserving their layout
-//      relative to the outputFileTracingRoot (the monorepo root),
-//   3. from <tmp>/packages/oracle/dist/parser it RESOLVES
-//      tree-sitter-python/tree-sitter-python.wasm (and, for lovers,
-//      tree-sitter-javascript/...wasm) via createRequire, then actually loads
-//      the web-tree-sitter runtime + grammar and PARSES a one-line snippet.
-// It fails with a clear message if any resolve / load / parse fails, and exits
-// 1. It exits 0 only when every route can genuinely initialise its parser from
-// its own traced file set. Temp dirs live under the OS temp dir, never the repo.
+// Extended in the symlink-packaging hotfix to also verify that NO traced
+// grammar WASM file has a symlinked directory segment in its path. Vercel
+// rejects deployment packages that contain files from symlinked directories
+// with:
+//   "The framework produced an invalid deployment package for a Serverless
+//    Function. Typically this means that the framework produces files in
+//    symlinked directories."
+//
+// For each of readings / resurrect / lovers this gate:
+//   1. Reads the @vercel/nft trace (route.js.nft.json).
+//   2. Walks every *.wasm entry in the trace and fails if any path segment
+//      (resolved from the trace root) is a symbolic link ? that is the Vercel
+//      packaging failure condition.
+//   3. Copies EXACTLY the traced files into a temp dir, preserving their
+//      layout relative to the outputFileTracingRoot (the monorepo root).
+//   4. From <tmp>/packages/oracle/dist/parser it resolves and loads the
+//      web-tree-sitter runtime, then locates each grammar from
+//      <tmp>/packages/oracle/dist/grammars/<name>.wasm (the real path the
+//      fixed parser uses), loads + parses a one-line snippet.
+// Fails with a clear message on any violation; exits 1. Exits 0 only when
+// every route genuinely passes all checks. Temp dirs live under the OS temp
+// dir, never the repo.
 
 import { createRequire } from "node:module";
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -41,15 +45,11 @@ const nextDir = resolve(webDir, ".next");
 // outputFileTracingRoot in next.config.ts is the monorepo root (apps/web/../../).
 const traceRoot = resolve(webDir, "..", "..");
 
-// Each route and the grammar specifiers the oracle must resolve from its traced
-// copy. Lovers parses BOTH Python and JavaScript.
+// Each route and the grammar file names the oracle must find in dist/grammars.
 const ROUTES = {
-  readings: ["tree-sitter-python/tree-sitter-python.wasm"],
-  resurrect: ["tree-sitter-python/tree-sitter-python.wasm"],
-  lovers: [
-    "tree-sitter-python/tree-sitter-python.wasm",
-    "tree-sitter-javascript/tree-sitter-javascript.wasm",
-  ],
+  readings: ["tree-sitter-python.wasm"],
+  resurrect: ["tree-sitter-python.wasm"],
+  lovers: ["tree-sitter-python.wasm", "tree-sitter-javascript.wasm"],
 };
 
 function msg(cause) {
@@ -64,6 +64,53 @@ function readTrace(route) {
   if (!existsSync(nftPath)) return { nftPath, dir: null, files: null };
   const nft = JSON.parse(readFileSync(nftPath, "utf8"));
   return { nftPath, dir: dirname(nftPath), files: nft.files ?? [] };
+}
+
+/**
+ * Walk the absolute path segment-by-segment and return the first segment
+ * that is a symbolic link, or null if none is.
+ */
+function firstSymlinkSegment(absPath) {
+  // Normalise separators
+  const parts = absPath.replace(/\\/g, "/").split("/");
+  let cur = "";
+  for (const part of parts) {
+    if (!part) {
+      cur = "/";
+      continue;
+    }
+    cur = cur === "/" ? "/" + part : cur + "/" + part;
+    if (!cur || cur.length < 2) continue; // skip bare "/" or drive letter
+    try {
+      if (lstatSync(cur).isSymbolicLink()) return cur;
+    } catch {
+      // segment does not exist yet (inside temp dirs, etc.) ? skip
+    }
+  }
+  return null;
+}
+
+/**
+ * Check that every *.wasm file listed in the trace has NO symlinked directory
+ * segment in its path. Returns an error message if any violation is found,
+ * null if all wasm entries are clean.
+ */
+function checkNoSymlinkInWasmPaths(trace) {
+  for (const entry of trace.files) {
+    if (!entry.endsWith(".wasm")) continue;
+    const abs = resolve(trace.dir, entry);
+    const sym = firstSymlinkSegment(abs);
+    if (sym !== null) {
+      return (
+        "traced wasm '" +
+        relative(traceRoot, abs) +
+        "' passes through symlink '" +
+        sym +
+        "' ? Vercel will reject the deployment package."
+      );
+    }
+  }
+  return null;
 }
 
 /**
@@ -90,12 +137,12 @@ function materializeTrace(route, trace) {
 }
 
 /**
- * From the materialised trace, resolve each grammar the SAME way the oracle
- * does (createRequire anchored at the traced tree-sitter.js), load it against
- * the traced web-tree-sitter runtime, and parse a snippet. Returns null on
- * success or an error message.
+ * From the materialised trace, load the web-tree-sitter runtime and then
+ * load each grammar from dist/grammars/<name>.wasm (the real path the fixed
+ * oracle parser resolves to). Parses a one-line snippet per grammar. Returns
+ * null on success or an error message.
  */
-async function verifyRouteParser(route, tmp, specifiers) {
+async function verifyRouteParser(route, tmp, grammarFileNames) {
   const parserFile = join(
     tmp, "packages", "oracle", "dist", "parser", "tree-sitter.js",
   );
@@ -115,30 +162,39 @@ async function verifyRouteParser(route, tmp, specifiers) {
     return "could not load the traced web-tree-sitter runtime: " + msg(cause);
   }
 
-  for (const spec of specifiers) {
-    let wasmPath;
-    try {
-      wasmPath = oracleRequire.resolve(spec);
-    } catch (cause) {
-      return 'the traced oracle CANNOT resolve "' + spec +
-        '" (the exact prod PARSER_INIT_FAILED cause): ' + msg(cause);
-    }
+  for (const grammarFileName of grammarFileNames) {
+    // The fixed oracle parser resolves grammars from dist/grammars/<name>.wasm
+    // (real file, no symlink). The materialised trace must contain that file.
+    const wasmPath = join(
+      tmp, "packages", "oracle", "dist", "grammars", grammarFileName,
+    );
     if (!existsSync(wasmPath)) {
-      return '"' + spec + '" resolved to ' + wasmPath + " but that file is not in the trace";
+      return (
+        '"packages/oracle/dist/grammars/' +
+        grammarFileName +
+        '" is not in the traced set' +
+        " (grammar wasm must be copied to dist/grammars/ by oracle postbuild)"
+      );
     }
     try {
       const language = await Language.load(pathToFileURL(wasmPath));
       const parser = new Parser();
       parser.setLanguage(language);
-      const snippet = spec.includes("javascript") ? "const x = 1;" : "x = 1\n";
+      const isJs = grammarFileName.includes("javascript");
+      const snippet = isJs ? "const x = 1;" : "x = 1\n";
       const tree = parser.parse(snippet);
       if (!tree || !tree.rootNode) {
-        return 'parsing with "' + spec + '" produced no tree';
+        return 'parsing with "' + grammarFileName + '" produced no tree';
       }
       tree.delete?.();
       parser.delete?.();
     } catch (cause) {
-      return 'the traced "' + spec + '" failed to load/parse (ABI or missing file?): ' + msg(cause);
+      return (
+        '"' +
+        grammarFileName +
+        '" failed to load/parse (ABI or missing file?): ' +
+        msg(cause)
+      );
     }
   }
   return null;
@@ -147,7 +203,7 @@ async function verifyRouteParser(route, tmp, specifiers) {
 let ok = true;
 const tmpDirs = [];
 try {
-  for (const [route, specifiers] of Object.entries(ROUTES)) {
+  for (const [route, grammarFileNames] of Object.entries(ROUTES)) {
     const trace = readTrace(route);
     if (trace.files === null) {
       console.error(
@@ -157,17 +213,29 @@ try {
       ok = false;
       continue;
     }
+
+    // --- Check 1: no symlinked directory segments in *.wasm trace entries ---
+    const symlinkErr = checkNoSymlinkInWasmPaths(trace);
+    if (symlinkErr) {
+      console.error("FAIL /api/" + route + " [symlink-check]: " + symlinkErr);
+      ok = false;
+      // Still materialise and run the parser check so we get full diagnostics.
+    }
+
+    // --- Check 2: materialise + resolve + init + parse ---
     const tmp = materializeTrace(route, trace);
     tmpDirs.push(tmp);
-    const err = await verifyRouteParser(route, tmp, specifiers);
-    if (err) {
-      console.error("FAIL /api/" + route + ": " + err);
+    const parseErr = await verifyRouteParser(route, tmp, grammarFileNames);
+    if (parseErr) {
+      console.error("FAIL /api/" + route + " [parser-check]: " + parseErr);
       ok = false;
-    } else {
+    }
+
+    if (!symlinkErr && !parseErr) {
       console.log(
         "OK   /api/" + route +
-          ": the traced lambda resolves + initialises its parser (" +
-          specifiers.join(" + ") + ").",
+          ": no symlinks in wasm paths + parser resolves/inits/parses (" +
+          grammarFileNames.join(" + ") + ").",
       );
     }
   }
@@ -179,14 +247,13 @@ try {
 
 if (!ok) {
   console.error(
-    "\nWASM trace check FAILED - at least one route's traced serverless " +
-      "function cannot resolve/initialise its tree-sitter parser " +
-      "(this is the production PARSER_INIT_FAILED).",
+    "\nWASM trace check FAILED - at least one route has a symlinked wasm path " +
+      "or cannot resolve/initialise its tree-sitter parser.",
   );
   process.exit(1);
 }
 console.log(
-  "\nWASM trace check PASSED - every route's traced files genuinely " +
-    "resolve, load and parse with their tree-sitter grammar(s).",
+  "\nWASM trace check PASSED - every route's traced wasm paths are real + " +
+    "the parser resolves, loads and parses.",
 );
 process.exit(0);

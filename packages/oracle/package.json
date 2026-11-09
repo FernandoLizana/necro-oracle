@@ -29,7 +29,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "lint": "eslint .",
     "build": "tsc",
-    "size": "size-limit"
+    "size": "size-limit",
+    "postbuild": "node scripts/copy-grammars.mjs"
   },
   "dependencies": {
     "smol-toml": "^1.9.1",
