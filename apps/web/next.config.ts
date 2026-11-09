@@ -119,9 +119,18 @@ export function buildWasmTracingIncludes(): Record<string, string[]> {
     ...resolvedRelPaths.filter((p): p is string => p !== null),
     ...WASM_TRACING_GLOBS,
   ];
+  // Item 2 (judge-ready-pass): the demo resurrect/lovers routes read the
+  // `lich-py2` graveyard fixture from disk (`loadDemoRitualInput`). On Vercel
+  // the serverless function only contains traced files, so the fixture tree
+  // must be named here. Globs are relative to apps/web (the directory Next
+  // resolves `outputFileTracingIncludes` from — the same gotcha as the JS
+  // wasm), reaching up to the monorepo-root `fixtures/` tree.
+  const DEMO_FIXTURE_GLOBS = [
+    "../../fixtures/graveyard/lich-py2/**/*",
+  ];
   return {
     "/api/readings": includes,
-    "/api/resurrect": includes,
+    "/api/resurrect": [...includes, ...DEMO_FIXTURE_GLOBS],
     // Lovers parses BOTH python (heart) and javascript (beloved), so it needs
     // all three WASM: python grammar + runtime + javascript grammar.
     // The JS grammar is a dep of @necro/oracle (not apps/web), so the
@@ -133,6 +142,7 @@ export function buildWasmTracingIncludes(): Record<string, string[]> {
       ...includes,
       "../../node_modules/.pnpm/tree-sitter-javascript@*/node_modules/tree-sitter-javascript/*.wasm",
       "../../node_modules/tree-sitter-javascript/*.wasm",
+      ...DEMO_FIXTURE_GLOBS,
     ],
   };
 }

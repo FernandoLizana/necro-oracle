@@ -812,4 +812,39 @@ describe("handleResurrect — transport + redaction", () => {
     expect(errorOf(lines)).toBeUndefined();
     expect(clock.pending()).toBe(0);
   });
+
+  // Item 18 (P0.5): when the client aborts the NDJSON stream (fetch abort /
+  // disconnect), the runtime calls the ReadableStream's cancel(). The handler
+  // must STOP the pipeline - cancel the Overall_Budget timer and mark the
+  // stream finished so no further work/lines happen - rather than keep the
+  // ritual (sandbox, LLM, timer) running for a client that is gone.
+  it("item 18: cancelling the stream stops the pipeline and cancels the budget timer", async () => {
+    const clock = makeFakeClock();
+    // A runner that emits one phase, then blocks forever: the stream stays open
+    // until the client cancels, exactly like a slow live ritual.
+    const runner = fakeRunner(async ({ emit }) => {
+      await emit.phase("SELECT");
+      await new Promise<never>(() => {
+        // never resolves - the ritual is "in flight" when the client aborts.
+      });
+      // unreachable
+      return { result: makeRitualResult(), error: null };
+    });
+    const deps = makeDeps({ clock, runner });
+
+    const res = await handleResurrect(postJson(validBody()), deps);
+    // The Overall_Budget timer is armed while the ritual runs.
+    expect(clock.pending()).toBe(1);
+
+    // Read the first line, then abort the stream like a disconnecting client.
+    const reader = res.body!.getReader();
+    await reader.read(); // the SELECT phase line
+    await reader.cancel();
+
+    // The pipeline is stopped: the budget timer is cancelled (no leak), so
+    // advancing time cannot fire a late callback against a dead stream.
+    expect(clock.pending()).toBe(0);
+    clock.advance(OVERALL_BUDGET_MS + 5_000);
+    expect(clock.pending()).toBe(0);
+  });
 });

@@ -43,7 +43,15 @@ const MAX_SOURCE_BYTES = 1_048_576;
 let initPromise: Promise<void> | null = null;
 let parserSingleton: Parser | null = null;
 let languageSingleton: Language | null = null;
-// JavaScript grammar singletons, armed by the same initParser() call (R18.1).
+// JavaScript grammar singletons. Item 1 (judge-ready-pass): these are armed by
+// their OWN lazy init (`initJavascript`), NOT by `initParser`. Readings and
+// resurrect parse only Python, so they must never force the JavaScript grammar
+// WASM to load — otherwise a route whose serverless function does not package
+// `tree-sitter-javascript.wasm` fails the whole shared init with
+// PARSER_INIT_FAILED even though it only needed Python. Only the Lovers flow
+// arms the JS grammar (via `initJavascript`), and only its route packages that
+// wasm.
+let jsInitPromise: Promise<void> | null = null;
 let jsParserSingleton: Parser | null = null;
 let jsLanguageSingleton: Language | null = null;
 
@@ -80,7 +88,11 @@ export function initParser(): Promise<void> {
     try {
       await Parser.init();
 
-      // Python grammar.
+      // Python grammar ONLY. Item 1 (judge-ready-pass): the JavaScript grammar
+      // is armed separately by `initJavascript`, so a Python-only route
+      // (readings, resurrect) never forces `tree-sitter-javascript.wasm` to
+      // load and never fails its shared init just because that wasm is not
+      // packaged into its serverless function.
       const language = await Language.load(
         await grammarWasmUrl("tree-sitter-python/tree-sitter-python.wasm"),
       );
@@ -88,9 +100,37 @@ export function initParser(): Promise<void> {
       parser.setLanguage(language);
       parserSingleton = parser;
       languageSingleton = language;
+    } catch (cause) {
+      // Reset so the next call retries (allows recovery from a transient load
+      // failure), then surface the failure in the oracle's voice.
+      initPromise = null;
+      parserSingleton = null;
+      languageSingleton = null;
+      throw new NecroError(
+        "PARSER_INIT_FAILED",
+        "The oracle could not awaken its sight; the grammar of the dead refused to load.",
+        cause,
+      );
+    }
+  })();
+  return initPromise;
+}
 
-      // JavaScript grammar — loaded identically and armed by this same call
-      // (R18.1). Its WASM is ABI-compatible with the installed web-tree-sitter.
+/**
+ * Arm the JavaScript grammar. Item 1 (judge-ready-pass): a SEPARATE lazy
+ * singleton from `initParser`, so only the Lovers flow (the one flow that
+ * parses JavaScript) loads `tree-sitter-javascript.wasm`. Idempotent: the first
+ * call creates the init promise; later calls return it. On failure the internal
+ * JS state is reset so a later call retries, and the promise rejects with
+ * `NecroError(PARSER_INIT_FAILED)`. It depends on the web-tree-sitter runtime,
+ * so it arms the Python side first (which also runs `Parser.init()`); that call
+ * is itself idempotent. No network access occurs (R3.1, R21.6).
+ */
+export function initJavascript(): Promise<void> {
+  jsInitPromise ??= (async (): Promise<void> => {
+    try {
+      // The runtime (`Parser.init()`) is shared; arm it via initParser first.
+      await initParser();
       const jsLanguage = await Language.load(
         await grammarWasmUrl(
           "tree-sitter-javascript/tree-sitter-javascript.wasm",
@@ -101,11 +141,7 @@ export function initParser(): Promise<void> {
       jsParserSingleton = jsParser;
       jsLanguageSingleton = jsLanguage;
     } catch (cause) {
-      // Reset so the next call retries (allows recovery from a transient load
-      // failure), then surface the failure in the oracle's voice.
-      initPromise = null;
-      parserSingleton = null;
-      languageSingleton = null;
+      jsInitPromise = null;
       jsParserSingleton = null;
       jsLanguageSingleton = null;
       throw new NecroError(
@@ -115,7 +151,7 @@ export function initParser(): Promise<void> {
       );
     }
   })();
-  return initPromise;
+  return jsInitPromise;
 }
 
 /**

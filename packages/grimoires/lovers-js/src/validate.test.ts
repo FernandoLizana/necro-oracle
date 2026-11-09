@@ -18,7 +18,7 @@
 // Validates: Requirements 17.1, 17.2, 17.3, 17.7, 17.8
 
 import { denyScan, parseContract, type LoversPlan } from "@necro/coven";
-import { initParser, parseJavascript, parsePython } from "@necro/oracle";
+import { initJavascript, initParser, parseJavascript, parsePython } from "@necro/oracle";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { buildTemplatePair } from "./fixers/ast-bridge.js";
@@ -61,6 +61,7 @@ function samplePlan(): LoversPlan {
 describe("R17.1, R17.2, R17.3, R17.7: validateLovers accepts a clean template pair", () => {
   beforeAll(async () => {
     await initParser();
+    await initJavascript();
   });
 
   it("accepts the deterministic buildTemplatePair(plan) output", () => {
@@ -79,6 +80,7 @@ describe("R17.1, R17.2, R17.3, R17.7: validateLovers accepts a clean template pa
 describe("R17.7, R17.8: validateLovers rejects a pair that smuggles a forbidden construct", () => {
   beforeAll(async () => {
     await initParser();
+    await initJavascript();
   });
 
   it("rejects a beloved tampered with an eval() call (deny-list hit)", () => {
@@ -107,6 +109,7 @@ describe("R17.7, R17.8: validateLovers rejects a pair that smuggles a forbidden 
 describe("R17.3: validateLovers rejects a pair that drops a planned function", () => {
   beforeAll(async () => {
     await initParser();
+    await initJavascript();
   });
 
   it("rejects a beloved missing one planned export (missing_js_fn)", () => {

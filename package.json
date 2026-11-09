@@ -21,6 +21,7 @@
     "test:pbt": "vitest run --reporter=verbose",
     "e2e": "pnpm --filter @necro/web e2e",
     "demo:bundle": "tsx --import ./scripts/demo-bundle/css-stub-register.mjs scripts/demo-bundle/generate.ts",
+    "smoke:llm": "tsx scripts/smoke-llm/smoke.ts",
     "size-limit": "pnpm --filter @necro/oracle size"
   },
   "devDependencies": {

@@ -8,12 +8,13 @@
 // The WASM grammar is initialised once in vitest.setup.ts's beforeAll via
 // initParser() (task 10), so parsePython may be called synchronously here with
 // no network access (R3.1, R21.5, R21.6).
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { NecroError } from "../util/errors.js";
 
 import {
   hasLegacyPythonNodes,
+  initJavascript,
   parseJavascript,
   parsePython,
   queryPython,
@@ -94,6 +95,12 @@ function countErrorNodes(tree: Tree): number {
 }
 
 describe("parseJavascript (R18.1)", () => {
+  // Item 1 (judge-ready-pass): the JS grammar is armed separately from
+  // initParser (the global setup arms Python only), so arm it here.
+  beforeAll(async () => {
+    await initJavascript();
+  });
+
   it("returns a program-root Tree for valid JavaScript source", () => {
     const tree = parseJavascript("export function f(x){ return x; }\n");
     expect(tree.rootNode.type).toBe("program");

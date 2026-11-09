@@ -292,6 +292,7 @@ export { isDemoSession, resolveSeed } from "./session/demo-seed.js";
 export {
   currentVisualReading,
   loversEligible,
+  resurrectEligible,
   visualCardIndex,
   visualCards,
   type VisualCard,
@@ -422,6 +423,7 @@ export {
   type UseTerminalOptions,
 } from "./hooks/use-terminal.js";
 export { useMotion, type MotionSignal } from "./hooks/use-motion.js";
+export { useCssVars, type CssVars } from "./hooks/use-css-vars.js";
 export {
   useBoot,
   type BootPhase,

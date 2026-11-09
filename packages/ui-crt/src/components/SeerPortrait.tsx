@@ -28,10 +28,11 @@
 
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState } from "react";
 
 import { integerScale, type Size } from "../arcana/integer-scale.js";
 import type { ArcanaAsset } from "../arcana/manifest.js";
+import { useCssVars } from "../hooks/use-css-vars.js";
 
 /** Props for the Seer landing portrait (design §"Component: SeerPortrait"). */
 export interface SeerPortraitProps {
@@ -73,14 +74,17 @@ export function SeerPortrait({
 
   const scale = integerScale(available, asset.logical);
 
-  const portraitStyle = {
+  const ref = useRef<HTMLDivElement | null>(null);
+  // SEC-08: apply the scale/logical custom properties via the CSSOM (useCssVars)
+  // instead of a CSP-blocked inline style attribute.
+  useCssVars(ref, {
     "--arcana-scale": String(scale),
     "--arcana-logical-w": String(asset.logical.w),
     "--arcana-logical-h": String(asset.logical.h),
-  } as CSSProperties;
+  });
 
   return (
-    <div className="crt-seer-portrait" data-asset={asset.id} style={portraitStyle}>
+    <div ref={ref} className="crt-seer-portrait" data-asset={asset.id}>
       {imageFailed ? (
         // Image unavailable: show the existing text landing, no broken-image
         // indicator, no layout error (R7.4).
@@ -90,7 +94,6 @@ export function SeerPortrait({
           className="crt-seer-img"
           src={src}
           alt={SEER_ALT_TEXT}
-          style={{ imageRendering: "pixelated" }}
           onError={() => setImageFailed(true)}
         />
       )}

@@ -1,7 +1,7 @@
-// @necro/oracle — deck registry, detectors, spreads, vitality (pure, no adapters)
+// @necro/oracle â€” deck registry, detectors, spreads, vitality (pure, no adapters)
 //
 // This is the browser-safe main entry. It must never import Node `fs` APIs or
-// the Node-only `src/node.ts` builder — those are reachable only via the
+// the Node-only `src/node.ts` builder â€” those are reachable only via the
 // "./node" subpath export. Keeping this barrel free of any `node:`/`fs` import
 // is what guarantees the terminal web bundle stays browser-safe (R2.3, R21.3).
 export const ORACLE_VERSION = "0.0.0";
@@ -47,7 +47,7 @@ export {
 } from "./snapshot/types.js";
 
 // --- Browser-safe snapshot builder (file-map only) ------------------------
-// NOTE: buildSnapshotFromDirectory is intentionally NOT exported here — it is
+// NOTE: buildSnapshotFromDirectory is intentionally NOT exported here â€” it is
 // Node-only and lives behind the "./node" subpath (src/node.ts).
 export {
   buildSnapshotFromFileMap,
@@ -57,6 +57,7 @@ export {
 // --- Tree-sitter parser (parser/tree-sitter) ------------------------------
 export {
   initParser,
+  initJavascript,
   parsePython,
   parseJavascript,
   queryPython,
@@ -104,6 +105,45 @@ export { detectStar } from "./detectors/star.js";
 
 // --- The World (destiny) draw (detectors/world) ---------------------------
 export { computeWorldDraw } from "./detectors/world.js";
+
+// --- Tarot deck + draw (tarot) --------------------------------------------
+// A SEPARATE 22-card Major-Arcana deck from the 12 diagnosis cards: a playful
+// destiny divination drawn at random (crypto-backed live, seeded for demo),
+// never added to the diagnosis registry.
+export {
+  TAROT_CARD_IDS,
+  TAROT_DECK,
+  TarotCardIdSchema,
+  TarotCardSchema,
+  getTarotCard,
+  type TarotCardId,
+  type TarotCard,
+} from "./tarot/deck.js";
+export {
+  TAROT_POSITIONS,
+  TarotOrientationSchema,
+  TarotDrawCardSchema,
+  TarotDrawSchema,
+  drawTarot,
+  cryptoRandomFn,
+  seededRandomFn,
+  type RandomFn,
+  type TarotPosition,
+  type TarotOrientation,
+  type TarotDrawCard,
+  type TarotDraw,
+} from "./tarot/draw.js";
+
+// --- Tarot reading text (tarot/reading) -----------------------------------
+export {
+  TAROT_MAX_OUTPUT_TOKENS,
+  TarotReadingSchema,
+  boundReading,
+  buildTarotPrompt,
+  fallbackReading,
+  sanitizeQuestion,
+  type TarotReading,
+} from "./tarot/reading.js";
 
 // --- Spread engine (spread/assign) ----------------------------------------
 // Only `assignSpread` is exported here. `SpreadKind`/`SpreadKindSchema` are

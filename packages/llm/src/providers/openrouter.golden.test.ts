@@ -30,7 +30,7 @@
 //   - a decline / low-confidence structured response path: the provider returns
 //     the recorded content verbatim (it never interprets confidence) and the
 //     caller's `parseStructured` sees a `confidence: 0` edit;
-//   - error mapping: `401`/`402` -> `UPSTREAM_UNAVAILABLE`,
+//   - error mapping: `401` -> `AUTH_INVALID`, `402` -> `UPSTREAM_UNAVAILABLE`,
 //     timeout/abort -> `NETWORK_TIMEOUT`;
 //   - the shared-cache `cached` flag (identical to Mock).
 //
@@ -431,13 +431,13 @@ describe("R7.1 (task 4.2): decline / low-confidence structured response path", (
 });
 
 describe("R1.4, R1.5 (task 4.2): error mapping", () => {
-  it("maps 401 -> UPSTREAM_UNAVAILABLE", async () => {
+  it("maps 401 -> AUTH_INVALID (SEC-09: distinct auth code)", async () => {
     const { accepted } = activeFixtures();
     const { fetchImpl } = fixtureResponder(accepted, { status: 401 });
     const port = createOpenRouterLlmPort({ apiKey: "sk-server", fetchImpl });
 
     await expect(port.complete(plainRequest())).rejects.toMatchObject({
-      code: "UPSTREAM_UNAVAILABLE",
+      code: "AUTH_INVALID",
     });
   });
 

@@ -247,6 +247,8 @@ export interface FakeApi extends ApiPort {
     target: ResurrectTarget;
     spread: PlayableSpread;
     signal: AbortSignal;
+    /** Item 2: the demo flag the terminal forwarded (undefined for a live run). */
+    demo: true | undefined;
     emit: (event: ResurrectProgressEvent) => void;
     resolve: (response: RitualResponse) => void;
     reject: (error: unknown) => void;
@@ -294,13 +296,14 @@ export function makeFakeApi(): FakeApi {
         });
       });
     },
-    resurrect(pinned, target, spread, signal, onProgress: ResurrectProgress) {
+    resurrect(pinned, target, spread, signal, onProgress: ResurrectProgress, demo?: true) {
       return new Promise<RitualResponse>((resolve, reject) => {
         resurrects.push({
           pinned,
           target,
           spread,
           signal,
+          demo,
           emit: (event) => onProgress(event),
           resolve,
           reject,

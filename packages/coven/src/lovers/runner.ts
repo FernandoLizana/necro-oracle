@@ -63,6 +63,7 @@
 
 import {
   initParser,
+  initJavascript,
   parseJavascript,
   parsePython,
   type NecroError,
@@ -269,6 +270,10 @@ export class LocalLoversRunner implements LoversRunner {
     // to be armed once, up front, so PLAN precondition + VALIDATE both find it
     // ready. (The gate reports a decisive error rather than crashing if not.)
     await initParser();
+    // Item 1 (judge-ready-pass): the Lovers flow is the only flow that parses
+    // JavaScript (the generated beloved), so it arms the JS grammar explicitly.
+    // Readings/resurrect never call this, so they never load the JS wasm.
+    await initJavascript();
 
     // Mask the repository source AS IT ENTERS the runner, before it can reach
     // any sink (ledger, prompt, fallback plan). `extractPlan` reads the MASKED

@@ -15,18 +15,18 @@
 // follow the EXISTING chip conventions exactly and leave every prior chip
 // byte-identical:
 //
-//   - KEY   — dispatches `key set` through `submit`, NOT a raw argument-bearing
+//   - KEY   â€” dispatches `key set` through `submit`, NOT a raw argument-bearing
 //             line. The reducer's `key set` path emits the `byok.open-key-input`
 //             effect so the shell opens the MASKED input (lovers-binding task
 //             10.1 note + D.2); the chip therefore never submits a key value.
-//   - MODEL — a PREFILL affordance mirroring SUMMON: `model` needs a required
+//   - MODEL â€” a PREFILL affordance mirroring SUMMON: `model` needs a required
 //             `<id>` argument, so the chip prefills `model ` and focuses the
 //             input (via `prefillModel`) rather than one-shot submitting an
 //             argument-less line. The user then types the tier + id.
-//   - LOVERS — CONDITIONAL (R14.3): rendered ONLY while THE LOVERS (VI) was
+//   - LOVERS â€” CONDITIONAL (R14.3): rendered ONLY while THE LOVERS (VI) was
 //             drawn AND a resurrectable file is in scope (the host passes the
 //             eligible file through `loversPrefill`). `lovers <file> js` needs a
-//             `<file>` argument, so — like SUMMON — the chip PREFILLS
+//             `<file>` argument, so â€” like SUMMON â€” the chip PREFILLS
 //             `lovers <file> ` and focuses the input, letting the user confirm /
 //             edit before submitting. When not eligible the host omits
 //             `loversPrefill` and the chip does not render at all.
@@ -51,10 +51,18 @@ export interface ButtonRowProps {
   /**
    * Prefill `lovers <file> ` and focus the input (LOVERS), mirroring
    * `prefillSummon`. Supplied by the host ONLY while THE LOVERS (VI) was drawn
-   * AND a resurrectable file is in scope (R14.3) — so the LOVERS chip renders
+   * AND a resurrectable file is in scope (R14.3) â€” so the LOVERS chip renders
    * exactly in the lovers-eligible state and is omitted otherwise.
    */
   readonly loversPrefill?: () => void;
+  /**
+   * Item 4 (guided buttons): offer a one-shot RESURRECT chip when a
+   * resurrectable candidate is in scope (JUDGEMENT drawn). Unlike SUMMON/LOVERS
+   * (which need a `<ref>`/`<file>` arg and PREFILL), bare `resurrect` takes no
+   * required argument, so the chip one-shot submits `resurrect` like READ.
+   * Supplied by the host ONLY while resurrect-eligible; omitted hides the chip.
+   */
+  readonly resurrectEligible?: boolean;
 }
 
 /** The clickable command shortcuts. */
@@ -65,6 +73,7 @@ export function ButtonRow({
   soundOn,
   prefillModel,
   loversPrefill,
+  resurrectEligible = false,
 }: ButtonRowProps): React.JSX.Element {
   return (
     <div role="group" aria-label="Command shortcuts" className="crt-buttons">
@@ -77,8 +86,20 @@ export function ButtonRow({
       <button type="button" onClick={() => submit("read", "button")}>
         READ
       </button>
+      {/* Item 4: RESURRECT one-shot chip, offered only when a resurrectable
+          candidate (JUDGEMENT) is in scope. Bare `resurrect` needs no arg. */}
+      {resurrectEligible ? (
+        <button type="button" onClick={() => submit("resurrect", "button")}>
+          RESURRECT
+        </button>
+      ) : null}
       <button type="button" onClick={() => submit("demo", "button")}>
         DEMO
+      </button>
+      {/* Item 33: TAROT one-shot chip. A destiny reading needs no repository
+          and no argument, so (like READ) it one-shot submits `tarot`. */}
+      <button type="button" onClick={() => submit("tarot", "button")}>
+        TAROT
       </button>
       <button type="button" onClick={() => submit("clear", "button")}>
         CLEAR
@@ -94,7 +115,7 @@ export function ButtonRow({
         SOUND
       </button>
       {/* KEY: dispatches `key set`, which opens the MASKED input via the
-          reducer's `byok.open-key-input` effect — never a raw key line. */}
+          reducer's `byok.open-key-input` effect â€” never a raw key line. */}
       <button type="button" onClick={() => submit("key set", "button")}>
         KEY
       </button>

@@ -102,3 +102,39 @@ describe("R4.8, R14.4: withCache sets the cached flag and skips recompute on a h
     expect(compute).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// SEC-05: the completion cache is BOUNDED so a long-lived server provider
+// instance cannot grow without limit (accepted-output cache isolation + size
+// cap). Eviction is oldest-first; the key dimensions (model+prompt+version)
+// and the no-raw-key contract live in cacheKeyParts and are unchanged.
+// ---------------------------------------------------------------------------
+
+describe("SEC-05: LlmCache is bounded and evicts the oldest entry past the cap", () => {
+  it("never exceeds the configured maximum number of entries", () => {
+    const cache = createLlmCache(3);
+    cache.set("a", "A");
+    cache.set("b", "B");
+    cache.set("c", "C");
+    cache.set("d", "D"); // evicts the oldest ("a")
+    expect(cache.size).toBeLessThanOrEqual(3);
+    expect(cache.size).toBe(3);
+  });
+
+  it("evicts the OLDEST key first (FIFO by insertion)", () => {
+    const cache = createLlmCache(2);
+    cache.set("a", "A");
+    cache.set("b", "B");
+    cache.set("c", "C"); // evicts "a"
+    expect(cache.get("a")).toBeUndefined();
+    expect(cache.get("b")).toBe("B");
+    expect(cache.get("c")).toBe("C");
+  });
+
+  it("has a finite DEFAULT cap when no size is given", () => {
+    const cache = createLlmCache();
+    // Insert more than any sane working set and confirm it stays bounded.
+    for (let i = 0; i < 5000; i++) cache.set("k" + i, "v" + i);
+    expect(cache.size).toBeLessThanOrEqual(2048);
+  });
+});

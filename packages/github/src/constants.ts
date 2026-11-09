@@ -12,6 +12,14 @@ export const DEFAULT_TTL_MS = 604_800_000; // 7 days (R8.5)
 /** Cap on the effective TTL of an entry whose degradedFields is non-empty (R8.11). */
 export const DEGRADED_TTL_MS = 600_000;
 export const DEFAULT_MAX_CACHE_ENTRIES = 20; // (R8.7)
+/**
+ * Item 23: total-byte budget for the snapshot cache. A cached SummonResult
+ * holds the snapshot's whole file-content Map (up to ~200 MB uncompressed), so
+ * bounding by entry count alone (20) could pin gigabytes. 256 MB keeps a few
+ * large snapshots warm while bounding the warm-instance footprint; the LRU
+ * evicts oldest-first once the running total would exceed it.
+ */
+export const MAX_SNAPSHOT_CACHE_BYTES = 268_435_456; // 256 MB
 export const TIMEOUT_REST_MS = 15_000;
 export const TIMEOUT_TARBALL_MS = 40_000;
 export const TIMEOUT_EXTERNAL_MS = 10_000; // (R5.4)

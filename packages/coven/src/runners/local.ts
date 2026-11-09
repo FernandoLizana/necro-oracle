@@ -158,6 +158,23 @@ const DEFAULT_SANDBOX_TIMEOUT_MS = 15_000;
 /** Documented default of `NECRO_LLM_MAX_CALLS_PER_READING` (design A.7). */
 const DEFAULT_MAX_LLM_CALLS_PER_READING = 12;
 
+/**
+ * Item 16 (P0.5): derive the cache key for a RETRY attempt so it never collides
+ * with the first attempt's key (cache "retry poison"). The first attempt caches
+ * under base.cacheKey; a retry has a DIFFERENT prompt (rejection reason) and an
+ * ESCALATED model, so serving the first attempt's cached rejected text would
+ * make the retry pointless. We fold the model + exact prior error into a
+ * NUL-delimited suffix on the opaque base key (a sha-256 hex digest), so a
+ * suffixed key cannot collide with any base key or another retry. Never
+ * contains a user key (the base key already excludes it, R5.3).
+ */
+export function retryCacheKey(
+  baseCacheKey: string,
+  model: string,
+  priorError: string,
+): string {
+  return baseCacheKey + "\u0000retry\u0000" + model + "\u0000" + priorError;
+}
 // ---------------------------------------------------------------------------
 // Single-request DEADLINE arithmetic for the chunked LLM_Pass (design A.8).
 //
@@ -463,6 +480,7 @@ export class LocalCovenRunner implements CovenRunner {
             llmCallBudget,
             usageRecords,
             healerRows,
+            input.modelOverride,
           );
         }
       } else {
@@ -673,6 +691,7 @@ export class LocalCovenRunner implements CovenRunner {
     callBudget: CallBudget,
     usageRecords: UsageRecord[],
     healerRows: HealerAttribution[],
+    modelOverride?: { readonly fast?: string; readonly strong?: string },
   ): Promise<void> {
     const pending = file.residuals;
     // Group the file's residuals into per-unit chunks; the model only ever sees
@@ -706,6 +725,7 @@ export class LocalCovenRunner implements CovenRunner {
         usageRecords,
         diagnose,
         parse,
+        modelOverride,
       );
 
       if (outcome.kind === "accept") {
@@ -750,6 +770,7 @@ export class LocalCovenRunner implements CovenRunner {
     usageRecords: UsageRecord[],
     diagnose: (tree: Tree) => boolean,
     parse: (source: string) => Tree,
+    modelOverride?: { readonly fast?: string; readonly strong?: string },
   ): Promise<ChunkOutcome> {
     const signals = deriveRouterSignals(chunk);
     let tier: ModelTier = router.route(signals);
@@ -771,7 +792,8 @@ export class LocalCovenRunner implements CovenRunner {
         return keep(attempt === 0 ? "deadline" : "deadline_retry");
       }
 
-      const model = router.resolveModel(tier);
+      // Item 24: honour the per-request BYOK override (YOURS only; absent on ORACLE).
+      const model = router.resolveModel(tier, modelOverride);
       const input: ChunkRequestInput = {
         chunkId: chunk.chunkId,
         path: chunk.path,
@@ -794,6 +816,12 @@ export class LocalCovenRunner implements CovenRunner {
           attempt === 0
             ? base.prompt
             : `${base.prompt}\n\nPREVIOUS ATTEMPT REJECTED: ${lastError}`,
+        // Item 16: a retry MUST NOT reuse the first attempt's cache key, or the
+        // cache would serve the rejected completion straight back (retry poison).
+        cacheKey:
+          attempt === 0
+            ? base.cacheKey
+            : retryCacheKey(base.cacheKey, model, lastError),
       };
 
       callBudget.used += 1;

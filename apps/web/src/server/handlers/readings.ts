@@ -57,7 +57,8 @@ import { ReadingRequestSchema, ReadingResponseSchema } from "../../protocol/sche
 import type { StreamLine } from "../../protocol/stream.js";
 import type { RouteDeps } from "../deps.js";
 import { mapError } from "../error-map.js";
-import { redactDeep } from "../redact.js";
+import { redactDeep, redactSecrets } from "../redact.js";
+import { NECRO_CANARY } from "../canary.js";
 import { decideExternalSkip, EXTERNAL_SUB_BUDGET_MS } from "./external-skip.js";
 import { checkLimit, errorResponse, methodNotAllowed, readJsonBody } from "./guard.js";
 import { createPhaseReporter } from "./phase.js";
@@ -203,6 +204,7 @@ export async function handleReading(req: Request, deps: ReadingDeps): Promise<Re
         "Content-Type": "application/x-ndjson",
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
       },
     });
   } finally {
@@ -215,8 +217,13 @@ export async function handleReading(req: Request, deps: ReadingDeps): Promise<Re
 
 /** The budget bundle scheduled once, synchronously, at handler entry. */
 interface Budgets {
-  /** The External_Sub_Budget signal — resolves when the 10 s timer fires. */
-  readonly externalDeadline: Promise<void>;
+  /**
+   * Item 28: ARM the External_Sub_Budget timer AT the EXTERNAL phase (not at
+   * request receipt), so a slow SUMMON/DOWNLOAD never shrinks external's full
+   * 10 s window. Returns the deadline signal + a canceller the pipeline calls
+   * once the external race settles. Called exactly once, at EXTERNAL.
+   */
+  armExternal(): { readonly deadline: Promise<void>; cancel(): void };
   /** Attach the stream's timeout emitter to the (already scheduled) overall timer. */
   bindOverall(onTimeout: () => void): void;
   /** Whether the overall timer fired before it was bound to a controller. */
@@ -225,8 +232,6 @@ interface Budgets {
   cancelOverall(): void;
   /** Cancel the overall timer only if it was never bound to a stream. */
   cancelOverallIfUnbound(): void;
-  /** Cancel the External_Sub_Budget timer (once the external race has settled). */
-  cancelExternal(): void;
 }
 
 /**
@@ -244,17 +249,24 @@ function startBudgets(setTimer: SetTimer): Budgets {
     if (onTimeout !== null) onTimeout();
   });
 
-  let resolveExternal!: () => void;
-  const externalDeadline = new Promise<void>((resolve) => {
-    resolveExternal = resolve;
-  });
-  // The external timer resolves its signal when it fires; the pipeline cancels
-  // it (cancelExternal) when externalData wins the race, so no pending timer
-  // lingers past completion (the "pending() === 0 on completion" invariant).
-  const external = setTimer(EXTERNAL_SUB_BUDGET_MS, () => resolveExternal());
-
   return {
-    externalDeadline,
+    // Item 28: the external timer is created HERE, when EXTERNAL begins, so its
+    // 10 s window is measured from the EXTERNAL phase - never shrunk by the
+    // time SUMMON + DOWNLOAD already spent. The pipeline cancels it when
+    // externalData wins the race, so no pending timer lingers past completion.
+    armExternal() {
+      let resolveExternal!: () => void;
+      const deadline = new Promise<void>((resolve) => {
+        resolveExternal = resolve;
+      });
+      const external = setTimer(EXTERNAL_SUB_BUDGET_MS, () => resolveExternal());
+      return {
+        deadline,
+        cancel() {
+          external.cancel();
+        },
+      };
+    },
     bindOverall(cb) {
       bound = true;
       onTimeout = cb;
@@ -267,9 +279,6 @@ function startBudgets(setTimer: SetTimer): Budgets {
     },
     cancelOverallIfUnbound() {
       if (!bound) overall.cancel();
-    },
-    cancelExternal() {
-      external.cancel();
     },
   };
 }
@@ -305,15 +314,18 @@ async function runPipeline(args: {
     reporter.report("DOWNLOAD");
 
     // c. EXTERNAL: race external enrichment against the 10 s sub-budget signal.
+    //    Item 28: the sub-budget is ARMED HERE, as the EXTERNAL phase begins,
+    //    so its full 10 s window is never shrunk by a slow SUMMON/DOWNLOAD.
     reporter.report("EXTERNAL");
+    const externalBudget = budgets.armExternal();
     const external = await raceExternal({
       deps,
       snapshot: summonResult.snapshot,
-      externalDeadline: budgets.externalDeadline,
+      externalDeadline: externalBudget.deadline,
     });
     // The race has settled either way; cancel the sub-budget timer so no
     // pending timer lingers past the reading's completion.
-    budgets.cancelExternal();
+    externalBudget.cancel();
     if (isFinished()) return;
     const decision = decideExternalSkip({
       elapsedMs: external.elapsedMs,
@@ -349,7 +361,9 @@ async function runPipeline(args: {
       reading,
     };
     const redacted = redactDeep(response, token);
-    const safe = ReadingResponseSchema.parse(redacted);
+    // SEC-10: the leak canary is always scrubbed from the response body.
+    const canaried = redactDeep(redacted, NECRO_CANARY);
+    const safe = ReadingResponseSchema.parse(canaried);
 
     if (isFinished()) return; // The Overall_Budget already closed the stream.
     write({ result: safe });
@@ -363,11 +377,12 @@ async function runPipeline(args: {
     // Log ONLY the stable tag, the NecroError machine code (when present), the
     // message and the stack — never the token, env, request body, or the
     // mapped `userMessage` (which may echo caller input).
+    const logSecrets = [token, NECRO_CANARY] as const;
     console.error(
       "[api/readings] reading pipeline failed:",
       err instanceof NecroError ? err.code : undefined,
-      err instanceof Error ? err.message : String(err),
-      err instanceof Error ? err.stack : undefined,
+      redactSecrets(err instanceof Error ? err.message : String(err), logSecrets),
+      redactSecrets(err instanceof Error ? err.stack : undefined, logSecrets),
     );
     const mapped = mapError(err, token);
     write({ error: mapped.body.error });

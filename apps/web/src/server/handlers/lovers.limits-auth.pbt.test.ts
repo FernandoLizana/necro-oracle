@@ -182,11 +182,13 @@ function makeReading(snapshot: RepoSnapshot, readOpts: ReadingOpts): Reading {
     },
     draws: [
       {
-        card: "lovers",
+        // Item 26 (CORRECTED): grimoire-linked LEGAL card, not an illegal id.
+        card: "judgement",
         orientation: "upright",
         severity: 2,
         position: 1,
         evidence: [{ path: "src/app.py", line: 1, detail: "x" }],
+        grimoires: ["lovers-js"],
       },
     ],
     spread: [{ position: 1, label: "The Corpse", draw: null, description: "nothing stirs" }],

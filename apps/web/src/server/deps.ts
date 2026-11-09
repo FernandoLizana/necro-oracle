@@ -69,6 +69,8 @@ export interface RouteEnvPort extends EnvPort {
   get(key: "NECRO_LLM_MODEL_STRONG"): string | undefined;
   // The OpenRouter `models` fallback array (comma list -> string[]).
   get(key: "NECRO_LLM_MODEL_FALLBACKS"): readonly string[] | undefined;
+  // SEC-03: the public URL wired as the OpenRouter HTTP-Referer (server-only).
+  get(key: "NECRO_PUBLIC_URL"): string | undefined;
   // Server-key token/request daily ceiling and per-reading call cap (A.8).
   get(key: "NECRO_LLM_DAILY_CEILING"): number;
   get(key: "NECRO_LLM_MAX_CALLS_PER_READING"): number;

@@ -129,3 +129,50 @@ describe("getRouteDeps — composition root (R12.10, R12.12, R16.4, R16.6)", () 
     expect(typeof deps.limiter.check).toBe("function");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Item 2 (judge-ready-pass): the demo loader resolves the REAL on-disk
+// graveyard fixtures OFFLINE. This proves `resolveFixturesRoot` finds the
+// `lich-py2` tree from the test runtime and `loadDemoInput` produces a valid
+// `RitualInput` with `demo: true` — without any GitHub or network call. The
+// server also traces that tree into the serverless function (next.config.ts),
+// which is asserted separately by the build trace; here we prove the loader.
+// ---------------------------------------------------------------------------
+
+describe("Item 2: getResurrectDeps().loadDemoInput reads the real fixtures offline", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function freshGetResurrectDeps() {
+    vi.doMock("server-only", () => ({}));
+    const mod = await import("./composition.js");
+    return mod.getResurrectDeps;
+  }
+
+  it("resolves a demo RitualInput with demo:true from the bundled lich-py2 fixture", async () => {
+    const getResurrectDeps = await freshGetResurrectDeps();
+    const deps = getResurrectDeps(ENV_WITHOUT_UPSTASH);
+
+    // The demo seam exists and is callable.
+    expect(typeof deps.loadDemoInput).toBe("function");
+
+    // Guard against any outbound network: the github gateway must not be hit by
+    // the demo loader (it reads fixtures from disk only).
+    const summonSpy = vi.spyOn(deps.github, "summon");
+
+    const now = "2026-01-01T00:00:00.000Z";
+    const input = await deps.loadDemoInput!(now);
+
+    // A complete, demo-flagged RitualInput built from the fixture.
+    expect(input.demo).toBe(true);
+    expect(input.snapshot).toBeDefined();
+    expect(input.snapshot.ref.owner).toBe("graveyard");
+    expect(input.snapshot.ref.name).toBe("lich-py2");
+    expect(input.reading).toBeDefined();
+    expect(input.reading.draws.length).toBeGreaterThan(0);
+
+    // Offline: the demo loader never summons GitHub.
+    expect(summonSpy).not.toHaveBeenCalled();
+  });
+});

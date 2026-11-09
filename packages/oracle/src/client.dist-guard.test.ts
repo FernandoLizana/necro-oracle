@@ -1,10 +1,10 @@
-// @necro/oracle — dist-level import-closure guard (task 2.3).
+// @necro/oracle â€” dist-level import-closure guard (task 2.3).
 //
 // This is the BUILD-OUTPUT counterpart to src/client.guard.test.ts (the
 // source-level guard, task 2.1). Where the source guard walks the `.ts` import
 // graph, this guard walks the EMITTED `.js` graph starting at `dist/client.js`
 // and applies the identical allowlist and forbidden-import rules. It proves the
-// browser-safe Client_Safe_Entry stays browser-safe AFTER TypeScript emits it —
+// browser-safe Client_Safe_Entry stays browser-safe AFTER TypeScript emits it â€”
 // catching any Node-only, tree-sitter, OSV/TOML or dynamic-import dependency
 // that a build step could otherwise introduce into the shipped `./client`
 // bundle (R16.1, R16.5).
@@ -63,6 +63,9 @@ const ALLOWLIST: ReadonlySet<string> = new Set([
   "snapshot/types",
   "reading/schema",
   "util/errors",
+  "tarot/deck",
+  "tarot/draw",
+  "tarot/reading",
 ]);
 
 /** The only bare (package) specifier the closure may depend on. */

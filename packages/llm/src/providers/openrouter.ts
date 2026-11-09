@@ -177,69 +177,131 @@ export function createOpenRouterLlmPort(options: OpenRouterOptions): LlmPort {
           : {}),
       };
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      let response: Response;
-      try {
-        response = await fetchImpl(OPENROUTER_URL, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": referer,
-            "X-Title": title,
-          },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-      } catch (cause) {
-        // An aborted fetch rejects with an AbortError — map it to a timeout;
-        // any other transport failure is an upstream outage. The `cause` is
-        // attached but the thrown userMessage carries no key/prompt/code body.
-        if (isAbortError(cause)) {
-          throw new NecroError(
-            "NETWORK_TIMEOUT",
-            "The seance ran long and the veil closed. The oracle will try again.",
-            cause,
-          );
+      // SEC-09: ONE fetch attempt. 2xx returns the response; 401 (auth) and
+      // 402 (credit) and the timeout/abort are DISTINCT terminal errors (no
+      // retry); only a transient 429/5xx (or a transient transport fault) is
+      // retryable. Never a silent server-key fallback here (the handler owns
+      // any ORACLE fallback).
+      type Attempt =
+        | { kind: "ok"; parsed: OpenRouterChatResponse }
+        | { kind: "terminal"; error: NecroError }
+        | { kind: "transient"; error: NecroError };
+      const attempt = async (): Promise<Attempt> => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        let response: Response;
+        try {
+          response = await fetchImpl(OPENROUTER_URL, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": referer,
+              "X-Title": title,
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+          });
+        } catch (cause) {
+          if (isAbortError(cause)) {
+            return {
+              kind: "terminal",
+              error: new NecroError(
+                "NETWORK_TIMEOUT",
+                "The seance ran long and the veil closed. The oracle will try again.",
+                cause,
+              ),
+            };
+          }
+          return {
+            kind: "transient",
+            error: new NecroError(
+              "UPSTREAM_UNAVAILABLE",
+              "The spirits beyond the network did not answer. The oracle will try again.",
+              cause,
+            ),
+          };
         }
-        throw new NecroError(
-          "UPSTREAM_UNAVAILABLE",
-          "The spirits beyond the network did not answer. The oracle will try again.",
-          cause,
-        );
-      } finally {
+
+        // Item 29b: read the response BODY while the controller + timer are
+        // STILL ARMED, so a server that returns headers fast then dribbles
+        // (or never finishes) the body is aborted at the deadline - the
+        // timeout covers the WHOLE request, not just the fetch.
+        if (response.ok) {
+          let parsedBody: OpenRouterChatResponse;
+          try {
+            parsedBody = (await response.json()) as OpenRouterChatResponse;
+          } catch (cause) {
+            clearTimeout(timer);
+            if (isAbortError(cause)) {
+              return {
+                kind: "terminal",
+                error: new NecroError(
+                  "NETWORK_TIMEOUT",
+                  "The seance ran long and the veil closed. The oracle will try again.",
+                  cause,
+                ),
+              };
+            }
+            return {
+              kind: "transient",
+              error: new NecroError(
+                "UPSTREAM_UNAVAILABLE",
+                "The reply came back as noise, not prophecy. The oracle will try again.",
+                cause,
+              ),
+            };
+          }
+          clearTimeout(timer);
+          return { kind: "ok", parsed: parsedBody };
+        }
         clearTimeout(timer);
-      }
-
-      if (!response.ok) {
-        // 401/402: BYOK auth / payment failure. Never silently fall back to the
-        // server key here — the handler decides whether to retry on ORACLE.
-        if (response.status === 401 || response.status === 402) {
-          throw new NecroError(
-            "UPSTREAM_UNAVAILABLE",
-            "Your offered key was refused at the gate. Check the key or let the oracle pay in its own souls.",
-          );
+        if (response.status === 401) {
+          return {
+            kind: "terminal",
+            error: new NecroError(
+              "AUTH_INVALID",
+              "Your offered key was refused at the gate. Check the key or let the oracle pay in its own souls.",
+            ),
+          };
         }
-        // Any other non-2xx (5xx and the rest): upstream unavailable.
-        throw new NecroError(
-          "UPSTREAM_UNAVAILABLE",
-          "The spirits beyond the network did not answer. The oracle will try again.",
-        );
-      }
+        if (response.status === 402) {
+          return {
+            kind: "terminal",
+            error: new NecroError(
+              "UPSTREAM_UNAVAILABLE",
+              "Your key's coffers are empty. Add credit, or let the oracle pay in its own souls.",
+            ),
+          };
+        }
+        if (response.status === 429) {
+          return {
+            kind: "transient",
+            error: new NecroError(
+              "RATE_LIMITED",
+              "The gate is thronged. The oracle will try again shortly.",
+            ),
+          };
+        }
+        return {
+          kind: "transient",
+          error: new NecroError(
+            "UPSTREAM_UNAVAILABLE",
+            "The spirits beyond the network did not answer. The oracle will try again.",
+          ),
+        };
+      };
 
-      let parsed: OpenRouterChatResponse;
-      try {
-        parsed = (await response.json()) as OpenRouterChatResponse;
-      } catch (cause) {
-        throw new NecroError(
-          "UPSTREAM_UNAVAILABLE",
-          "The reply came back as noise, not prophecy. The oracle will try again.",
-          cause,
-        );
+      // At most ONE retry, ONLY for a transient outcome (SEC-09).
+      let outcome = await attempt();
+      if (outcome.kind === "transient") {
+        outcome = await attempt();
       }
-
+      if (outcome.kind !== "ok") {
+        throw outcome.error;
+      }
+      // Item 29b: the body was already read UNDER the timeout inside attempt().
+      const parsed = outcome.parsed;
       const text = parsed.choices?.[0]?.message?.content;
       if (typeof text !== "string") {
         throw new NecroError(

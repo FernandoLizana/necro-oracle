@@ -238,18 +238,38 @@ function isStdlibImportLine(line: string): boolean {
   const trimmed = line.trim();
   if (trimmed.length === 0) return false;
 
-  const fromMatch = /^from\s+([A-Za-z_][\w.]*)\s+import\s+\S/.exec(trimmed);
+  // Item 27 (R12.5): an import line must be PURELY a single import statement.
+  // Reject anything that could smuggle executable code onto the module top when
+  // the line is hoisted verbatim: an embedded newline (a second line), a `;`
+  // statement separator, or a trailing comment (`#`). This runs BEFORE the
+  // form checks so no structurally-suspicious line can reach the module-name
+  // allow-list and be accepted on the strength of its first token alone.
+  if (/[\n\r;#]/.test(trimmed)) return false;
+
+  // `from <mod>[.<sub>...] import <names>` - the import list is a comma-list of
+  // `name [as alias]` identifiers, OPTIONALLY wrapped in a single pair of
+  // parens. The pattern is ANCHORED at both ends (`$`), so NOTHING may follow
+  // the import list (no trailing statement). A relative import (`from . import`)
+  // has no leading identifier, so it fails the `[A-Za-z_]` module start.
+  const IMPORT_NAME = "[A-Za-z_]\\w*(?:\\s+as\\s+[A-Za-z_]\\w*)?";
+  const NAME_LIST = `${IMPORT_NAME}(?:\\s*,\\s*${IMPORT_NAME})*`;
+  const fromRe = new RegExp(
+    `^from\\s+([A-Za-z_][\\w.]*)\\s+import\\s+(?:\\*|\\(\\s*${NAME_LIST}\\s*,?\\s*\\)|${NAME_LIST})$`,
+  );
+  const fromMatch = fromRe.exec(trimmed);
   if (fromMatch) {
     const top = (fromMatch[1] ?? "").split(".")[0] ?? "";
     return PYTHON3_STDLIB_MODULES.has(top);
   }
 
-  const importMatch = /^import\s+(.+)$/.exec(trimmed);
-  if (importMatch) {
-    const modules = (importMatch[1] ?? "").split(",");
-    if (modules.length === 0) return false;
+  // `import <mod>[.<sub>][ as alias][, <mod2>...]` - anchored at both ends so a
+  // trailing statement cannot ride along; every top-level module must be stdlib.
+  const importRe = new RegExp(
+    `^import\\s+[A-Za-z_][\\w.]*(?:\\s+as\\s+[A-Za-z_]\\w*)?(?:\\s*,\\s*[A-Za-z_][\\w.]*(?:\\s+as\\s+[A-Za-z_]\\w*)?)*$`,
+  );
+  if (importRe.test(trimmed)) {
+    const modules = trimmed.replace(/^import\s+/, "").split(",");
     for (const spec of modules) {
-      // `os.path as p` -> top-level module is `os`.
       const name = spec.trim().split(/\s+as\s+/)[0] ?? "";
       const top = name.split(".")[0] ?? "";
       if (top.length === 0 || !PYTHON3_STDLIB_MODULES.has(top)) return false;

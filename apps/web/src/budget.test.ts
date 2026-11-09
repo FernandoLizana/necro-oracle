@@ -127,7 +127,21 @@ describe("R16.2: forbidden-marker scan over browser chunks", () => {
         "GITHUB_TOKEN",
         "tree-sitter-python.wasm",
         "tar-stream",
+        // SEC-11: the runtime leak canary must never reach a browser chunk.
+        "NECRO_CANARY_dead0beef_do_not_ship_a1b2c3d4e5f6",
       ]),
+    );
+  });
+
+  it("SEC-11: flags the leak canary if it ever leaks into a client chunk", async () => {
+    const mod = await loadScript();
+    const scanForbiddenMarkers = mod["scanForbiddenMarkers"] as (
+      text: string,
+      markers?: readonly string[],
+    ) => readonly string[];
+    const leaked = 'const c="NECRO_CANARY_dead0beef_do_not_ship_a1b2c3d4e5f6";export{c};';
+    expect(scanForbiddenMarkers(leaked)).toContain(
+      "NECRO_CANARY_dead0beef_do_not_ship_a1b2c3d4e5f6",
     );
   });
 

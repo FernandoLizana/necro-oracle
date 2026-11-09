@@ -272,4 +272,14 @@ export interface RitualInput {
    * array; omit the key entirely when the pre-reading had none.
    */
   readonly osvData?: OsvData;
+
+  /**
+   * Item 24: the per-request BYOK model override (design D.2 / R40). Present
+   * ONLY when the route decided soulSource = YOURS; the chunked LLM_Pass passes
+   * it to `ModelRouterPort.resolveModel(tier, override)` so a user-supplied
+   * `model fast|strong <id>` is honoured for THIS reading. Omit the key
+   * entirely (exactOptionalPropertyTypes) on ORACLE so the env-configured tier
+   * models are used unchanged.
+   */
+  readonly modelOverride?: { readonly fast?: string; readonly strong?: string };
 }

@@ -54,7 +54,6 @@
 
 import {
   createDemoPorts,
-  installNetworkBlockGuard,
   prefixDemoLine,
   type LedgerPort,
   type LlmPort,
@@ -75,7 +74,8 @@ import {
 } from "../../protocol/resurrect-stream.js";
 import type { ResurrectDeps } from "../deps.js";
 import { mapError } from "../error-map.js";
-import { redactDeep } from "../redact.js";
+import { redactDeep, redactSecrets } from "../redact.js";
+import { NECRO_CANARY } from "../canary.js";
 import { parseUserKey, redactLine, USER_KEY_HEADER } from "../user-key.js";
 import { checkLimit, errorResponse, methodNotAllowed, readJsonBody } from "./guard.js";
 
@@ -148,6 +148,11 @@ type SoulSource = "ORACLE" | "YOURS";
 const DEGRADE_NO_KEY_NOTICE =
   "The oracle reads with its own eyes.\n" +
   "No model configured; deterministic result only.";
+
+/** Item 24 NOTICE: model overrides ignored because soulSource is ORACLE (R40.2). */
+const OVERRIDES_IGNORED_NOTICE =
+  "The circle spends its own souls; your chosen names are set aside.\n" +
+  "Model overrides ignored on SOUL SOURCE: ORACLE; set your own key to use them.";
 
 /** NOTICE: the LLM spend breaker is open — deterministic only (soft). */
 const DEGRADE_BREAKER_NOTICE =
@@ -279,9 +284,14 @@ export async function handleResurrect(
   //    Response resolves immediately and a test can trip the Overall_Budget with
   //    a fake clock while a phase promise is pending.
   const encoder = new TextEncoder();
+  // Item 18: `finished` and the budget-timer canceller live in the handler
+  // scope so the ReadableStream's `cancel()` (fired when the client aborts /
+  // disconnects) can stop the pipeline (mark finished + cancel the timer),
+  // same way a terminal line does. `start` and `cancel` share this closure.
+  let finished = false;
+  let cancelBudgetTimer: (() => void) | null = null;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      let finished = false;
 
       // Serialize + validate + redact ONE line, then enqueue it. Returns true
       // when the line was written, false when it failed validation (the caller
@@ -294,7 +304,9 @@ export async function handleResurrect(
         const redacted = redactDeep(line, githubToken);
         const reRedacted = redactDeep(redacted, llmKey);
         const scrubbed = redactLine(reRedacted, openrouterKey, userKey);
-        const parsed = ResurrectStreamLineSchema.safeParse(scrubbed);
+        // SEC-10: the leak canary is always scrubbed from outgoing lines.
+        const canaried = redactDeep(scrubbed, NECRO_CANARY);
+        const parsed = ResurrectStreamLineSchema.safeParse(canaried);
         if (!parsed.success) return false;
         const serialized = JSON.stringify(parsed.data);
         const out = demo ? prefixDemoLine(serialized) : serialized;
@@ -322,11 +334,12 @@ export async function handleResurrect(
         // ONLY the stable tag, the NecroError machine code (when present), the
         // message and the stack — never the tokens, env, request body, or the
         // mapped `userMessage` (which may echo caller input).
+        const logSecrets = [githubToken, llmKey, openrouterKey, userKey, NECRO_CANARY] as const;
         console.error(
           "[api/resurrect] ritual failed:",
           err instanceof NecroError ? err.code : undefined,
-          err instanceof Error ? err.message : String(err),
-          err instanceof Error ? err.stack : undefined,
+          redactSecrets(err instanceof Error ? err.message : String(err), logSecrets),
+          redactSecrets(err instanceof Error ? err.stack : undefined, logSecrets),
         );
         const mapped = mapError(mapEngineError(err), githubToken);
         finished = true;
@@ -373,6 +386,7 @@ export async function handleResurrect(
         terminateError(new NecroError("NETWORK_TIMEOUT", OVERALL_TIMEOUT_MESSAGE));
       });
       const cancelOverall = (): void => overall.cancel();
+      cancelBudgetTimer = cancelOverall;
 
       // The monotonic reporter the runner drives: one Phase_Line per phase, a
       // Skip_Note_Line per skip. Both are forwarded through `write`, so an
@@ -401,6 +415,15 @@ export async function handleResurrect(
         cancelOverall,
       });
     },
+    // Item 18: the client aborted the fetch / disconnected. Stop the pipeline:
+    // mark finished so every `write`/`writeResult` and the between-phase
+    // `isFinished()` checks short-circuit, and cancel the Overall_Budget timer
+    // so no late callback fires against a dead stream (no timer leak, no wasted
+    // sandbox/LLM spend for a client that is gone).
+    cancel() {
+      finished = true;
+      if (cancelBudgetTimer !== null) cancelBudgetTimer();
+    },
   });
 
   return new Response(stream, {
@@ -409,6 +432,7 @@ export async function handleResurrect(
       "Content-Type": "application/x-ndjson",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }
@@ -455,10 +479,11 @@ async function runRitual(args: {
     cancelOverall,
   } = args;
 
-  // A demo blocks outbound network for the whole run (R14.2); restored in
-  // `finally`. For a live run this is a no-op guard we never install.
-  let restoreNetwork: (() => void) | null = null;
-
+  // Item 15 (P0.5): a demo is network-free BY CONSTRUCTION - it runs on the
+  // Mock LlmPort with NO sandbox and the on-disk demo loader, so no adapter
+  // ever reaches the wire. We do NOT monkey-patch globalThis.fetch: a
+  // serverless isolate serves concurrent requests, so a global patch (and its
+  // finally-restore) could block or race another in-flight live request.
   try {
     // Decide the ports from the spend breakers (R11.3-R11.5). An open breaker
     // means the corresponding port is OMITTED so the runner degrades.
@@ -479,7 +504,6 @@ async function runRitual(args: {
       }
       input = await deps.loadDemoInput(now);
       if (isFinished()) return;
-      restoreNetwork = installNetworkBlockGuard();
       // The demo always runs with the Mock LlmPort and no sandbox (R14.4).
       ports = createDemoPorts({
         llm: deps.demoLlm,
@@ -529,12 +553,32 @@ async function runRitual(args: {
         now,
         demo: false,
       } satisfies RitualInput;
+      // Item 24: honour the per-request BYOK model override ONLY on YOURS
+      // (design D.2 / R40). On ORACLE the override is set aside with ONE
+      // oracle-voice NOTICE, mirroring the Lovers route - the env-configured
+      // tier models are used unchanged.
+      const requestedModels = request.models;
+      let modelOverride: RitualInput["modelOverride"];
+      if (soulSource === "YOURS" && requestedModels !== undefined) {
+        modelOverride = {
+          ...(requestedModels.fast !== undefined ? { fast: requestedModels.fast } : {}),
+          ...(requestedModels.strong !== undefined ? { strong: requestedModels.strong } : {}),
+        };
+      } else {
+        modelOverride = undefined;
+        if (soulSource === "ORACLE" && requestedModels !== undefined) {
+          await emit.skipNote(OVERRIDES_IGNORED_NOTICE);
+          if (isFinished()) return;
+        }
+      }
+
       input = {
         ...inputBase,
         ...(external.registryData.size > 0
           ? { registryData: external.registryData }
           : {}),
         ...(external.osvData.length > 0 ? { osvData: external.osvData } : {}),
+        ...(modelOverride !== undefined ? { modelOverride } : {}),
       };
 
       // A route-level skip-note for an OPEN sandbox breaker (R11.4): the runner
@@ -643,7 +687,6 @@ async function runRitual(args: {
     // Any throw after streaming began -> a final { error } line at 200 (R9.3).
     terminateError(err);
   } finally {
-    if (restoreNetwork !== null) restoreNetwork();
     cancelOverall();
   }
 }

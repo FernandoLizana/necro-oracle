@@ -51,5 +51,7 @@ export function printCommand(cmd: Exclude<Command, { kind: "unknown" }>): string
       return `key ${cmd.op}`;
     case "model":
       return `model ${cmd.tier} ${cmd.id}`;
+    case "tarot":
+      return cmd.question === undefined ? "tarot" : `tarot ${cmd.question}`;
   }
 }

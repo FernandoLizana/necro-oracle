@@ -177,11 +177,14 @@ function makeReading(snapshot: RepoSnapshot, readOpts: ReadingOpts, card: string
     },
     draws: [
       {
-        card,
+        // Item 26 (CORRECTED): the Lovers signal is a grimoire linkage on a
+        // LEGAL card; the "__lovers_signal__" sentinel -> judgement + lovers-js.
+        card: card === "__lovers_signal__" ? "judgement" : card,
         orientation: "upright",
         severity: 2,
         position: 1,
         evidence: [{ path: "src/app.py", line: 1, detail: "x" }],
+        grimoires: card === "__lovers_signal__" ? ["lovers-js"] : [],
       },
     ],
     spread: [{ position: 1, label: "The Corpse", draw: null, description: "nothing stirs" }],
@@ -290,7 +293,7 @@ function makeDeps(over: {
     fetch: fakeFetch(),
     limiter: fakeLimiter(),
     github: fakeGithub(),
-    runReading: fakeRunReading(over.card ?? "lovers"),
+    runReading: fakeRunReading(over.card ?? "__lovers_signal__"),
     loversRunner: over.loversRunner ?? fakeLoversRunner(),
     resurrectRunner: over.resurrectRunner ?? fakeResurrectRunner(),
     makeLedger: fakeMakeLedger(),
@@ -374,5 +377,76 @@ describe("handleLovers (lovers-binding task 11.6b)", () => {
       expect(last.result.file).toBe("src/app.py");
       expect(last.result.targetLang).toBe("javascript");
     }
+  });
+
+  // Item 15 (P0.5): the demo network guard must NOT mutate globalThis.fetch.
+  // A serverless isolate serves concurrent requests, so a global monkey-patch
+  // (and its finally-restore) could block or race another in-flight request.
+  // The demo is network-free by construction (Mock LLM + no sandbox + demo
+  // loader), so the handler must not touch the global.
+  it("item 15: a demo run never replaces globalThis.fetch (no global patch)", async () => {
+    const fetchBefore = globalThis.fetch;
+    // Capture globalThis.fetch identity AT THE MOMENT the demo runner runs
+    // (mid-request). A global monkey-patch would be observable here — and to a
+    // concurrent request. The demo is network-free by construction, so the
+    // handler must not have patched the global.
+    let fetchDuringRun: unknown;
+    const loversRunner = {
+      run: vi.fn(async (_i: unknown, _p: unknown, emit: LoversEmit): Promise<LoversResult> => {
+        fetchDuringRun = globalThis.fetch;
+        await emit.phase("PLAN");
+        await emit.phase("GENERATE");
+        await emit.phase("VALIDATE");
+        await emit.phase("BIND");
+        return makeLoversResult();
+      }),
+    } as unknown as LoversRunner;
+    const clock = makeFakeClock();
+    const deps = {
+      ...makeDeps({ loversRunner }),
+      clock,
+      setTimer: (ms: number, cb: () => void) => clock.setTimer(ms, cb),
+      demoLlm: { providerId: "mock", complete: async () => ({ text: "{}", cached: false }) },
+      loadDemoLovers: async () => ({ file: "src/app.py", source: "def add(a, b):\n    return a + b\n" }),
+    } as unknown as LoversHandlerDeps;
+
+    const res = await handleLovers(loversRequest({ ...VALID_BODY, demo: true }), deps);
+    await res.text();
+
+    // globalThis.fetch was NOT replaced at any point during the demo run.
+    expect(fetchDuringRun).toBe(fetchBefore);
+    expect(globalThis.fetch).toBe(fetchBefore);
+  });
+
+  // Item 29c (R13.1/R24.3): the per-IP limiter runs BEFORE any GitHub work. A
+  // denied request is a PRE-STREAM 429 (Retry-After + RATE_LIMITED) and NEVER
+  // reaches github.summon or either runner — the resurrect/readings routes
+  // had this test; the lovers route previously lacked it.
+  it("item 29c: a denied limiter is a pre-stream 429 and performs NO GitHub work", async () => {
+    const github = fakeGithub();
+    const loversRunner = fakeLoversRunner();
+    const resurrectRunner = fakeResurrectRunner();
+    const deps = {
+      ...makeDeps({ loversRunner, resurrectRunner }),
+      github,
+      limiter: {
+        check: vi.fn(async () => ({ allowed: false, scope: "ip", retryAfterSeconds: 90 })),
+      },
+    } as unknown as LoversHandlerDeps;
+
+    const res = await handleLovers(loversRequest(VALID_BODY), deps);
+
+    expect(res.status).toBe(429);
+    expect(Number(res.headers.get("retry-after"))).toBeGreaterThanOrEqual(1);
+    const json = (await res.json()) as { error: { code: string } };
+    expect(json.error.code).toBe("RATE_LIMITED");
+
+    expect(github.summon).not.toHaveBeenCalled();
+    expect(
+      (loversRunner as unknown as { run: { mock: { calls: unknown[] } } }).run.mock.calls,
+    ).toHaveLength(0);
+    expect(
+      (resurrectRunner as unknown as { run: { mock: { calls: unknown[] } } }).run.mock.calls,
+    ).toHaveLength(0);
   });
 });

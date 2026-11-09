@@ -5,7 +5,7 @@
 // owned by another task (for example the `Command` arbitrary from task 5.1).
 //
 // The arbitraries below support the text sanitiser and 72-column wrapper
-// properties (P4, P5 — tasks 6.1/6.2): they generate strings peppered with
+// properties (P4, P5 â€” tasks 6.1/6.2): they generate strings peppered with
 // ANSI escape sequences, C0/C1 control characters, Unicode bidirectional
 // control characters, and over-long whitespace-free tokens, so that the
 // properties exercise the full input space the real Terminal must defend
@@ -25,8 +25,8 @@ export const ST = "\u001B\\";
 /**
  * Unicode bidirectional override, embedding and isolate controls plus the
  * directional marks. `sanitizeText` must strip every one of these:
- *   U+202A–U+202E  LRE RLE PDF LRO RLO (embeddings + overrides)
- *   U+2066–U+2069  LRI RLI FSI PDI     (isolates)
+ *   U+202Aâ€“U+202E  LRE RLE PDF LRO RLO (embeddings + overrides)
+ *   U+2066â€“U+2069  LRI RLI FSI PDI     (isolates)
  *   U+200E U+200F  LRM RLM             (marks)
  *   U+061C         ALM                 (Arabic letter mark)
  */
@@ -49,7 +49,7 @@ export const BIDI_CONTROL_CHARS: readonly string[] = [
 
 /**
  * A CSI sequence: `ESC [` followed by zero or more parameter/intermediate
- * bytes (0x20–0x3F) and a single final byte (0x40–0x7E). Covers colour codes
+ * bytes (0x20â€“0x3F) and a single final byte (0x40â€“0x7E). Covers colour codes
  * like `ESC[31m`, cursor moves like `ESC[2J`, and so on.
  */
 export const arbAnsiCsi: fc.Arbitrary<string> = fc
@@ -74,7 +74,7 @@ export const arbAnsiOsc: fc.Arbitrary<string> = fc
   .map(([payload, terminator]) => `${ESC}]${payload}${terminator}`);
 
 /**
- * A two-character `ESC x` sequence, where `x` is a single byte in 0x40–0x5F
+ * A two-character `ESC x` sequence, where `x` is a single byte in 0x40â€“0x5F
  * (for example `ESC c` reset, `ESC D` index).
  */
 export const arbAnsiTwoChar: fc.Arbitrary<string> = fc
@@ -92,7 +92,7 @@ export const arbAnsiSequence: fc.Arbitrary<string> = fc.oneof(
 
 /**
  * A C0 control character other than line feed (`\n`). Includes DEL (0x7F),
- * which the sanitiser also removes. Covers 0x00–0x09, 0x0B–0x1F, and 0x7F.
+ * which the sanitiser also removes. Covers 0x00â€“0x09, 0x0Bâ€“0x1F, and 0x7F.
  */
 export const arbC0Control: fc.Arbitrary<string> = fc
   .oneof(
@@ -102,7 +102,7 @@ export const arbC0Control: fc.Arbitrary<string> = fc
   )
   .map((c) => String.fromCodePoint(c));
 
-/** A C1 control character (U+0080–U+009F). */
+/** A C1 control character (U+0080â€“U+009F). */
 export const arbC1Control: fc.Arbitrary<string> = fc
   .integer({ min: 0x80, max: 0x9f })
   .map((c) => String.fromCodePoint(c));
@@ -203,7 +203,7 @@ export function stripWhitespace(s: string): string {
 }
 
 // ============================================================================
-// Command arbitrary (task 5.1 — P1 command round-trip)
+// Command arbitrary (task 5.1 â€” P1 command round-trip)
 // ============================================================================
 //
 // `arbCommand` generates valid, non-`unknown` parsed Commands. The `unknown`
@@ -213,7 +213,7 @@ export function stripWhitespace(s: string): string {
 // round-trip property P1.
 //
 // Imports from `@necro/oracle/client` (the Client_Safe_Entry) and the local
-// `command/types.ts` only — no parser, no Node modules — keeping the arbitrary
+// `command/types.ts` only â€” no parser, no Node modules â€” keeping the arbitrary
 // browser-safe like the code it exercises.
 
 import { CardIdSchema, type CardId } from "@necro/oracle/client";
@@ -313,12 +313,12 @@ export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
     fc
       .constantFrom(...COMMAND_SPREAD_ARGS)
       .map<Command>((spread) => ({ kind: "read", spread })),
-    // explain → position target (integer >= 1)
+    // explain â†’ position target (integer >= 1)
     fc.integer({ min: 1, max: 10_000 }).map<Command>((position) => ({
       kind: "explain",
       target: { kind: "position", position },
     })),
-    // explain → card target (a CardId)
+    // explain â†’ card target (a CardId)
     fc.constantFrom(...COMMAND_CARD_IDS).map<Command>((card) => ({
       kind: "explain",
       target: { kind: "card", card },
@@ -341,7 +341,7 @@ export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
       .map<Command>((arg) =>
         arg === undefined ? { kind: "sound" } : { kind: "sound", arg },
       ),
-    // lovers <file> js|javascript → normalised targetLang "javascript"
+    // lovers <file> js|javascript â†’ normalised targetLang "javascript"
     arbCommandLoversFile.map<Command>((file) => ({
       kind: "lovers",
       file,
@@ -355,10 +355,26 @@ export const arbCommand: fc.Arbitrary<Exclude<Command, { kind: "unknown" }>> =
     fc
       .tuple(fc.constantFrom(...COMMAND_MODEL_TIERS), arbCommandModelId)
       .map<Command>(([tier, id]) => ({ kind: "model", tier, id })),
+    // tarot with and without a free-text question. The question is generated as
+    // 1..8 safe word-tokens joined by single spaces so it re-tokenises to an
+    // identical canonical form (the parser splits on whitespace and rejoins).
+    fc
+      .option(
+        fc
+          .array(fc.stringMatching(/^[A-Za-z0-9?]{1,12}$/), {
+            minLength: 1,
+            maxLength: 8,
+          })
+          .map((words) => words.join(" ")),
+        { nil: undefined },
+      )
+      .map<Command>((question) =>
+        question === undefined ? { kind: "tarot" } : { kind: "tarot", question },
+      ),
   ) as fc.Arbitrary<Exclude<Command, { kind: "unknown" }>>;
 
 // ============================================================================
-// Reading / SpreadPosition / Evidence builders (task 9.1 — renderers P7, P8, P12)
+// Reading / SpreadPosition / Evidence builders (task 9.1 â€” renderers P7, P8, P12)
 // ============================================================================
 //
 // These arbitraries build the real `@necro/oracle/client` shapes the reading,
@@ -425,7 +441,7 @@ export const arbRepoRef: fc.Arbitrary<RepoRef> = fc
   })
   .map((ref) => RepoRefSchema.parse(ref));
 
-/** A severity literal in the real 0..3 range (0 is valid — a latent card). */
+/** A severity literal in the real 0..3 range (0 is valid â€” a latent card). */
 export const arbSeverity: fc.Arbitrary<Severity> = fc.constantFrom<Severity[]>(
   0,
   1,
@@ -433,20 +449,20 @@ export const arbSeverity: fc.Arbitrary<Severity> = fc.constantFrom<Severity[]>(
   3,
 );
 
-// --- Printable evidence text (P8 — "evidence is always shown") --------------
+// --- Printable evidence text (P8 â€” "evidence is always shown") --------------
 //
 // The reading renderer (render/reading.ts) deliberately runs every evidence
 // string through `sanitizeText` (stripping ANSI, C0/C1 controls and Unicode
 // bidi controls, R14.2/R14.3) and wraps it to 72 columns before display. So an
-// evidence `detail`/`path` made only of characters the sanitiser strips — or of
-// whitespace the wrapper drops at a break — leaves NO raw substring in the card
+// evidence `detail`/`path` made only of characters the sanitiser strips â€” or of
+// whitespace the wrapper drops at a break â€” leaves NO raw substring in the card
 // block. That is a required security transformation, not a renderer bug, which
 // is why asserting a *raw* substring survives (the P8 first property) flaked on
-// such inputs (e.g. `detail:""`, `path:" / "` → rendered as `"/"`, so
-// `text.includes(" / ")` is false; `path:" "` → `""`).
+// such inputs (e.g. `detail:""`, `path:" / "` â†’ rendered as `"/"`, so
+// `text.includes(" / ")` is false; `path:" "` â†’ `""`).
 //
 // Real oracle evidence is never raw control bytes: detectors emit printable
-// technical strings — file paths, dependency names, advisory ids, line refs.
+// technical strings â€” file paths, dependency names, advisory ids, line refs.
 // The generators below reflect that by emitting printable detail/path with at
 // least one character that always survives sanitisation AND is not whitespace
 // (so the wrapper cannot drop it at a break). This keeps P8's "a substring is
@@ -456,7 +472,7 @@ export const arbSeverity: fc.Arbitrary<Severity> = fc.constantFrom<Severity[]>(
 
 /**
  * A printable, non-whitespace character guaranteed to survive `sanitizeText`:
- * an ASCII glyph in the visible range 0x21–0x7E, excluding `/` and `\n` (never
+ * an ASCII glyph in the visible range 0x21â€“0x7E, excluding `/` and `\n` (never
  * valid inside a single path segment). This is the "anchor" that guarantees a
  * rendered evidence line carries a detectable substring.
  */
@@ -470,9 +486,9 @@ const arbPrintableAnchor: fc.Arbitrary<string> = fc
  * are non-whitespace, so the wrapped evidence line always contains it verbatim.
  * Models the short technical snippet a detector emits.
  *
- * The length is bounded (≤ 24) together with the path length below so the whole
+ * The length is bounded (â‰¤ 24) together with the path length below so the whole
  * inline evidence line (`  {path[:line]}  {detail}`) stays within the renderer's
- * 72-column wrap width — otherwise the wrapper would split `detail` across two
+ * 72-column wrap width â€” otherwise the wrapper would split `detail` across two
  * lines and the `blockText` newline would break the raw-substring check. This
  * keeps the P8 "detail is shown" assertion a check of the shown form, not an
  * accidental wrap artefact.
@@ -492,9 +508,9 @@ const arbPrintablePathSegment: fc.Arbitrary<string> = fc
 
 /**
  * A printable repository path of 1..3 `/`-joined printable segments. Bounded
- * (≤ 3×6 + 2 = 20 code points) so that, with a `:line` suffix of up to 7 and a
+ * (â‰¤ 3Ã—6 + 2 = 20 code points) so that, with a `:line` suffix of up to 7 and a
  * detail of up to 24, the inline evidence line fits in 72 columns and never
- * wraps — keeping the shown path/detail detectable as a raw substring.
+ * wraps â€” keeping the shown path/detail detectable as a raw substring.
  */
 const arbPrintableEvidencePath: fc.Arbitrary<string> = fc
   .array(arbPrintablePathSegment, { minLength: 1, maxLength: 3 })
@@ -536,7 +552,7 @@ export const arbEvidenceWithPath: fc.Arbitrary<Evidence> = fc
 /**
  * A `CardDraw`: a drawn card with its orientation, severity, deterministic
  * summary, a (possibly empty) evidence list, and an empty grimoire list (the
- * oracle package leaves `grimoires` empty). `narration` is omitted — the oracle
+ * oracle package leaves `grimoires` empty). `narration` is omitted â€” the oracle
  * never writes it, and the renderer uses `VOICE_TABLE`, not `narration`.
  */
 export const arbCardDraw: fc.Arbitrary<CardDraw> = fc
@@ -687,7 +703,7 @@ export function arbReadingResponse(
 }
 
 // ============================================================================
-// Session reducer action-sequence arbitraries (task 15.1 — P19, P24, P25, P27)
+// Session reducer action-sequence arbitraries (task 15.1 â€” P19, P24, P25, P27)
 // ============================================================================
 //
 // These arbitraries drive the pure session reducer (`session/state.ts` +
@@ -703,7 +719,7 @@ export function arbReadingResponse(
 //     commands plus the sound sub-events.
 //
 // They import ONLY the demo catalog (for the real catalog names), the command
-// constants and the already-present reading/summary builders above — no reducer
+// constants and the already-present reading/summary builders above â€” no reducer
 // module, keeping the arbitraries free of the system under test (which does not
 // exist yet in the red phase).
 
@@ -801,7 +817,7 @@ export const arbOverLengthRaw: fc.Arbitrary<string> = fc
 //
 // These builders produce real, booted `SessionState` values by driving the
 // pure session reducer (`step` from `../session/reducer.js`) with the same
-// `boot` action the app uses on the idle screen — `bootSignal: true` so
+// `boot` action the app uses on the idle screen â€” `bootSignal: true` so
 // `boot.phase` settles to "done" immediately. Nothing here reads the DOM,
 // clock, network or storage; every state is reached through the pure reducer,
 // so the arbitraries are safe for unit/property tests (no network / LLM /
@@ -816,7 +832,7 @@ import { step } from "../session/reducer.js";
  * immediately, so the booted state is the common idle screen with
  * `landingDismissed === false`. `stepBoot` always appends the boot banner
  * block (kind "boot") as the first Output_Block, so the booted log holds that
- * one banner block — which `landingVisible` treats as an empty idle screen.
+ * one banner block â€” which `landingVisible` treats as an empty idle screen.
  */
 export const BOOT_IDLE: Action = {
   type: "boot",
@@ -842,7 +858,7 @@ export function submitRaw(
 }
 
 /**
- * A command string that the parser ACCEPTS and that produces output — so the
+ * A command string that the parser ACCEPTS and that produces output â€” so the
  * reducer's `submit` path dismisses the landing (sets `landingDismissed =
  * true`). Deliberately excludes the empty / whitespace-only entries and the
  * bare `summon` prefill, which produce no output and never dismiss the landing.

@@ -15,7 +15,7 @@
 // than crashing the phase, keeping the rule "the cards cannot lie": content we
 // could not confirm is never presented as converted.
 
-import { parsePython, type Tree } from "@necro/oracle";
+import { hasLegacyPythonNodes, parsePython, type Tree } from "@necro/oracle";
 import type { ValidationResult } from "@necro/coven";
 
 import type { Node } from "web-tree-sitter";
@@ -44,6 +44,16 @@ export function validate(after: string): ValidationResult {
 
   try {
     const errorNodeCount = countErrorNodes(tree);
+    // Item 17 (R5.1): zero error nodes is NECESSARY but not SUFFICIENT. Several
+    // py2 constructs parse CLEANLY under the py3 grammar (a long literal `10L`,
+    // a legacy octal `0777`, even `print 'x'` on some grammar builds), so a
+    // file that was never actually migrated would otherwise pass. Require that
+    // NO legacy py2 node remains (the SAME oracle AST rule the chunk gate uses).
+    // A lingering legacy node is reported as one decisive syntactic defect so
+    // `errorNodeCount` stays a positive, non-zero signal for the caller.
+    if (errorNodeCount === 0 && hasLegacyPythonNodes(tree)) {
+      return { valid: false, errorNodeCount: 1 };
+    }
     return { valid: errorNodeCount === 0, errorNodeCount };
   } finally {
     tree.delete();

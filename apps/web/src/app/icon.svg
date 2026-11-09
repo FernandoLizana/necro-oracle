@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Necro-Oracle">
+  <rect width="32" height="32" fill="#001a00"/>
+  <!-- A phosphor skull: cranium, eye sockets, nasal, and jaw teeth, drawn in
+       the CRT palette (#33ff66 bright, #1f9e45 dim). Pure vector, no raster. -->
+  <path d="M16 4c-6 0-9 4-9 9 0 3 1 5 3 7v4h2v-3h2v3h4v-3h2v3h2v-4c2-2 3-4 3-7 0-5-3-9-9-9z" fill="#1f9e45"/>
+  <circle cx="12" cy="13" r="2.4" fill="#001a00"/>
+  <circle cx="20" cy="13" r="2.4" fill="#001a00"/>
+  <circle cx="12" cy="13" r="1.1" fill="#33ff66"/>
+  <circle cx="20" cy="13" r="1.1" fill="#33ff66"/>
+  <path d="M16 15l-1.4 3h2.8z" fill="#001a00"/>
+  <rect x="13" y="23" width="1.6" height="3" fill="#001a00"/>
+  <rect x="15.2" y="23" width="1.6" height="3" fill="#001a00"/>
+  <rect x="17.4" y="23" width="1.6" height="3" fill="#001a00"/>
+</svg>

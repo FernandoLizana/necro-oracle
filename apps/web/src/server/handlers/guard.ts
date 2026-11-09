@@ -31,10 +31,13 @@ import type { RouteName } from "../limiter/port.js";
 /** The hard cap on a request body, in bytes (design.md step 3). */
 const MAX_BODY_BYTES = 2048;
 
-/** The two security headers every route response carries (R12.8). */
+/** The security headers every route response carries (R12.8, SEC-07). */
 const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
+  // SEC-07: lock no-referrer at the handler level too (defense in depth), not
+  // only in next.config.ts, so a directly-built Response still carries it.
+  "Referrer-Policy": "no-referrer",
 };
 
 /**

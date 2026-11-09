@@ -188,9 +188,14 @@ const NDJSON_HEADERS = {
 /** The demo bundle the live-reading-with-lovers body is built from. */
 const bundlePath = new URL("../src/demo/bundle.generated.json", import.meta.url);
 
-/** One LOVERS (VI) draw — card id "lovers" — the bindability precondition. */
+/**
+ * The bindability precondition signal (item 26 CORRECTED): a LEGAL diagnosis
+ * draw (JUDGEMENT) carrying the "lovers-js" grimoire linkage + bindable
+ * evidence -- THE LOVERS is not a diagnosis card id, so the signal rides on a
+ * legal card via `grimoires` (a schema-valid reading).
+ */
 const LOVERS_DRAW = {
-  card: "lovers",
+  card: "judgement",
   evidence: [
     {
       detail: `bindable public function greet in ${BINDABLE_FILE}`,
@@ -242,6 +247,7 @@ function liveReadingWithLovers(): { summary: unknown; reading: unknown } {
     const emptySlot = reading.spread.find((slot) => slot.draw === null);
     if (emptySlot !== undefined) {
       emptySlot.draw = LOVERS_DRAW;
+      delete (emptySlot as { description?: unknown }).description;
     }
   }
   return { summary, reading };

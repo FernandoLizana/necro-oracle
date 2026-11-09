@@ -1,4 +1,4 @@
-// @necro/config — env schema validated at startup (zod); never prints tokens
+// @necro/config â€” env schema validated at startup (zod); never prints tokens
 import { z } from "zod";
 
 export const CONFIG_VERSION = "0.0.0";
@@ -142,6 +142,19 @@ export const EnvSchema = z.object({
       .regex(/^[1-9][0-9]*$/)
       .refine((s) => Number.isSafeInteger(Number(s)))
       .default("200")
+      .transform(Number),
+  ),
+  // Separate tarot-reading daily ceiling (item 32). UNIT: tarot LLM completions
+  // per UTC day, server-key only. DEFAULT: 300. A tarot reading is one FAST
+  // completion; once this many have run today on the server key, further tarot
+  // readings fall back to the deterministic offline text (never an error).
+  NECRO_TAROT_DAILY_CEILING: z.preprocess(
+    blankToUndefined,
+    z
+      .string()
+      .regex(/^[1-9][0-9]*$/)
+      .refine((s) => Number.isSafeInteger(Number(s)))
+      .default("300")
       .transform(Number),
   ),
   // Total LLM calls per reading (A.8 per-reading cap).

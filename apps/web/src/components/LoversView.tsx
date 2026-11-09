@@ -44,9 +44,10 @@
 //
 // _Requirements: R21.1, R21.2, R21.3, R21.4, R21.5, R21.6, R22.1, R31.1_
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import type { LoversResult } from "@necro/coven";
+import { useCssVars } from "@necro/ui-crt";
 
 import { loadZipBuilder } from "../terminal/load-zip-builder.js";
 import "./lovers-view.css";
@@ -108,6 +109,32 @@ function toLines(code: string): readonly string[] {
 }
 
 /**
+ * One rising code line. SEC-08: the `--lov-rise-delay` custom property is
+ * applied through the CSSOM (useCssVars on its own ref) rather than a
+ * CSP-blocked inline style attribute. The stagger is capped so a long pane
+ * finishes quickly; lovers-view.css disables the animation entirely under
+ * reduced motion, so the delay is inert there (R21.1).
+ */
+function LoversLine({
+  line,
+  index,
+}: {
+  readonly line: string;
+  readonly index: number;
+}): React.JSX.Element {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  useCssVars(ref, {
+    "--lov-rise-delay": `${Math.min(index, MAX_RISE_LINES) * RISE_STEP_MS}ms`,
+  });
+  return (
+    <span ref={ref} className="crt-lovers-line">
+      {line === "" ? "\u00A0" : line}
+      {"\n"}
+    </span>
+  );
+}
+
+/**
  * One code pane: a titled, integer-scaled box whose body scrolls INTERNALLY
  * (R21.6) and whose lines rise one by one under full motion (R21.2). The
  * `<pre>` is a labelled region with the pane title as its accessible name.
@@ -130,19 +157,7 @@ function CodePane({
       </h3>
       <pre className="crt-lovers-panel crt-lovers-code" tabIndex={0}>
         {lines.map((line, index) => (
-          <span
-            key={index}
-            className="crt-lovers-line"
-            // Stagger the rise under full motion; capped so a long pane finishes
-            // quickly. The CSS disables the animation entirely under reduced
-            // motion, so this delay is inert there (R21.1).
-            style={{
-              ["--lov-rise-delay" as string]: `${Math.min(index, MAX_RISE_LINES) * RISE_STEP_MS}ms`,
-            }}
-          >
-            {line === "" ? "\u00A0" : line}
-            {"\n"}
-          </span>
+          <LoversLine key={index} line={line} index={index} />
         ))}
       </pre>
     </section>

@@ -26,6 +26,7 @@ export {
 export {
   createLlmCache,
   withCache,
+  DEFAULT_LLM_CACHE_MAX_ENTRIES,
   type LlmCache,
 } from "./cache.js";
 

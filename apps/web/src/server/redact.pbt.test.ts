@@ -29,7 +29,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 // Not yet implemented — task 21.2 adds this module.
-import { redactDeep, redactString } from "./redact.js";
+import { redactDeep, redactSecrets, redactString } from "./redact.js";
 
 /** P14 runs the default property budget. */
 const NUM_RUNS = 200;
@@ -176,5 +176,36 @@ describe("P14 (R12.6, R14.7): token redaction", () => {
     expect(out.list[1]).toBe(7);
     expect(out.list[0]).toBe(`keep${MARKER}keep`);
     expect(out.nested.s).toBe(`pre${MARKER}post`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SEC-04: redactSecrets (multi-token string redaction for log lines)
+// ---------------------------------------------------------------------------
+
+describe("SEC-04 (R19.4, R27.2): redactSecrets strips EVERY in-scope token", () => {
+  it("leaves no supplied token in the result, for any set of tokens", () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.string({ minLength: 4, maxLength: 24 }).filter((t) => !/[\s\[\]]/.test(t) && !MARKER.includes(t) && t.length > 0), { minLength: 1, maxLength: 4 }),
+        fc.string(),
+        (tokens, filler) => {
+          const line = tokens.map((t) => "prefix " + t + " suffix").join(" | ") + " " + filler;
+          const out = redactSecrets(line, tokens);
+          expect(out).toBeDefined();
+          for (const t of tokens) expect(out as string).not.toContain(t);
+        },
+      ),
+      { numRuns: NUM_RUNS },
+    );
+  });
+
+  it("maps undefined input to undefined (an absent stack stays absent)", () => {
+    expect(redactSecrets(undefined, ["sk-secret"])).toBeUndefined();
+  });
+
+  it("skips undefined/empty tokens and keeps non-secret text", () => {
+    const out = redactSecrets("hello sk-LEAK world", [undefined, "", "sk-LEAK"]);
+    expect(out).toBe("hello " + MARKER + " world");
   });
 });

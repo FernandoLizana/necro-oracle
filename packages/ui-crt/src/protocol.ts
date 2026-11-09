@@ -82,6 +82,9 @@ export interface ApiPort {
     spread: PlayableSpread,
     signal: AbortSignal,
     onProgress: ResurrectProgress,
+    // Item 2 (judge-ready-pass): a demo replay resurrects the bundled fixture
+    // OFFLINE; forwarded to the route as `demo: true` so it never calls GitHub.
+    demo?: true,
   ): Promise<RitualResponse>;
   /**
    * Consume the NDJSON lovers stream for a `lovers` command: POST the pinned
@@ -113,6 +116,11 @@ export interface LoversRequestArgs {
   readonly spread: PlayableSpread;
   /** Optional BYOK model overrides, honoured by the route only on YOURS. */
   readonly models?: LoversModelOverrides | undefined;
+  /**
+   * Item 2 (judge-ready-pass): `true` for a demo replay so the Lovers route
+   * binds the bundled fixture OFFLINE (no GitHub, no OpenRouter).
+   */
+  readonly demo?: true | undefined;
 }
 
 /** The optional BYOK model overrides threaded from the session to the route. */

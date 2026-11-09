@@ -25,14 +25,14 @@
 import type { CardId } from "@necro/oracle/client";
 
 /**
- * Motion preference literals. The prefs module (design §"Motion and
+ * Motion preference literals. The prefs module (design Â§"Motion and
  * preferences") owns the canonical `MotionPreference` export; the union is
  * restated here so `command/types.ts` stays self-contained and depends only on
  * `@necro/oracle/client`.
  */
 export type CommandMotionArg = "auto" | "on" | "off";
 
-/** Sound preference literals (design §"Motion and preferences"). */
+/** Sound preference literals (design Â§"Motion and preferences"). */
 export type CommandSoundArg = "on" | "off";
 
 /** Target of an `explain` command: a 1-based spread position or a card id. */
@@ -44,7 +44,7 @@ export type ExplainTarget =
 export type SpreadArg = "fates" | "necropsy" | "celtic";
 
 /**
- * Parsed argument of a `resurrect` command (design §"Resurrect_Command",
+ * Parsed argument of a `resurrect` command (design Â§"Resurrect_Command",
  * R1.1-R1.4). This mirrors the coven `ResurrectTarget` discriminated union but
  * is defined here so `@necro/ui-crt` stays browser-safe and never imports
  * `@necro/coven` (which pulls node-only modules). The server re-derives the
@@ -52,9 +52,9 @@ export type SpreadArg = "fates" | "necropsy" | "celtic";
  * validation (card/file existence, Python-2 classification); this type carries
  * only the parse-level discrimination:
  *
- * - `bare`  — no argument; resurrect every Python-2 candidate (R1.4).
- * - `card`  — a card id (any token without a `/` or `.py` suffix) (R1.2).
- * - `file`  — a file path (a token containing `/` or ending in `.py`) (R1.3).
+ * - `bare`  â€” no argument; resurrect every Python-2 candidate (R1.4).
+ * - `card`  â€” a card id (any token without a `/` or `.py` suffix) (R1.2).
+ * - `file`  â€” a file path (a token containing `/` or ending in `.py`) (R1.3).
  */
 export type ResurrectTarget =
   | { readonly kind: "bare" }
@@ -76,10 +76,11 @@ export type Command =
   | { readonly kind: "lovers"; readonly file: string; readonly targetLang: "javascript" }
   | { readonly kind: "key"; readonly op: KeyOp }
   | { readonly kind: "model"; readonly tier: ModelTierArg; readonly id: string }
+  | { readonly kind: "tarot"; readonly question?: string }
   | { readonly kind: "unknown"; readonly raw: string };
 
 /**
- * The `key` sub-command operations (lovers-binding design §D.2): `set` opens
+ * The `key` sub-command operations (lovers-binding design Â§D.2): `set` opens
  * the masked `SoulKeyInput`, `status` reports the Soul_Source, `clear` drops
  * the in-memory key.
  */
@@ -87,7 +88,7 @@ export type KeyOp = "set" | "status" | "clear";
 
 /**
  * The two model tiers a `model <tier> <id>` override targets (lovers-binding
- * design §A.3 Model_Router): the FAST diagnostic tier or the STRONG tier.
+ * design Â§A.3 Model_Router): the FAST diagnostic tier or the STRONG tier.
  */
 export type ModelTierArg = "fast" | "strong";
 

@@ -23,11 +23,28 @@ export type SpreadKind = "fates" | "necropsy" | "celtic";
 const VOID_DESCRIPTION = "This position holds no card — the void is a sign.";
 
 /**
- * Ritual-specific override for the Necropsy "The Call" void position
- * (design.md). The spec text is authoritative; the test asserts the
- * description CONTAINS "no ritual can be performed".
+ * Ritual-specific descriptions for the Necropsy "The Call" position (position 5,
+ * design.md). Item 3 (judge-ready-pass): each BLOCKED condition gives its OWN
+ * nonempty two-layer reason (never the bare heading), and an ALLOWED ritual
+ * names the command the user can run. Oracle voice: a short mystical line, a
+ * newline, then the plain technical fact / next action (<= 72 cols/line).
  */
-const NO_RITUAL_DESCRIPTION = "no ritual can be performed — here is why";
+/** The Call is void: JUDGEMENT was never drawn in this reading. */
+const CALL_NO_JUDGEMENT =
+  "The trumpet is silent; no JUDGEMENT fell.\n" +
+  "No ritual can be performed: JUDGEMENT was not drawn in this reading.";
+/** The Call is void: JUDGEMENT exists but its card carries no grimoire. */
+const CALL_NO_GRIMOIRE =
+  "The dead hear the call, but no rite answers.\n" +
+  "No ritual can be performed: JUDGEMENT is linked to no grimoire.";
+/** The Call is void: JUDGEMENT was drawn but ranked into an earlier slot. */
+const CALL_ALREADY_PLACED =
+  "JUDGEMENT already stands in an earlier seat.\n" +
+  "No ritual can be performed: JUDGEMENT was placed in a higher position.";
+/** The Call is ALLOWED: JUDGEMENT holds the seat and a rite can run. */
+const CALL_RITUAL_READY =
+  "A dead runtime hears the trumpet.\n" +
+  "A ritual can be performed: run resurrect to raise the dead code.";
 
 /** Position labels per spread kind, in required order (R17.2–R17.4). */
 const _FATES_LABELS = ["Past", "Present", "Future"] as const;
@@ -232,13 +249,29 @@ function assignNecropsy(
   if (shadow) placed.add(shadow.card);
 
   // The Call = `judgement` only when drawn, linked to at least one grimoire,
-  // and still unplaced after the slots above. Otherwise void ("no ritual").
+  // and still unplaced after the slots above. Item 3 (judge-ready-pass): when
+  // the Call is void, pick the reason that matches WHY, so the position never
+  // prints the bare heading and the user is told the actual blocker. When it is
+  // filled, the position carries a description naming the runnable command.
   const judgementLinked =
     (CARD_REGISTRY.get("judgement")?.linkedGrimoireIds.length ?? 0) > 0;
+  const judgementDrawn = ranked.some((d) => d.card === "judgement");
+  const judgementAlreadyPlaced = placed.has("judgement");
   const call = judgementLinked
     ? pickCard(ranked, placed, "judgement")
     : undefined;
   if (call) placed.add(call.card);
+
+  // Resolve the void reason for The Call by condition (checked in the order the
+  // engine blocks on): no grimoire link > not drawn > already placed. Each is a
+  // distinct, nonempty two-layer oracle-voice description.
+  const callVoidReason = !judgementLinked
+    ? CALL_NO_GRIMOIRE
+    : !judgementDrawn
+      ? CALL_NO_JUDGEMENT
+      : judgementAlreadyPlaced
+        ? CALL_ALREADY_PLACED
+        : CALL_NO_JUDGEMENT;
 
   return [
     corpse
@@ -250,8 +283,8 @@ function assignNecropsy(
       : voidPosition(3, "The Shadow"),
     hope ? filledPosition(4, "The Hope", hope) : voidPosition(4, "The Hope"),
     call
-      ? filledPosition(5, "The Call", call)
-      : voidPosition(5, "The Call", NO_RITUAL_DESCRIPTION),
+      ? { position: 5, label: "The Call", draw: call, description: CALL_RITUAL_READY }
+      : voidPosition(5, "The Call", callVoidReason),
   ];
 }
 

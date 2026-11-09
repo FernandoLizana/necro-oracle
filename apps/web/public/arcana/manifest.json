@@ -22,7 +22,7 @@
   "blank_header_footer": true,
   "preprocess": {
     "contrast": 1.65,
-    "sharp": 2.0
+    "sharp": 2
   },
   "images": [
     {
@@ -344,6 +344,246 @@
       "webp": "/workspace/necro-cards/pixel/final/world.webp",
       "webp_bytes": 1838,
       "preview_4x": "/workspace/necro-cards/pixel/final/world@4x.png",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "fool",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/fool.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "magician",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/magician.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "high_priestess",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/high_priestess.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "empress",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/empress.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "emperor",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/emperor.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "hierophant",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/hierophant.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "lovers",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/lovers.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "chariot",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/chariot.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "strength",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/strength.webp",
+      "bands": {
+        "width": 120,
+        "height": 160,
+        "header_rows": [
+          0,
+          19
+        ],
+        "footer_rows": [
+          147,
+          160
+        ],
+        "header_frac": 0.12,
+        "footer_frac": 0.08,
+        "note": "Header/footer blanked to bg; app should render numeral+title and diagnosis text as real pixels/DOM."
+      },
+      "dither": false
+    },
+    {
+      "id": "sun",
+      "logical": [
+        120,
+        160
+      ],
+      "webp": "/arcana/sun.webp",
       "bands": {
         "width": 120,
         "height": 160,

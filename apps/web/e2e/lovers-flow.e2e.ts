@@ -208,9 +208,15 @@ const bundlePath = new URL(
   import.meta.url,
 );
 
-/** One LOVERS (VI) draw — card id "lovers" — the bindability precondition. */
+/**
+ * The bindability precondition signal (item 26 CORRECTED): a LEGAL diagnosis
+ * draw (JUDGEMENT, the resurrection card) whose `grimoires` includes the Lovers
+ * grimoire id "lovers-js" + a bindable-function evidence item. THE LOVERS is
+ * not a diagnosis card id, so the signal rides on a legal card via the grimoire
+ * linkage -- a schema-valid reading, no illegal "lovers" card id.
+ */
 const LOVERS_DRAW = {
-  card: "lovers",
+  card: "judgement",
   evidence: [
     {
       detail: `bindable public function greet in ${BINDABLE_FILE}`,
@@ -258,6 +264,9 @@ function liveReadingWithLovers(): { summary: unknown; reading: unknown } {
     const emptySlot = reading.spread.find((slot) => slot.draw === null);
     if (emptySlot !== undefined) {
       emptySlot.draw = LOVERS_DRAW;
+      // A filled position is not a void: drop the void-sentinel description so
+      // the slot is a clean drawn position (item 26 / item 14 interaction).
+      delete (emptySlot as { description?: unknown }).description;
     }
   }
   return { summary, reading };

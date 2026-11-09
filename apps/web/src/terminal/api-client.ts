@@ -296,12 +296,18 @@ export function createApiPort(
     spread: PlayableSpread,
     signal: AbortSignal,
     onProgress: ResurrectProgress,
+    demo?: true,
   ): Promise<RitualResponse> {
     // Serialize the parsed target to the optional `target` string field of
     // ResurrectRequestSchema: a bare run OMITS the field, a card target sends
     // its id, a file target sends its path (R1.4). The server owns all semantic
     // validation (card/file existence, py2 classification).
-    const body: { ref: string; spread: PlayableSpread; target?: string } = {
+    const body: {
+      ref: string;
+      spread: PlayableSpread;
+      target?: string;
+      demo?: true;
+    } = {
       ref: pinned,
       spread,
     };
@@ -309,6 +315,11 @@ export function createApiPort(
       body.target = target.card;
     } else if (target.kind === "file") {
       body.target = target.path;
+    }
+    // Item 2 (judge-ready-pass): a demo replay forwards demo:true so the route
+    // resurrects the bundled fixture OFFLINE (never GitHub/OpenRouter).
+    if (demo === true) {
+      body.demo = true;
     }
 
     // The 55 s client timeout stays armed across both the POST and the whole

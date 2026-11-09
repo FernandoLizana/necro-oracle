@@ -149,6 +149,10 @@ export async function runReading(
   //    `snapshot.manifests`.
   snapshot.manifests = parseAllManifests(snapshot);
 
+  // Item 22: parsed trees are WASM-backed and NOT GC-reclaimed; the finally
+  // below deletes every one so a reading never leaks trees in the warm
+  // serverless instance, even if a detector or the spread throws.
+  try {
   // 4. Build the shared DetectorOpts. registryData/osvData are only assigned
   //    when defined (exactOptionalPropertyTypes is on, so the keys must stay
   //    absent — not set to undefined — when the caller omits them).
@@ -205,4 +209,12 @@ export async function runReading(
   // 9. Validate the assembled Reading for safety. The Reading carries no
   //    `contents` Map, so parse is cheap and strict.
   return ReadingSchema.parse(reading);
+  } finally {
+    // Item 22: reclaim every parsed tree exactly once (no WASM leak). `delete`
+    // on web-tree-sitter is idempotent-safe enough here because each tree is
+    // deleted once; the map is discarded immediately after.
+    for (const tree of trees.values()) {
+      tree.delete();
+    }
+  }
 }

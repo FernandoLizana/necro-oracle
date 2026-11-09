@@ -106,15 +106,40 @@ export function visualCardIndex(
 }
 
 /**
- * The card id THE LOVERS (VI) carries in the deck (lovers-binding R14.3). The
- * `lovers` detector + registry entry land in a later task of this spec, so the
- * oracle `CardId` enum does not yet include `"lovers"`; this selector therefore
- * compares the drawn card id as a WIDENED string so the eligibility gate is
- * forward-compatible the moment the card is drawn, without this module taking a
- * compile-time dependency on a card id literal the enum does not yet hold. The
+ * Item 26 (CORRECTED): THE LOVERS (VI) is NOT a diagnosis card -- the oracle
+ * `CardId` enum is the 12 diagnosis cards and deliberately has NO "lovers"
+ * member (a reading carrying `card: "lovers"` fails `CardDrawSchema` and the
+ * client/server reject the whole reading). The bindability signal is instead
+ * the DRAW'S GRIMOIRE LINKAGE: a draw whose `grimoires` includes the Lovers
+ * grimoire id ("lovers-js") marks a repo the Lovers binding can address. That
+ * field is `z.array(z.string())` on every draw, so the signal rides on a LEGAL
+ * card (no new card id, no schema change). Matched here as a pure, total scan.
+ */
+const LOVERS_GRIMOIRE_ID = "lovers-js";
+
+/**
+ * The card id JUDGEMENT carries in the deck. JUDGEMENT is the resurrection
+ * summons - it is drawn exactly when the reading found Python-2 constructs
+ * (resurrectable candidates), so its presence is the client signal that a
+ * `resurrect` can be offered (item 4). Matched as a widened string so the
  * comparison stays pure and total.
  */
-const LOVERS_CARD_ID = "lovers";
+const JUDGEMENT_CARD_ID = "judgement";
+
+/**
+ * Item 4 (guided buttons): is a `resurrect` affordance eligible right now? True
+ * WHEN the in-scope reading drew JUDGEMENT (Python-2 candidates exist, so a bare
+ * `resurrect` has something to raise). Pure: reads SessionState only. The
+ * authoritative server precondition (R1.6) still owns the final decision and
+ * terminates with a typed error when nothing is resurrectable - this selector
+ * only decides whether to OFFER the clickable RESURRECT chip (every typed
+ * command also clickable, tarot-ux), never whether the ritual will succeed.
+ */
+export function resurrectEligible(state: SessionState): boolean {
+  return visualCards(state).some(
+    (card) => (card.draw.card as string) === JUDGEMENT_CARD_ID,
+  );
+}
 
 /**
  * The lovers-binding eligibility signal the Terminal gates the `lovers <file>
@@ -144,8 +169,10 @@ const LOVERS_CARD_ID = "lovers";
 export function loversEligible(
   state: SessionState,
 ): { readonly file: string } | null {
-  const loversDrawn = visualCards(state).some(
-    (card) => (card.draw.card as string) === LOVERS_CARD_ID,
+  const loversDrawn = visualCards(state).some((card) =>
+    // Defensive `?? []`: a partial/legacy draw may omit `grimoires`; absent
+    // means not Lovers-linked, never a crash.
+    (card.draw.grimoires ?? []).includes(LOVERS_GRIMOIRE_ID),
   );
   if (!loversDrawn) return null;
 

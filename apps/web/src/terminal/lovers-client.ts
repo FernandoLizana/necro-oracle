@@ -51,8 +51,19 @@ import {
 import { createNdjsonParser } from "./ndjson.js";
 import type { UserKeyReader } from "./api-client.js";
 
-/** The internal per-request client timeout composed with the caller's signal. */
-const CLIENT_TIMEOUT_MS = 55_000;
+/**
+ * Item 19: the per-request client timeout composed with the caller's signal.
+ *
+ * The lovers rite summons + resurrects the file BEFORE PLAN/GENERATE, so the
+ * server runs up to a 115 s Overall_Budget under `maxDuration = 120` (design
+ * C.6). This timeout must sit ABOVE the server's own deadline so the client
+ * only gives up AFTER the server would have; otherwise a legitimate long
+ * binding is aborted client-side as a spurious NETWORK_TIMEOUT. (The generic
+ * 55 s value is correct for the readings/resurrect clients, whose server
+ * budgets are 40/48 s, but is far too short for the 120 s lovers route.)
+ * Exported so a test pins the "client waits longer than the server" invariant.
+ */
+export const LOVERS_CLIENT_TIMEOUT_MS = 125_000;
 
 /**
  * The dedicated BYOK transport header (lovers-binding R27.1, R41.1), declared
@@ -83,9 +94,9 @@ export interface LoversRequestArgs extends UiCrtLoversRequestArgs {
 }
 
 /**
- * Compose the caller's abort signal with a fresh 55 s client timeout. Either
+ * Compose the caller's abort signal with a fresh client timeout (LOVERS_CLIENT_TIMEOUT_MS). Either
  * aborting cancels the fetch; the caller's own `signal` is still inspected
- * later to tell a user abort apart from the timeout. Identical to the helper in
+ * later to tell a user abort apart from the timeout. Like the helper in
  * `api-client.ts`; a `setTimeout`-backed controller so fake timers can drive it
  * deterministically, with a disposer so no timer leaks.
  */
@@ -96,7 +107,7 @@ function withClientTimeout(signal: AbortSignal): {
   const timeoutController = new AbortController();
   const timer = setTimeout(() => {
     timeoutController.abort();
-  }, CLIENT_TIMEOUT_MS);
+  }, LOVERS_CLIENT_TIMEOUT_MS);
   return {
     signal: AbortSignal.any([signal, timeoutController.signal]),
     dispose: () => {
@@ -166,7 +177,7 @@ export function createLoversClient(
     signal: AbortSignal,
     onProgress: LoversProgress,
   ): Promise<LoversResponse> {
-    // The 55 s client timeout stays armed across both the POST and the whole
+    // The client timeout stays armed across both the POST and the whole
     // stream read, so a mid-stream stall is mapped to NETWORK_TIMEOUT. The
     // user-abort vs timeout discrimination is identical to `api-client.ts`.
     const timeout = withClientTimeout(signal);
@@ -254,7 +265,7 @@ export function createLoversClient(
         if (signal.aborted) {
           throw error;
         }
-        // Any other abort is the 55 s client timeout or a dropped connection.
+        // Any other abort is the LOVERS_CLIENT_TIMEOUT_MS client timeout or a dropped connection.
         if (error instanceof DOMException && error.name === "AbortError") {
           throw networkError();
         }

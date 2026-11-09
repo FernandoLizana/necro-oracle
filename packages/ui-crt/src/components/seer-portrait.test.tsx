@@ -95,16 +95,18 @@ function renderSeer(available: Size): {
 // ---------------------------------------------------------------------------
 
 describe("SeerPortrait pixelated + no filter (R7.2)", () => {
-  it("renders a single img carrying .crt-seer-img and inline image-rendering: pixelated", () => {
+  it("renders a single img carrying .crt-seer-img (pixelated + no filter via CSS, SEC-08)", () => {
     const { img } = renderSeer({ w: 1024, h: 768 });
 
     const el = img();
     expect(el).not.toBeNull();
-    // The no-filter guarantee lives in arcana.css keyed off this class, so the
-    // class presence is what wires the img to `filter: none` (R7.2).
+    // SEC-08: `image-rendering: pixelated` AND `filter: none` (R7.2) both
+    // live in arcana.css keyed off this class, NOT in a CSP-blocked inline
+    // `style=` attribute. The class presence is what wires the pixelated,
+    // unfiltered rendering.
     expect(el).toHaveClass("crt-seer-img");
-    // Pixelated is set inline on the img (R7.2).
-    expect(el?.style.imageRendering).toBe("pixelated");
+    // The img carries NO inline imageRendering (it is a static rule the class owns).
+    expect(el?.style.imageRendering).toBe("");
   });
 });
 

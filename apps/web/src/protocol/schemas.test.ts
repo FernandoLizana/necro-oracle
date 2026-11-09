@@ -23,6 +23,7 @@ import type { z } from "zod";
 
 import {
   ErrorEnvelopeSchema,
+  LoversRequestSchema,
   ReadingRequestSchema,
   ReadingResponseSchema,
   ResurrectRequestSchema,
@@ -315,5 +316,54 @@ describe("compile-time conformance with @necro/ui-crt types (D2)", () => {
 
   it("ReadingResponseSchema infers exactly the ReadingResponse interface", () => {
     expectTypeOf<z.infer<typeof ReadingResponseSchema>>().toEqualTypeOf<ReadingResponse>();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Item 21 (P0.5): every request that drives GitHub work must carry a
+// COMMIT-PINNED ref (owner/name@<40-hex-lowercase-sha>), never a mutable branch
+// / tag / bare ref. This is the TOCTOU guard: a reading is drawn on an exact
+// commit, and resurrect/lovers re-summon that SAME commit - a branch ref could
+// move between the reading and the ritual and silently diagnose/patch a
+// different tree. The schema is the single enforcement point; the GitHub client
+// + resolveRef then verify/use that SHA.
+// ---------------------------------------------------------------------------
+
+describe("Item 21 (R5.3, R6.1): resurrect/lovers refs must be commit-pinned, not mutable", () => {
+  // Non-pinned ref forms that must ALL be rejected at the boundary.
+  const unpinned = [
+    "octocat/hello-world", // bare - resolves to a MOVING default branch
+    "octocat/hello-world#main", // a branch ref
+    "octocat/hello-world@main", // a branch via @
+    `octocat/hello-world@${"a".repeat(7)}`, // a partial / short sha
+    `octocat/hello-world@${"A".repeat(40)}`, // uppercase hex (not canonical)
+  ] as const;
+
+  for (const ref of unpinned) {
+    it(`resurrect rejects a non-pinned ref: ${ref}`, () => {
+      expect(ResurrectRequestSchema.safeParse({ ref, spread: "fates" }).success).toBe(false);
+    });
+    it(`lovers rejects a non-pinned ref: ${ref}`, () => {
+      expect(
+        LoversRequestSchema.safeParse({
+          ref,
+          file: "src/app.py",
+          targetLang: "javascript",
+          spread: "fates",
+        }).success,
+      ).toBe(false);
+    });
+  }
+
+  it("both accept a canonical commit-pinned ref", () => {
+    expect(ResurrectRequestSchema.safeParse({ ref: `o/n@${SHA}`, spread: "fates" }).success).toBe(true);
+    expect(
+      LoversRequestSchema.safeParse({
+        ref: `o/n@${SHA}`,
+        file: "src/app.py",
+        targetLang: "javascript",
+        spread: "fates",
+      }).success,
+    ).toBe(true);
   });
 });

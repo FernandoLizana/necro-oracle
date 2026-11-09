@@ -42,6 +42,7 @@ import {
   visualCards,
   visualCardIndex,
   loversEligible,
+  resurrectEligible,
 } from "../session/visual-reading.js";
 import type { ArcanaAsset } from "../arcana/manifest.js";
 import type { Size } from "../arcana/integer-scale.js";
@@ -356,6 +357,8 @@ export function Terminal({
   // while THE LOVERS (VI) was drawn AND a resurrectable file is in scope, else
   // `null`. It gates whether the conditional LOVERS chip + hint are offered.
   const lovers = loversEligible(state);
+  // Item 4: offer the RESURRECT chip when a resurrectable candidate is in scope.
+  const canResurrect = resurrectEligible(state);
 
   // Whether the pixel-art Spread_View replaces the ASCII CardReveal: only when
   // a manifest covering every drawn card is supplied (Arcana_Visions). Without
@@ -760,6 +763,7 @@ export function Terminal({
           {...(lovers !== null
             ? { loversPrefill: () => prefillLovers(lovers.file) }
             : {})}
+          resurrectEligible={canResurrect}
         />
         {/* The resurrection result view's patch-download control. Mounted
             through the `resurrectView` port (oracle-landing-polish, Part B bug

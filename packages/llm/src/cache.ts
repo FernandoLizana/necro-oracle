@@ -25,8 +25,29 @@ export interface LlmCache {
   readonly size: number;
 }
 
-/** Create a fresh in-memory {@link LlmCache}. */
-export function createLlmCache(): LlmCache {
+/**
+ * SEC-05: default upper bound on the number of distinct cache entries. A cache
+ * key is a content hash, so the working set for one ritual is small; this cap
+ * only bounds a LONG-LIVED (warm serverless) provider instance so an unbounded
+ * stream of distinct keys cannot grow memory without limit. Eviction is
+ * oldest-first (FIFO by insertion), which is safe because entries are immutable
+ * content-addressed text (no staleness, only a bounded working set).
+ */
+export const DEFAULT_LLM_CACHE_MAX_ENTRIES = 2048;
+
+/**
+ * Create a fresh in-memory {@link LlmCache}, bounded to at most `maxEntries`
+ * distinct keys (default {@link DEFAULT_LLM_CACHE_MAX_ENTRIES}). Past the cap
+ * the OLDEST entry is evicted first. The key dimensions (purpose + schema +
+ * PROMPT_VERSION + resolved model + content hash) and the no-raw-key contract
+ * live in `cacheKeyParts` and are unchanged; this only bounds the store.
+ */
+export function createLlmCache(
+  maxEntries: number = DEFAULT_LLM_CACHE_MAX_ENTRIES,
+): LlmCache {
+  // Insertion order is preserved by Map iteration, so the first key is the
+  // oldest. A non-positive cap is clamped to 1 so the store is always usable.
+  const cap = Number.isFinite(maxEntries) && maxEntries > 0 ? Math.floor(maxEntries) : 1;
   const store = new Map<string, string>();
   return {
     has: (cacheKey) => store.has(cacheKey),
@@ -34,7 +55,14 @@ export function createLlmCache(): LlmCache {
     set: (cacheKey, text) => {
       // First write wins: a cache key is a content hash, so re-deriving the
       // same text is a no-op and we never overwrite a stored entry.
-      if (!store.has(cacheKey)) store.set(cacheKey, text);
+      if (store.has(cacheKey)) return;
+      store.set(cacheKey, text);
+      // Bound the store: evict oldest-first until within the cap.
+      while (store.size > cap) {
+        const oldest = store.keys().next().value;
+        if (oldest === undefined) break;
+        store.delete(oldest);
+      }
     },
     get size() {
       return store.size;

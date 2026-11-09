@@ -317,3 +317,15 @@ export {
   type LoversDenyScanFn,
   type LoversValidateResult,
 } from "./lovers/runner.js";
+
+// --- Tarot reading service (tarot/service) ---------------------------------
+// One FAST completion through the injected LlmPort for the destiny reading
+// text, with a deterministic offline fallback on demo / no-model / ceiling /
+// failure (judge-ready-pass item 32). Adapter-free.
+export {
+  generateTarotReading,
+  parseTarotText,
+  type TarotReadingSource,
+  type TarotReadingResult,
+  type TarotReadingRequest,
+} from "./tarot/service.js";

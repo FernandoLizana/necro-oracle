@@ -51,3 +51,42 @@ export {
   NecroErrorCodeSchema,
   type NecroErrorCode,
 } from "./util/errors.js";
+
+// --- Tarot deck + draw (tarot) --------------------------------------------
+// A SEPARATE 22-card Major-Arcana deck from the 12 diagnosis cards: a playful
+// destiny divination drawn at random (crypto-backed live, seeded for demo),
+// never added to the diagnosis registry.
+export {
+  TAROT_CARD_IDS,
+  TAROT_DECK,
+  TarotCardIdSchema,
+  TarotCardSchema,
+  getTarotCard,
+  type TarotCardId,
+  type TarotCard,
+} from "./tarot/deck.js";
+export {
+  TAROT_POSITIONS,
+  TarotOrientationSchema,
+  TarotDrawCardSchema,
+  TarotDrawSchema,
+  drawTarot,
+  cryptoRandomFn,
+  seededRandomFn,
+  type RandomFn,
+  type TarotPosition,
+  type TarotOrientation,
+  type TarotDrawCard,
+  type TarotDraw,
+} from "./tarot/draw.js";
+
+// --- Tarot reading text (tarot/reading) -----------------------------------
+export {
+  TAROT_MAX_OUTPUT_TOKENS,
+  TarotReadingSchema,
+  boundReading,
+  buildTarotPrompt,
+  fallbackReading,
+  sanitizeQuestion,
+  type TarotReading,
+} from "./tarot/reading.js";

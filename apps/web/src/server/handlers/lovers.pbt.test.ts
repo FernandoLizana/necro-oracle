@@ -167,13 +167,21 @@ function makeReading(
   readOpts: ReadingOpts,
   cards: readonly string[],
 ): Reading {
-  const draws = cards.map((card, i) => ({
-    card,
-    orientation: "upright" as const,
-    severity: 2,
-    position: i + 1,
-    evidence: [{ path: TARGET_FILE, line: 1, detail: "x" }],
-  }));
+  const draws = cards.map((card, i) => {
+    // Item 26 (CORRECTED): the Lovers signal is the grimoire linkage on a LEGAL
+    // card, never an illegal "lovers" card id. The LOVERS_CARD sentinel maps to
+    // a legal "judgement" draw carrying grimoires:["lovers-js"]; every other
+    // card carries no grimoires (so it is NOT a Lovers signal).
+    const isLovers = card === LOVERS_CARD;
+    return {
+      card: isLovers ? "judgement" : card,
+      orientation: "upright" as const,
+      severity: 2,
+      position: i + 1,
+      evidence: [{ path: TARGET_FILE, line: 1, detail: "x" }],
+      grimoires: isLovers ? ["lovers-js"] : [],
+    };
+  });
   return {
     id: "123e4567-e89b-42d3-a456-426614174000",
     repo: {
@@ -349,7 +357,7 @@ function callCount(runner: LoversRunner | CovenRunner): number {
   return (runner as unknown as { run: { mock: { calls: unknown[] } } }).run.mock.calls.length;
 }
 
-const LOVERS_CARD = "lovers";
+const LOVERS_CARD = "__lovers_signal__";
 
 /** Non-lovers card ids drawn from the deck (never the "lovers" id). */
 const OTHER_CARDS = [

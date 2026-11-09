@@ -38,23 +38,23 @@ body:has(.crt) {
 }
 
 .crt {
-  /* Phosphor palette (R9.1) — mirrors tokens.ts exactly. */
+  /* Phosphor palette (R9.1) â€” mirrors tokens.ts exactly. */
   --crt-fg: #33ff66;
   --crt-bg: #001a00;
   --crt-fg-dim: #29cc52;
   --crt-error: #ff7a7a;
   /*
-   * Focus-ring colour (oracle-landing-polish R32) — mirrors tokens.ts exactly.
+   * Focus-ring colour (oracle-landing-polish R32) â€” mirrors tokens.ts exactly.
    * The bright DMG/phosphor shade `#8cff9e` (identical to --dmg-3), used as the
    * OUTLINE of the global composed focus indicator (see the `.crt
    * :focus-visible` rule below). No longer the off-palette amber-brown
-   * `#a85c30`; the dark `--crt-bg` (#001a00) offset in the composed ring — not
-   * this colour vs the bright `#33ff66` fg — provides the separation on the
+   * `#a85c30`; the dark `--crt-bg` (#001a00) offset in the composed ring â€” not
+   * this colour vs the bright `#33ff66` fg â€” provides the separation on the
    * bright-text side, so the indicator stays inside the DMG + phosphor palette.
    */
   --crt-focus: #8cff9e;
 
-  /* Effect tokens (R9.2-R9.5) — mirror tokens.ts exactly. */
+  /* Effect tokens (R9.2-R9.5) â€” mirror tokens.ts exactly. */
   --crt-glow-radius: 4px;
   --crt-glow-alpha: 0.55;
   --crt-scanline-period: 3px;
@@ -64,7 +64,7 @@ body:has(.crt) {
   --crt-afterglow-ms: 600ms;
 
   /*
-   * Visual_Layer accents (visual-necromancy task 14.1) — mirror tokens.ts
+   * Visual_Layer accents (visual-necromancy task 14.1) â€” mirror tokens.ts
    * exactly. NOT new palette values: both are tarot-ux colours (R7.2). Amber is
    * decorative glow for tower/devil only (never body text); error-red is the
    * STILL DEAD verdict word only. No other element may reference them.
@@ -73,7 +73,7 @@ body:has(.crt) {
   --crt-still-dead: #ff3355;
 
   /*
-   * Visual_Layer motion tokens (visual-necromancy task 14.1) — mirror
+   * Visual_Layer motion tokens (visual-necromancy task 14.1) â€” mirror
    * tokens.ts exactly. All one-shot windows are <= 300 ms; the rot cadence
    * floor keeps luminance changes <= 2/s (Flash_Limit, see caps below).
    */
@@ -83,16 +83,16 @@ body:has(.crt) {
   --crt-rot-frame-min-ms: 500ms;
 
   /*
-   * OPTIONAL phosphor bloom window (visual-necromancy task 21.2) — mirrors
+   * OPTIONAL phosphor bloom window (visual-necromancy task 21.2) â€” mirrors
    * tokens.ts exactly. A one-shot glow swell on a severity-3 card reveal in
    * full motion; <= 300 ms, iteration-count 1, a single rise-then-settle
    * (<= 2 luminance changes, no repeat), so it stays inside the Flash_Limit
-   * (see caps block below). CSS only — no JS, so Bundle_Budget is untouched.
+   * (see caps block below). CSS only â€” no JS, so Bundle_Budget is untouched.
    */
   --crt-bloom-ms: 300ms;
 
   /*
-   * Arcana_Visions motion / ritual tokens (arcana-visions task 1) — mirror
+   * Arcana_Visions motion / ritual tokens (arcana-visions task 1) â€” mirror
    * tokens.ts exactly. The ritual total caps the four-phase Resurrection_Ritual
    * at <= 3 s (R6.2); the motion-zone period/step defaults keep a CSS-only
    * steps() zone animation at the Flash_Limit of <= 2 luminance changes/s
@@ -123,7 +123,7 @@ body:has(.crt) {
   overflow: hidden;
 }
 
-/* The phosphor glow is a text-shadow only — no filter image (R9.3, R9.8). */
+/* The phosphor glow is a text-shadow only â€” no filter image (R9.3, R9.8). */
 .crt .crt-screen {
   position: relative;
   display: flex;
@@ -150,7 +150,7 @@ body:has(.crt) {
 /*
  * No-JS fallback note (R1.5). Rendered by the root layout as a plain, visible
  * element in <body> so the static document carries the boot phrase and the
- * requires-JavaScript line WITHOUT any JavaScript — no reliance on <noscript>
+ * requires-JavaScript line WITHOUT any JavaScript â€” no reliance on <noscript>
  * content being promoted to live DOM. The client terminal sets
  * `document.documentElement.dataset.js = "ready"` on mount, and the rule below
  * hides this note for JS users so it never shows alongside the live terminal.
@@ -177,6 +177,31 @@ html[data-js="ready"] .crt-no-js {
   overflow-y: auto;
   overflow-x: hidden;
   outline: none;
+}
+
+/*
+ * Item 12: a phosphor-themed scrollbar for the ONE terminal scroll region
+ * (.crt-log), so it never paints a bright OS-default bar against the dark
+ * CRT. Standards properties (Firefox) + the WebKit pseudo-elements
+ * (Chromium/Safari); both use the palette tokens only.
+ */
+.crt-log {
+  scrollbar-width: thin;
+  scrollbar-color: var(--crt-fg-dim) var(--crt-bg);
+}
+.crt-log::-webkit-scrollbar {
+  width: 10px;
+}
+.crt-log::-webkit-scrollbar-track {
+  background: var(--crt-bg);
+}
+.crt-log::-webkit-scrollbar-thumb {
+  background: var(--crt-fg-dim);
+  border: 2px solid var(--crt-bg);
+  border-radius: 0;
+}
+.crt-log::-webkit-scrollbar-thumb:hover {
+  background: var(--crt-fg);
 }
 
 .crt-block {
@@ -226,6 +251,18 @@ html[data-js="ready"] .crt-no-js {
   outline: none;
 }
 
+/*
+ * The masked Soul_Key (BYOK) input is a short secret token, not a command
+ * line: cap its width so it stays a narrow field instead of inheriting the
+ * greedy `.crt-input input { flex: 1 1 12rem }` grow and filling the whole
+ * row (judge-ready-pass item 9). It still shrinks on narrow screens.
+ */
+#crt-soul-key {
+  flex: 0 1 auto;
+  width: 14rem;
+  max-width: 100%;
+}
+
 .crt-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -250,14 +287,14 @@ html[data-js="ready"] .crt-no-js {
 }
 
 /*
- * Soul_Source HUD indicator (lovers-binding task 10.6, R24.4, design §D.6).
+ * Soul_Source HUD indicator (lovers-binding task 10.6, R24.4, design Â§D.6).
  * The always-present terminal-chrome line stating the active Soul_Source
  * (`SOUL SOURCE: ORACLE` / `SOUL SOURCE: YOURS`) plus the souls-spent
  * attribution seam. Authored in the strict 4-shade DMG Asset_Palette so the
  * terminal-wide palette guard stays green: the brightest DMG shade `#8cff9e`
  * (= --dmg-3) for the MODE label on the shared darkest shade `#001a00`
- * (= --dmg-0 = --crt-bg) — a pair whose sRGB contrast ratio is well over the
- * 4.5:1 floor (R24.4 a11y, §D.6). The souls-spent seam line uses the same
+ * (= --dmg-0 = --crt-bg) â€” a pair whose sRGB contrast ratio is well over the
+ * 4.5:1 floor (R24.4 a11y, Â§D.6). The souls-spent seam line uses the same
  * bright shade so it reads clearly whenever it is wired. These two hex values
  * are DMG_Palette members, so palette purity holds with no new colour.
  */
@@ -323,12 +360,12 @@ html[data-js="ready"] .crt-no-js {
  * whatever it sits on by a `#001a00` (`--crt-bg`) inner offset/gap. The
  * `box-shadow: 0 0 0 2px var(--crt-bg)` paints a solid dark separating ring in
  * the `outline-offset` gap, so the bright outline never sits directly on the
- * bright `#33ff66` phosphor foreground — the dark gap provides the separation
+ * bright `#33ff66` phosphor foreground â€” the dark gap provides the separation
  * on the bright-text side. The `#8cff9e` ring clears >= 3:1 against the
  * `#001a00` offset/background it visibly sits against (~11:1), so the indicator
  * is plainly visible against both the dark surround and the bright text, while
  * staying strictly inside the DMG + phosphor palette (no amber-brown, R32.1,
- * R32.2). Kept at a 2px ring; the layering (text → #001a00 gap → #8cff9e ring)
+ * R32.2). Kept at a 2px ring; the layering (text â†’ #001a00 gap â†’ #8cff9e ring)
  * composes the in-palette indicator per R32.
  */
 .crt :focus-visible {
@@ -347,7 +384,7 @@ html[data-js="ready"] .crt-no-js {
   pointer-events: none;
 }
 
-/* Scanlines are a repeating-linear-gradient — no image file (R9.2, R9.8). */
+/* Scanlines are a repeating-linear-gradient â€” no image file (R9.2, R9.8). */
 .crt-scanlines {
   background-image: repeating-linear-gradient(
     to bottom,
@@ -396,7 +433,7 @@ html[data-js="ready"] .crt-no-js {
 /* Visual_Layer: ASCII cards, reveal flip, severity glitch, tower shake,    */
 /* reversed rotation, and resurrection rot (visual-necromancy task 14.1).   */
 /*                                                                          */
-/* FLASH_LIMIT CAPS (R5.11, R6.11, R7.6, R10.3) — the contract every effect */
+/* FLASH_LIMIT CAPS (R5.11, R6.11, R7.6, R10.3) â€” the contract every effect */
 /* below honours so no rolling one-second window ever exceeds 3 flashes:    */
 /*   - A "flash" is one luminance change. Our ceiling is <= 2 changes per    */
 /*     window, a safety margin under the 3-flash accessibility limit.        */
@@ -432,8 +469,8 @@ html[data-js="ready"] .crt-no-js {
  * The card-reveal layer lays its per-position slots side by side in a single
  * horizontal row instead of the default stacked block flow, so a 3-card fates
  * spread reads left-to-right (3 x 24 monospace cols ~= 72 cols). `flex` keeps
- * the slots in DOM order, which is the Reading's exact spread order — no
- * reorder, add, or omit — and `flex-wrap: wrap` lets a wider spread (e.g.
+ * the slots in DOM order, which is the Reading's exact spread order â€” no
+ * reorder, add, or omit â€” and `flex-wrap: wrap` lets a wider spread (e.g.
  * celtic's 10 cards) reflow onto the next line rather than clip. This is pure
  * layout, not motion: it is NOT gated behind `data-motion`, so reduced motion
  * is unaffected. The container stays `aria-hidden` (set in CardReveal.tsx); the
@@ -461,7 +498,7 @@ html[data-js="ready"] .crt-no-js {
 /*
  * Narrow-viewport fallback (R15.8): below 48rem a row of 24-col cards would
  * overflow, so stack them into a single readable column. Still layout, not
- * motion — reduced motion is untouched.
+ * motion â€” reduced motion is untouched.
  */
 @media (max-width: 48rem) {
   .crt-card-reveal {
@@ -489,14 +526,14 @@ html[data-js="ready"] .crt-no-js {
  * phosphor text-shadow layers nudged +/- `--glitch-offset` (set per-card by
  * AsciiCardView from GlitchParams.offsetPx). Those duplicated layers belong to
  * the ONE-SHOT `crt-glitch-kf` animation (see keyframes below), NOT to the
- * resting state — so the chromatic double-image appears only during the
+ * resting state â€” so the chromatic double-image appears only during the
  * <= 300 ms reveal and the card settles to a clean, single-image, readable
  * resting state (R5.3). A calm severity-0 card never carries `crt-glitch` at
  * all (gated in AsciiCardView), so it is steady from the first paint. The
  * duplicated layers are a shadow, so they never alter the selectable text.
  * `--glitch-tears` / `--glitch-corrupt` are consumed by the tear + corruption
  * layers; the corruption is a transient decorative overlay that never changes
- * the glyphs in the DOM (R5.12 — severity is also shown as the integer header).
+ * the glyphs in the DOM (R5.12 â€” severity is also shown as the integer header).
  *
  * The element carries the class only in full motion at intensity > 0; the
  * keyframes declare `animation-iteration-count: 1` so the effect is one-shot.
@@ -510,7 +547,7 @@ html[data-js="ready"] .crt-no-js {
 
 /*
  * Resting state of a glitch card art: the SAME steady single phosphor glow as
- * any normal card — NO chromatic `+/- --glitch-offset` layers. The offset
+ * any normal card â€” NO chromatic `+/- --glitch-offset` layers. The offset
  * layers live inside `crt-glitch-kf` so they appear only during the one-shot
  * animation; once it finishes the card is clean and single-image (R5.3).
  */
@@ -530,8 +567,8 @@ html[data-js="ready"] .crt-no-js {
 /*
  * Chromatic-offset keyframes: 2 luminance changes max in the <= 300 ms window.
  * The duplicated +/- `--glitch-offset` phosphor text-shadow layers (the
- * chromatic double-image) live HERE, inside the one-shot animation — NOT in the
- * resting rule — so they appear only during the reveal and vanish when the
+ * chromatic double-image) live HERE, inside the one-shot animation â€” NOT in the
+ * resting rule â€” so they appear only during the reveal and vanish when the
  * animation settles back to the clean single phosphor glow at 100% (R5.3). The
  * glyphs themselves never move; only the decorative shadow does.
  */
@@ -658,7 +695,7 @@ html[data-js="ready"] .crt-no-js {
  * OPTIONAL severity-3 phosphor bloom (R13.2): a brief one-shot glow swell on
  * the card art when a severity-3 card is revealed in full motion. The glow is a
  * text-shadow bump using the existing phosphor foreground (no new palette
- * value, tarot-ux rule) — it rises once to a brighter/wider phosphor halo at
+ * value, tarot-ux rule) â€” it rises once to a brighter/wider phosphor halo at
  * the midpoint, then settles back to the steady state. That is a single
  * rise-then-settle: at most 2 luminance changes inside the `--crt-bloom-ms`
  * (<= 300 ms) window. With `animation-iteration-count: 1` (set in the gating
@@ -757,7 +794,7 @@ html[data-js="ready"] .crt-no-js {
 
 /*
  * Reduced motion also strips the decorative glitch glow so cards render in
- * their final steady phosphor state — no chromatic offset, no amber, no tear
+ * their final steady phosphor state â€” no chromatic offset, no amber, no tear
  * (R5.10, R7.4). The selectable glyphs and sr-only text are unaffected.
  */
 .crt[data-motion="reduced"] .crt-glitch .crt-ascii-card-art,

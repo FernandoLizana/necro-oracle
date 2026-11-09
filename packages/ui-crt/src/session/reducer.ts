@@ -5,7 +5,7 @@
 // The pure session reducer for the CRT terminal. `step(state, action)` returns
 // the next `SessionState` and the list of `Effect` descriptors the adapter
 // layer must perform. It reads no DOM, clock, network or storage; every side
-// effect is described, never performed (design.md §"Session reducer and
+// effect is described, never performed (design.md Â§"Session reducer and
 // effects").
 //
 // The reducer composes the already-built pure modules: command parse/print,
@@ -30,6 +30,13 @@ import { appendBlocks } from "./log.js";
 import { historyNext, historyPrev, historyPush } from "./history.js";
 import { formatPinnedRef } from "./pinned-ref.js";
 import { withDemoLabel } from "../render/demo-label.js";
+import { tarotRevealBlocks } from "../render/tarot.js";
+import {
+  cryptoRandomFn,
+  drawTarot,
+  fallbackReading,
+  seededRandomFn,
+} from "@necro/oracle/client";
 
 import { parseCommand } from "../command/parse.js";
 import {
@@ -86,7 +93,7 @@ interface Accumulator {
 }
 
 // ---------------------------------------------------------------------------
-// Block helpers — assign ids, append with the 500-line cap, queue for reveal.
+// Block helpers â€” assign ids, append with the 500-line cap, queue for reveal.
 // ---------------------------------------------------------------------------
 
 /**
@@ -135,14 +142,14 @@ function completeReveal(state: SessionState): SessionState {
 /**
  * Seed the Card_Reveal slice for a freshly rendered reading. The schedule has
  * one step per spread position in the Reading's order, so it never reorders,
- * adds, or omits a position — `renderReading` still emits exactly one block per
+ * adds, or omits a position â€” `renderReading` still emits exactly one block per
  * position (R4.1, R4.6). Each position's `diagnosisLength` is the length of its
  * rendered diagnosis text, so the per-card typewriter duration matches what the
  * view types out.
  *
  * In full motion the schedule drives a one-by-one flip, so `flippedCount`
- * starts at 0. In reduced motion no queue is seeded — every card is face-up
- * with full text in a single render (R4.4) — so the schedule is empty and every
+ * starts at 0. In reduced motion no queue is seeded â€” every card is face-up
+ * with full text in a single render (R4.4) â€” so the schedule is empty and every
  * position counts as already flipped.
  */
 function seedCardReveal(state: SessionState, resp: ReadingResponse): SessionState {
@@ -173,7 +180,7 @@ function seedCardReveal(state: SessionState, resp: ReadingResponse): SessionStat
 /**
  * Complete the Card_Reveal slice: every card flipped and every diagnosis fully
  * revealed (R4.5). Reaches the same final state the reduced-motion / Escape
- * path lands on — `flippedCount` is the full count and nothing remains queued.
+ * path lands on â€” `flippedCount` is the full count and nothing remains queued.
  */
 function completeCardReveal(state: SessionState): SessionState {
   const total = state.cardReveal.schedule.length;
@@ -290,6 +297,24 @@ function bootBlock(): BlockDraft {
   return { ...echo, kind: "boot" };
 }
 
+/**
+ * SEC-02: does this raw entry look like a key typed inline after `key set`?
+ *
+ * `true` when the first whitespace-delimited token is `key` (any case) and
+ * the second is `set` (any case) AND at least one further token follows, i.e.
+ * `key set <secret...>`. The bare `key set` (which safely opens the masked
+ * input) returns `false` and flows through the normal parser. Pure; never
+ * throws; never copies the secret tail anywhere.
+ */
+function isInlineKeySet(raw: string): boolean {
+  const tokens = raw.trim().split(/\s+/u);
+  return (
+    tokens.length >= 3 &&
+    tokens[0]!.toLowerCase() === "key" &&
+    tokens[1]!.toLowerCase() === "set"
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Submit
 // ---------------------------------------------------------------------------
@@ -320,6 +345,25 @@ function stepSubmit(
     pushBlocks(acc, [
       oracleBlock(
         `That incantation runs too long; keep it within ${MAX_ENTRY_LENGTH} characters.`,
+      ),
+    ]);
+    maybeFocus(acc, action);
+    return result(acc);
+  }
+
+  // SEC-02: a key typed inline after `key set` (e.g. `key set sk-...`) is a
+  // secret. It must NEVER be echoed, pushed to history, or reflected in an
+  // "Unknown command" line. Intercept it BEFORE parse/echo/history: drop the
+  // raw tail entirely, open the masked `SoulKeyInput` (the only safe entry
+  // path), and explain in oracle voice; the secret characters never leave the
+  // caller's keystrokes (R25.1, R25.2).
+  if (isInlineKeySet(raw)) {
+    acc.effects.push({ type: "byok.open-key-input" });
+    pushLabelled(acc, [
+      oracleBlock(
+        "Never speak your key aloud on the command line. " +
+          "Whisper it into the masked sigil instead; it is held in memory for " +
+          "this tab only and cleared on reload.",
       ),
     ]);
     maybeFocus(acc, action);
@@ -411,6 +455,9 @@ function dispatchCommand(acc: Accumulator, command: Command): void {
       // the parsed command is never silently swallowed.
       doLovers(acc, command.file, command.targetLang);
       return;
+    case "tarot":
+      doTarot(acc, command.question);
+      return;
     case "key":
       doKey(acc, command.op);
       return;
@@ -431,8 +478,8 @@ function doClear(acc: Accumulator): void {
   const cleared = clearBlock();
   const demo = isDemoSession(acc.state);
   const block: BlockDraft = demo ? { ...cleared, demo: true } : cleared;
-  // clear replaces the whole log with one "screen cleared" block — the prior
-  // output and the just-echoed `clear` command are both wiped — while keeping
+  // clear replaces the whole log with one "screen cleared" block â€” the prior
+  // output and the just-echoed `clear` command are both wiped â€” while keeping
   // summary / readings / lastSpread (R15.10). The reveal queue is reset too.
   const reset: SessionState = {
     ...acc.state,
@@ -449,11 +496,11 @@ function doClear(acc: Accumulator): void {
 /**
  * Return to the Landing_State (oracle-landing-polish R1.4, R2.3). `home` is a
  * superset of `clear` plus the landing restore: it empties the output log (no
- * "screen cleared" block is left — the log must be empty for `landingVisible`),
+ * "screen cleared" block is left â€” the log must be empty for `landingVisible`),
  * nulls `summary`/`readings`/`lastSpread`/`lastRitual`, resets the reveal and
  * card-reveal queues, and sets `landingDismissed = false`. With the boot phase
  * already `done`, an empty log, and `summary === null`, `landingVisible(state)`
- * becomes true again — a clean round-trip from Dismissed to LandingVisible.
+ * becomes true again â€” a clean round-trip from Dismissed to LandingVisible.
  */
 function doHome(acc: Accumulator): void {
   acc.state = {
@@ -467,6 +514,11 @@ function doHome(acc: Accumulator): void {
     reveal: { queue: [], startedAtMs: null },
     cardReveal: { schedule: [], flippedCount: 0 },
     landingDismissed: false,
+    // Item 7 (demo exit): leave any demo replay cleanly. `summary: null` already
+    // ends the demo session (isDemoSession reads summary.demo); also drop the
+    // pending demo name so no stale demo selection lingers. The cached
+    // demoBundle is kept so a later `demo <name>` re-installs without a reload.
+    pendingDemo: null,
   };
 }
 
@@ -609,7 +661,7 @@ function inScopeResurrectSpread(state: SessionState): PlayableSpread | null {
 
 /**
  * Begin a resurrection for the parsed target (R1.1). Refuses with an
- * oracle-voice block when no completed reading is in scope — no summary, or no
+ * oracle-voice block when no completed reading is in scope â€” no summary, or no
  * live/demo reading for the pinned ref (R1.6). Otherwise guards the single
  * in-flight slot, opens a `resurrect` request, pushes a pre-resurrection
  * phrase, and emits one `api.resurrect` effect carrying the pinned ref, the
@@ -644,11 +696,17 @@ function doResurrect(acc: Accumulator, target: ResurrectTarget): void {
   };
   pushBlocks(acc, [oracleBlock(PRE_RESURRECTION_PHRASE)]);
   const pinned = formatPinnedRef(summary.ref);
-  acc.effects.push({ type: "api.resurrect", requestId, pinned, target, spread });
+  // Item 2 (judge-ready-pass): a demo session resurrects the bundled fixture
+  // OFFLINE. Forward demo:true so the server reads the fixture and never calls
+  // GitHub (the demo pinned ref is not a real repo) or OpenRouter.
+  const resurrectEffect = isDemoSession(acc.state)
+    ? ({ type: "api.resurrect", requestId, pinned, target, spread, demo: true } as const)
+    : ({ type: "api.resurrect", requestId, pinned, target, spread } as const);
+  acc.effects.push(resurrectEffect);
 }
 
 // ---------------------------------------------------------------------------
-// motion (changes only the motion region — P27)
+// motion (changes only the motion region â€” P27)
 // ---------------------------------------------------------------------------
 
 function doMotion(acc: Accumulator, arg: "auto" | "on" | "off" | undefined): void {
@@ -665,7 +723,7 @@ function doMotion(acc: Accumulator, arg: "auto" | "on" | "off" | undefined): voi
 }
 
 // ---------------------------------------------------------------------------
-// sound (changes only the sound region — P27; never writes a block itself)
+// sound (changes only the sound region â€” P27; never writes a block itself)
 // ---------------------------------------------------------------------------
 
 function doSound(acc: Accumulator, arg: "on" | "off" | undefined): void {
@@ -689,21 +747,79 @@ function doSound(acc: Accumulator, arg: "on" | "off" | undefined): void {
   acc.effects.push({ type: "prefs.save", key: "sound", value: arg });
   const activity = soundActivity(sound);
   acc.effects.push({ type: "sound.apply", hum: activity.hum, click: activity.click });
+  // Item 8: a confirmation line, mirroring motion's "Motion set to X." — the
+  // viewer sees the toggle was honoured (the sound STATE still lives only in
+  // the sound region; this block is command output, not a sound side effect).
+  pushLabelled(acc, [oracleBlock(`Sound set to ${arg}.`)]);
 }
 
 // ---------------------------------------------------------------------------
-// lovers — the Lovers binding ritual (lovers-binding R14.1, R14.4, task 14.4)
+// tarot -- the destiny draw + reading (judge-ready-pass items 30-33)
+// ---------------------------------------------------------------------------
+
+/**
+ * Draw a three-card Past/Present/Future tarot spread and render its reading.
+ *
+ * The draw is a SEPARATE deck from the diagnosis cards and needs no repository,
+ * so `tarot` works on the bare landing with nothing summoned. A live session
+ * draws with the crypto-backed RNG; a DEMO session draws with a seeded RNG
+ * LOCAL to the demo (item 33) -- never patching `globalThis.crypto` -- so the
+ * replay is deterministic. This reducer renders the DETERMINISTIC offline
+ * reading (`fallbackReading`); the model-backed reading text (item 32) arrives
+ * through the client effect/route, which may later replace this block.
+ */
+function doTarot(acc: Accumulator, question: string | undefined): void {
+  const demo = isDemoSession(acc.state);
+  // Demo: a seeded RNG local to the demo (item 33). The seed is derived from
+  // the pending demo name so the same replay always lays the same spread, with
+  // NO globalThis.crypto patch. Live: the crypto-backed RNG.
+  const rng = demo
+    ? seededRandomFn(demoTarotSeed(acc.state.pendingDemo))
+    : cryptoRandomFn();
+  const draw = drawTarot(rng);
+  const reading = fallbackReading(draw);
+  // `question` is untrusted DATA; the offline reading does not consume it, but
+  // keeping it in the parsed command lets the model path (item 32) use it.
+  void question;
+  // Item 31: mark the spread laid so the sound hook can toll one tone (gated by
+  // soundCueAllowed; sound-off stays silent).
+  acc.state = { ...acc.state, tarotSeq: acc.state.tarotSeq + 1 };
+  // Item 31 (ritual reveal): push the CEREMONIAL sequence as ordered blocks --
+  // the shuffle/cut opener, then one block per card (its dealt line + a single
+  // Seer line as it flips face-up), then the reading typed paragraph by
+  // paragraph, then the verdict. Each block rides the shell's existing reveal
+  // queue, so it deals/types one-by-one in full motion and renders instantly in
+  // reduced motion; Escape/clear/home cancel it with no leaked timers.
+  pushLabelled(
+    acc,
+    tarotRevealBlocks(draw, reading).map((text) => oracleBlock(text)),
+  );
+}
+
+/** A stable per-demo seed for the local tarot RNG (item 33). */
+function demoTarotSeed(pendingDemo: string | null): number {
+  const name = pendingDemo ?? "demo";
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// ---------------------------------------------------------------------------
+// lovers â€” the Lovers binding ritual (lovers-binding R14.1, R14.4, task 14.4)
 // ---------------------------------------------------------------------------
 
 /**
  * Begin a Lovers binding for the parsed `lovers <file> js` entry, mirroring
  * `doResurrect` exactly. Refuses with an oracle-voice block when no completed
- * reading is in scope — no summary, or no live/demo reading for the pinned ref
+ * reading is in scope â€” no summary, or no live/demo reading for the pinned ref
  * (the same precondition `doResurrect` enforces for R1.6). Otherwise guards the
  * single in-flight slot, opens a `lovers` request, pushes the pre-binding
  * phrase, and emits one `api.lovers` effect carrying the pinned ref, the file
  * to bind and the in-scope spread. The session model overrides ride along ONLY
- * when the Soul_Source is `YOURS` (design §D.2 item 5); on ORACLE they are
+ * when the Soul_Source is `YOURS` (design Â§D.2 item 5); on ORACLE they are
  * omitted so the reducer never forwards an override the server would ignore.
  * The server owns all semantic validation (THE LOVERS drawn, file bindable,
  * function/byte caps).
@@ -739,7 +855,7 @@ function doLovers(acc: Accumulator, file: string, _targetLang: "javascript"): vo
   const pinned = formatPinnedRef(summary.ref);
 
   // The session model overrides are honoured by the server only on YOURS, so
-  // the reducer forwards them only then (design §D.2 item 5); on ORACLE the
+  // the reducer forwards them only then (design Â§D.2 item 5); on ORACLE the
   // effect omits `models` entirely.
   const overrides = acc.state.sessionModelOverrides;
   const hasOverride =
@@ -749,33 +865,41 @@ function doLovers(acc: Accumulator, file: string, _targetLang: "javascript"): vo
       ? { ...overrides }
       : undefined;
 
-  acc.effects.push(
-    models === undefined
-      ? { type: "api.lovers", requestId, pinned, file, spread }
-      : { type: "api.lovers", requestId, pinned, file, spread, models },
-  );
+  // Item 2 (judge-ready-pass): a demo session binds the bundled fixture
+  // OFFLINE â€” forward demo:true so the server never calls GitHub/OpenRouter.
+  const demo = isDemoSession(acc.state) ? (true as const) : undefined;
+  const loversEffect = {
+    type: "api.lovers" as const,
+    requestId,
+    pinned,
+    file,
+    spread,
+    ...(models === undefined ? {} : { models }),
+    ...(demo === undefined ? {} : { demo }),
+  };
+  acc.effects.push(loversEffect);
 }
 
 // ---------------------------------------------------------------------------
-// key — the BYOK Soul_Source commands (lovers-binding R25.1-R25.4, D.2, D.6)
+// key â€” the BYOK Soul_Source commands (lovers-binding R25.1-R25.4, D.2, D.6)
 // ---------------------------------------------------------------------------
 
 /**
  * Reduce a `key set|status|clear` command. The reducer stays pure: it mirrors
  * only the key STATUS (`soulKeyStatus = { keySet, last4 }`) and the
- * `soulSource` flag, and NEVER the raw key — the key value lives solely in the
- * `apps/web` `SoulKeyContext` ref (design §D.3). The reducer signals UI intent
+ * `soulSource` flag, and NEVER the raw key â€” the key value lives solely in the
+ * `apps/web` `SoulKeyContext` ref (design Â§D.3). The reducer signals UI intent
  * through `Effect` descriptors (exactly as `api.*` / `prefs.save` / `focus`
  * are signalled), so it touches no DOM and no storage.
  *
- * - `set`    — signals the shell to open the masked `SoulKeyInput` via the
+ * - `set`    â€” signals the shell to open the masked `SoulKeyInput` via the
  *              `byok.open-key-input` effect, plus an oracle-voice line stating
  *              the key is memory-only for this tab (R25.2, R26.4). The reducer
  *              does NOT receive the key value here; the shell later dispatches a
  *              `byok.key-set` action carrying only `{ last4 }`.
- * - `status` — renders set/not-set plus the last four from `soulKeyStatus`
+ * - `status` â€” renders set/not-set plus the last four from `soulKeyStatus`
  *              (never the raw key) (R25.3).
- * - `clear`  — resets `soulKeyStatus` to not-set and `soulSource` to `ORACLE`,
+ * - `clear`  â€” resets `soulKeyStatus` to not-set and `soulSource` to `ORACLE`,
  *              and signals the shell to drop the ref via `byok.clear-key`
  *              (R25.4).
  */
@@ -818,17 +942,17 @@ function doKey(acc: Accumulator, op: KeyOp): void {
 }
 
 // ---------------------------------------------------------------------------
-// model — the session-only model override (lovers-binding R25.5-R25.8, D.2)
+// model â€” the session-only model override (lovers-binding R25.5-R25.8, D.2)
 // ---------------------------------------------------------------------------
 
 /**
  * Reduce a `model fast|strong <id>` command. The `<id>` is already
  * `MODEL_ID_RE`-validated by the parser (an invalid id parses to `unknown`),
  * so the reducer records it into `sessionModelOverrides` for THIS session only
- * — it is never written to any storage (no `prefs.save` effect).
+ * â€” it is never written to any storage (no `prefs.save` effect).
  *
  * An override is honoured by the server only when the Soul_Source is `YOURS`
- * (design §D.2 item 5): the server-side honour/ignore is enforced in task 11.6.
+ * (design Â§D.2 item 5): the server-side honour/ignore is enforced in task 11.6.
  * When the Soul_Source is still `ORACLE`, the reducer records the override but
  * the oracle-voice confirmation states it is ignored until a key is bound, so
  * the HUD/notice reflects that it has no effect on ORACLE.
@@ -914,6 +1038,18 @@ function installDemo(
   };
   // Now a demo session: the summary block carries the demo label (R18.5).
   pushLabelled(acc, [renderSummary(summary)]);
+  // Item 7 (autoplay): a replay is a canned, self-running demonstration -- it
+  // should SHOW a reading immediately, not wait for the viewer to type `read`.
+  // Auto-run the fates spread from the bundle (the same path `read fates` takes
+  // in a demo session), so `demo <name>` lands on a full reading. `doReadDemo`
+  // reads only the just-installed bundle entry (no network), seeds the card
+  // reveal, and renders the demo-labelled reading.
+  doReadDemo(acc, "fates");
+  // Item 33: the demo autoplay ENDS with a tarot destiny reading. Because this
+  // is now a demo session, `doTarot` draws with the seeded RNG LOCAL to the
+  // demo (never patching globalThis.crypto), so the replay's spread is
+  // deterministic and offline.
+  doTarot(acc, undefined);
 }
 
 // ---------------------------------------------------------------------------
@@ -1221,7 +1357,7 @@ function stepSound(
 /**
  * The shell reports that the masked `SoulKeyInput` accepted a key
  * (lovers-binding R24.2, R25.2, D.3). The action carries ONLY the last four
- * characters — never the raw key — so the reducer mirrors `soulKeyStatus` and
+ * characters â€” never the raw key â€” so the reducer mirrors `soulKeyStatus` and
  * flips `soulSource` to `YOURS`, leaving the key value in the `apps/web` ref
  * alone. An oracle-voice confirmation names only the last four runes.
  */
@@ -1273,7 +1409,7 @@ function unknownBlock(raw: string): BlockDraft {
 /** The demo-catalog listing block (R18.2, R18.4). */
 function catalogBlock(): BlockDraft {
   const header = "The crypt holds these recorded readings:";
-  const entries = DEMO_CATALOG.map((entry) => `  ${entry.name} — ${entry.description}`);
+  const entries = DEMO_CATALOG.map((entry) => `  ${entry.name} â€” ${entry.description}`);
   const hint = "Type demo <name> to replay one.";
   const text = [header, ...entries, hint].join("\n");
   return oracleBlock(text);
@@ -1327,7 +1463,7 @@ function loversSkipNoteBlock(note: string): BlockDraft {
 
 /**
  * Render a settled Lovers binding as a single oracle block: a mystical line,
- * then the technical facts — how many functions were bound, the path the
+ * then the technical facts â€” how many functions were bound, the path the
  * accepted pair came from (`llm` vs `template`), and the souls spent attributed
  * to the Soul_Source that paid. The authoritative summary lives here in the
  * log; the DMG `LoversView` (mounted from `lastLovers`) shows the full split

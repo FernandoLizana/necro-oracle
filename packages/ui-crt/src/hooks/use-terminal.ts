@@ -346,6 +346,8 @@ export function useTerminal(
                   event,
                 });
               },
+              // Item 2: forward the demo flag so a demo replay stays offline.
+              effect.demo,
             )
             .then((result) => {
               dispatchRef.current({
@@ -380,6 +382,8 @@ export function useTerminal(
                 file: effect.file,
                 spread: effect.spread,
                 models: effect.models,
+                // Item 2: forward the demo flag so a demo replay stays offline.
+                demo: effect.demo,
               },
               controller.signal,
               (event) => {
@@ -453,6 +457,14 @@ export function useTerminal(
           return;
 
         case "byok.clear-key":
+          // SEC-01: clearing the key must also abort any in-flight LLM request
+          // so a request started before the clear cannot keep using the key
+          // that was just revoked. The header was already copied into the live
+          // fetch; aborting it is the only way to stop that request from
+          // completing under the old key. The abort also drops the queued
+          // resolve/reject closures that captured it.
+          abortRef.current?.abort();
+          abortRef.current = null;
           onClearKeyRef.current?.();
           return;
       }
@@ -607,6 +619,7 @@ export function useTerminal(
   const prevGlitchFlippedRef = useRef(state.cardReveal.flippedCount);
   const prevRitualRef = useRef(state.lastRitual);
   const prevReadingRef = useRef(currentVisualReading(state));
+  const prevTarotSeqRef = useRef(state.tarotSeq);
 
   useEffect(() => {
     // Boot completion: the overlay's phase settles to "done" (R8.1).
@@ -659,6 +672,19 @@ export function useTerminal(
     }
     prevReadingRef.current = currentReading;
   }, [currentReading, requestCue]);
+
+  // Item 31 (tarot ritual reveal): one original Web Audio toll the instant a
+  // tarot spread is laid (`tarotSeq` advances). It reuses the `summon` cue --
+  // the "a spread is laid" note -- so the tarot reveal is scored with the same
+  // short tone, and gating is entirely `useSound`'s `soundCueAllowed`: off by
+  // default, gesture-gated, SILENT while sound is off (R8.1-R8.4). Motion mode
+  // never affects it (the typewriter block sequence owns the visual reveal).
+  useEffect(() => {
+    if (state.tarotSeq !== prevTarotSeqRef.current) {
+      requestCue("summon");
+    }
+    prevTarotSeqRef.current = state.tarotSeq;
+  }, [state.tarotSeq, requestCue]);
 
   // The ambient Resurrection_Animation hum gate (visual-necromancy task 21.1,
   // OPTIONAL polish). A pure boolean over the sound state, the Motion_Mode and

@@ -55,10 +55,10 @@ const LOVERS_LANGS: Readonly<Record<string, "javascript">> = {
   javascript: "javascript",
 };
 
-/** The three `key` operations (lovers-binding R25.1, design §D.2). */
+/** The three `key` operations (lovers-binding R25.1, design Â§D.2). */
 const KEY_OPS: readonly KeyOp[] = ["set", "status", "clear"];
 
-/** The two `model` tiers (lovers-binding R25.5, R25.6, design §A.3). */
+/** The two `model` tiers (lovers-binding R25.5, R25.6, design Â§A.3). */
 const MODEL_TIERS: readonly ModelTierArg[] = ["fast", "strong"];
 
 /**
@@ -66,7 +66,7 @@ const MODEL_TIERS: readonly ModelTierArg[] = ["fast", "strong"];
  *
  * Accepts `vendor/model` with an OPTIONAL leading `~` routing hint and an
  * OPTIONAL `:tag` suffix (e.g. `:free`, `:nitro`), over a restricted charset,
- * total length ≤ 128. Rejects whitespace, control chars, `..`, a bare vendor,
+ * total length â‰¤ 128. Rejects whitespace, control chars, `..`, a bare vendor,
  * and leading/trailing separators.
  *
  * Exported so task 11's server-side request schema validates the SAME pattern
@@ -94,8 +94,8 @@ function unknown(raw: string): Command {
  * ResurrectTarget} at the parse level only. A token containing a `/` or ending
  * in `.py` is a file path (R1.3), its case preserved because paths are
  * case-sensitive; any other token is a card id (R1.2), lowercased to match the
- * canonical card-id casing (mirrors `explain`). Semantic validation —
- * card/file existence and Python-2 classification — is the server's job, so no
+ * canonical card-id casing (mirrors `explain`). Semantic validation â€”
+ * card/file existence and Python-2 classification â€” is the server's job, so no
  * `CardIdSchema` check happens here. Returns `null` for an empty token so the
  * caller can reject `resurrect ""`-style input; tokenization already strips
  * surrounding whitespace, so a present-but-empty token cannot otherwise arise.
@@ -212,6 +212,16 @@ export function parseCommand(input: string): Command | null {
         return { kind: "sound", arg: arg as CommandSoundArg };
       }
       return unknown(trimmed);
+    }
+
+    case "tarot": {
+      // `tarot [question...]` — the optional question is the FREE-TEXT rest of
+      // the entry (everything after the command word), not a single token, so a
+      // seeker can ask a real question. It is untrusted DATA; the server treats
+      // it as such and never as instructions. Empty => omitted entirely.
+      if (args.length === 0) return { kind: "tarot" };
+      const question = args.join(" ").slice(0, 200);
+      return { kind: "tarot", question };
     }
 
     case "lovers": {

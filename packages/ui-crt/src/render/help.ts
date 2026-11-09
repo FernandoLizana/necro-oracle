@@ -4,8 +4,8 @@
 //
 // `renderHelp` is a pure function of nothing: it reads no port, makes no
 // network/clock/DOM call, and returns a single oracle block built from static
-// copy (R4.3). It lists the core commands — each with its argument form and a
-// one-line description — and the keyboard shortcuts (R4.1, R4.2). Two calls are
+// copy (R4.3). It lists the core commands â€” each with its argument form and a
+// one-line description â€” and the keyboard shortcuts (R4.1, R4.2). Two calls are
 // byte-for-byte equal.
 
 import { sanitizeText } from "../text/sanitize.js";
@@ -18,9 +18,14 @@ const COMMAND_LINES: readonly string[] = [
   "read <fates|necropsy|celtic>    lay a spread for the pinned repo",
   "explain <position|card>         show the evidence behind a card",
   "resurrect [<card-or-file>]      raise the dead code the cards named",
+  "lovers <file> js                bind a resurrected file to JavaScript",
+  "key <set|status|clear>          bring your own OpenRouter key (this tab)",
+  "model <fast|strong> <id>        choose a model for your own key",
   "help                            show this grimoire of commands",
   "clear                           clear the screen, keep the reading",
+  "home                            return to the landing",
   "demo [name]                     replay a recorded reading",
+  "tarot [question]                draw a three-card destiny reading",
   "motion <auto|on|off>            control reveal and CRT motion",
   "sound <on|off>                  toggle the spectral hum",
 ];

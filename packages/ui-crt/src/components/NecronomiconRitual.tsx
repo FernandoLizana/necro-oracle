@@ -50,10 +50,10 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 
 import type { FramePort } from "../ports.js";
+import { useCssVars } from "../hooks/use-css-vars.js";
 import type { MotionMode } from "../motion/motion-mode.js";
 import type { RitualPhase, RitualStep } from "../arcana/ritual-timeline.js";
 
@@ -219,12 +219,6 @@ export function NecronomiconRitual({
     complete();
   }, [onImageError, complete]);
 
-  // Skipped ritual or finished playback: render the Spec 05 diff/patch view
-  // verbatim. `children` is never altered by the ritual (R6.9).
-  if (!hasRitual || finished) {
-    return <>{children}</>;
-  }
-
   // The active phase for the current frame (or the first phase before the frame
   // loop has anchored), used to drive the `data-ritual` attribute and the
   // per-phase `--ritual-phase-ms` duration the `arcana.css` keyframes read.
@@ -233,16 +227,24 @@ export function NecronomiconRitual({
   const activePhase: RitualPhase = activeStep ? activeStep.phase : "closed-glitch";
   const phaseMs = activeStep ? activeStep.durationMs : 0;
 
-  const ritualStyle = {
-    "--ritual-phase-ms": `${phaseMs}ms`,
-  } as CSSProperties;
+  // SEC-08: apply the ritual phase-duration custom property through the CSSOM
+  // (useCssVars) instead of a CSP-blocked inline style attribute. Declared
+  // BEFORE the early return below so every render runs the same hooks.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useCssVars(rootRef, { "--ritual-phase-ms": `${phaseMs}ms` });
+
+  // Skipped ritual or finished playback: render the Spec 05 diff/patch view
+  // verbatim. `children` is never altered by the ritual (R6.9).
+  if (!hasRitual || finished) {
+    return <>{children}</>;
+  }
 
   return (
     <div
+      ref={rootRef}
       className="crt-ritual crt-necronomicon"
       data-ritual={activePhase}
       data-motion={motionMode}
-      style={ritualStyle}
       aria-hidden="true"
     >
       {/*
@@ -254,14 +256,12 @@ export function NecronomiconRitual({
         className="crt-necronomicon-img crt-ritual-closed"
         src={closedSrc}
         alt=""
-        style={{ imageRendering: "pixelated" }}
         onError={handleImageError}
       />
       <img
         className="crt-necronomicon-img crt-ritual-open"
         src={openSrc}
         alt=""
-        style={{ imageRendering: "pixelated" }}
         onError={handleImageError}
       />
 

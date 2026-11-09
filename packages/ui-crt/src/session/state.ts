@@ -138,6 +138,13 @@ export interface SessionState {
   readonly boot: BootState;
   readonly cardReveal: CardRevealState;
   /**
+   * A monotonic counter bumped each time a tarot spread is laid (item 31). The
+   * sound hook fires one original Web Audio tone when it advances (gated by
+   * `soundCueAllowed`, so sound-off is silent); the reveal itself is the
+   * typewriter block sequence. Pure session memory.
+   */
+  readonly tarotSeq: number;
+  /**
    * Whether the Landing_State has been dismissed by the first accepted command
    * (oracle-landing-polish, R1.2/R1.5). Seeded `false`; set `true` on the first
    * `submit` that produces output; set back to `false` by the `home` command.
@@ -244,6 +251,12 @@ export type Effect =
       readonly pinned: string;
       readonly target: ResurrectTarget;
       readonly spread: PlayableSpread;
+      /**
+       * Item 2 (judge-ready-pass): set `true` when the session is a demo replay
+       * so the server resurrects the bundled fixture offline and never calls
+       * GitHub or OpenRouter. Omitted for a live session.
+       */
+      readonly demo?: true | undefined;
     }
   | {
       readonly type: "api.lovers";
@@ -257,6 +270,11 @@ export type Effect =
        * the reducer never forwards an override the server would ignore.
        */
       readonly models?: LoversModelOverrides | undefined;
+      /**
+       * Item 2 (judge-ready-pass): set `true` for a demo replay so the Lovers
+       * binding runs from the bundled fixture offline (no GitHub, no OpenRouter).
+       */
+      readonly demo?: true | undefined;
     }
   | { readonly type: "api.abort" }
   | {
@@ -311,6 +329,7 @@ export function initialState(): SessionState {
     reveal: { queue: [], startedAtMs: null },
     boot: { phase: "playing", startedAtMs: null, stepIndex: 0, seen: false },
     cardReveal: { schedule: [], flippedCount: 0 },
+    tarotSeq: 0,
     landingDismissed: false,
     soulSource: "ORACLE",
     soulKeyStatus: { keySet: false, last4: "" },

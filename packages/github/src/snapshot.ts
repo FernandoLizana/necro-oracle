@@ -22,6 +22,7 @@ import {
   type GhRepo,
 } from "./schemas/github.js";
 import { cacheKey, effectiveTtlMs, SnapshotCache } from "./snapshot-cache.js";
+import { MAX_SNAPSHOT_CACHE_BYTES } from "./constants.js";
 import { extractTarball, type ExtractionLimits } from "./tar-extract.js";
 import { isoFromMs } from "./time.js";
 
@@ -39,7 +40,7 @@ export interface SummonResult {
 }
 
 export interface SummonerOptions {
-  readonly cache?: { readonly ttlMs?: number; readonly maxEntries?: number };
+  readonly cache?: { readonly ttlMs?: number; readonly maxEntries?: number; readonly maxBytes?: number };
   readonly limits?: Partial<ExtractionLimits>;
 }
 
@@ -76,6 +77,24 @@ interface Operation {
   readonly ctl: AbortController;
 }
 
+/**
+ * Item 23: measure the byte footprint of a cached SummonResult - dominated by
+ * the snapshot's runtime file-content Map. Sums the UTF-8-ish length of every
+ * stored content string (string `.length` is a cheap, monotonic proxy for the
+ * byte size; exactness is not required - the budget only needs to bound growth
+ * sanely). Never throws.
+ */
+export function measureSummonResultBytes(result: SummonResult): number {
+  let bytes = 0;
+  const contents = result.snapshot.contents;
+  if (contents instanceof Map) {
+    for (const value of contents.values()) {
+      if (typeof value === "string") bytes += value.length;
+    }
+  }
+  return bytes;
+}
+
 export class GitHubSummoner implements GitHubSnapshotBuilder {
   private readonly cache: SnapshotCache<SummonResult>;
   private readonly inflight = new Map<string, Promise<SummonResult>>();
@@ -85,7 +104,16 @@ export class GitHubSummoner implements GitHubSnapshotBuilder {
     private readonly deps: SummonerDeps,
     opts: SummonerOptions = {},
   ) {
-    this.cache = new SnapshotCache<SummonResult>(deps.clock, opts.cache ?? {});
+    // Item 23: bound the snapshot cache by TOTAL BYTES, not just entry count -
+    // a cached SummonResult holds the whole file-content Map (up to ~200 MB),
+    // so 20 entries could pin GBs. `measureSummonResultBytes` sums the content
+    // byte lengths; the LRU evicts oldest-first once the running total exceeds
+    // the budget (default MAX_SNAPSHOT_CACHE_BYTES).
+    this.cache = new SnapshotCache<SummonResult>(deps.clock, {
+      ...(opts.cache ?? {}),
+      maxBytes: opts.cache?.maxBytes ?? MAX_SNAPSHOT_CACHE_BYTES,
+      measure: measureSummonResultBytes,
+    });
     this.limits = opts.limits ?? {};
   }
 

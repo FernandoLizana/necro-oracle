@@ -50,13 +50,13 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 
 import { integerScale, type Size } from "../arcana/integer-scale.js";
 import type { ArcanaAsset } from "../arcana/manifest.js";
 import type { PreviewModel } from "../landing/landing-model.js";
 import type { MotionMode } from "../motion/motion-mode.js";
+import { useCssVars } from "../hooks/use-css-vars.js";
 import { SeerPortrait } from "./SeerPortrait.js";
 
 /** Props for the PREVIEW window (design §"Component: PreviewWindow"). */
@@ -125,9 +125,6 @@ function CardBack(): React.JSX.Element {
       data-sigil={CARD_BACK_SIGIL_ID}
       src={CARD_BACK_SRC}
       alt={CARD_BACK_ALT}
-      // Pixelated + no filter are enforced by `landing.css`; the inline hint
-      // keeps the crisp rendering even before the stylesheet applies.
-      style={{ imageRendering: "pixelated" }}
       onError={() => setImageFailed(true)}
     />
   );
@@ -263,11 +260,13 @@ export function PreviewWindow({
     { w: fillArea.w / CARD_BACK_COUNT, h: cardBackHeightBudget },
     CARD_BACK_LOGICAL,
   );
-  const previewStyle = {
+  // SEC-08: apply the card-back scale/logical custom properties through the
+  // CSSOM (useCssVars on panelRef) instead of a CSP-blocked inline style attr.
+  useCssVars(panelRef, {
     "--arcana-scale": String(cardBackScale),
     "--arcana-logical-w": String(CARD_BACK_LOGICAL.w),
     "--arcana-logical-h": String(CARD_BACK_LOGICAL.h),
-  } as CSSProperties;
+  });
 
   // The area the Seer's reused `SeerPortrait` scales itself against: the full
   // panel width and the Seer's height share, so the Seer fills the preview
@@ -278,7 +277,6 @@ export function PreviewWindow({
     <div
       ref={panelRef}
       className="crt-landing-panel crt-landing-preview"
-      style={previewStyle}
       role="group"
       aria-label="Reading preview"
     >

@@ -242,3 +242,60 @@ describe("shallow copy (D5)", () => {
     expect(cache.get("a")?.manifests).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Item 23 (P0.5): the snapshot cache must be bounded by BYTES, not only by
+// entry count. A cached SummonResult holds the snapshot's whole file-content
+// Map (up to ~200 MB uncompressed), so 20 entries could pin gigabytes. The
+// cache takes an injected `measure(value): number` and a `maxBytes` budget and
+// evicts LRU entries until the total measured size is within budget.
+// ---------------------------------------------------------------------------
+
+describe("Item 23 (R8.7): the snapshot cache is bounded by total bytes", () => {
+  it("evicts LRU entries so total measured bytes never exceed maxBytes", () => {
+    const clock = fakeClock();
+    // Each value reports its own byte size via `measure`. Budget = 250 bytes.
+    const cache = new SnapshotCache<{ bytes: number }>(clock, {
+      maxEntries: 100, // high, so BYTES are the binding limit
+      maxBytes: 250,
+      measure: (v) => v.bytes,
+    });
+
+    cache.set("a", { bytes: 100 });
+    cache.set("b", { bytes: 100 });
+    // a+b = 200 <= 250, both fit.
+    expect(cache.get("a")).toEqual({ bytes: 100 });
+    expect(cache.get("b")).toEqual({ bytes: 100 });
+
+    // Adding c (100) would make 300 > 250 - evict LRU until within budget.
+    // get() above marked a then b as MRU (a is now LRU), so a is evicted.
+    cache.set("c", { bytes: 100 });
+    expect(cache.get("a")).toBeUndefined();
+    expect(cache.get("b")).toEqual({ bytes: 100 });
+    expect(cache.get("c")).toEqual({ bytes: 100 });
+  });
+
+  it("still stores a single entry larger than maxBytes (never wedges), but holds only it", () => {
+    const clock = fakeClock();
+    const cache = new SnapshotCache<{ bytes: number }>(clock, {
+      maxBytes: 100,
+      measure: (v) => v.bytes,
+    });
+    cache.set("big", { bytes: 500 }); // bigger than the whole budget
+    expect(cache.get("big")).toEqual({ bytes: 500 });
+    // A second entry forces the oversize one out (budget can hold at most one).
+    cache.set("small", { bytes: 10 });
+    expect(cache.get("big")).toBeUndefined();
+    expect(cache.get("small")).toEqual({ bytes: 10 });
+  });
+
+  it("without a measure/maxBytes it behaves exactly as before (entry-count only)", () => {
+    const clock = fakeClock();
+    const cache = new SnapshotCache<{ n: number }>(clock, { maxEntries: 2 });
+    cache.set("a", { n: 1 });
+    cache.set("b", { n: 2 });
+    cache.set("c", { n: 3 }); // evicts "a" by count
+    expect(cache.get("a")).toBeUndefined();
+    expect(cache.size).toBe(2);
+  });
+});

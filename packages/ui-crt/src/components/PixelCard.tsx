@@ -60,8 +60,8 @@
 "use client";
 
 import {
+  useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 
@@ -77,6 +77,7 @@ import { glitchProfile, type GlitchParams } from "../motion/glitch.js";
 import type { MotionMode } from "../motion/motion-mode.js";
 import type { AsciiCard } from "../render/ascii-card.js";
 import { AsciiCardView, GLITCH_CLASS } from "./AsciiCardView.js";
+import { useCssVars } from "../hooks/use-css-vars.js";
 
 /** The CardIds that burn amber (`data-burning`) — identical to `AsciiCardView`. */
 const BURNING_CARDS = new Set(["tower", "devil"]);
@@ -112,13 +113,13 @@ export interface PixelCardProps {
  * `GlitchParams`. Attached only in full motion — identical to the set
  * `AsciiCardView` applies so both ride the same `crt-glitch-kf` contract.
  */
-function glitchStyle(glitch: GlitchParams): CSSProperties {
+function glitchStyle(glitch: GlitchParams): Record<string, string> {
   return {
     "--glitch-offset": `${glitch.offsetPx}px`,
     "--glitch-tears": String(glitch.tearCount),
     "--glitch-corrupt": String(glitch.corruptChars),
     "--glitch-duration": `${glitch.durationMs}ms`,
-  } as CSSProperties;
+  };
 }
 
 /**
@@ -126,13 +127,32 @@ function glitchStyle(glitch: GlitchParams): CSSProperties {
  * `arcana.css` multiplies each by `--arcana-scale` to place the overlay exactly
  * over the animated region of the scaled image (R4.2, R4.6).
  */
-function zoneStyle(zone: MotionZone): CSSProperties {
+function zoneVars(zone: MotionZone): Record<string, string> {
   return {
     "--zone-x": String(zone.rect.x),
     "--zone-y": String(zone.rect.y),
     "--zone-w": String(zone.rect.w),
     "--zone-h": String(zone.rect.h),
-  } as CSSProperties;
+  };
+}
+
+/**
+ * One Motion_Zone overlay span. SEC-08: its `--zone-*` custom properties are
+ * applied through the CSSOM (useCssVars on its own ref) rather than a
+ * CSP-blocked inline style attribute, so each per-zone value is still dynamic
+ * while the nonce-only `style-src` holds.
+ */
+function MotionZoneSpan({ zone }: { zone: MotionZone }): React.JSX.Element {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  useCssVars(ref, zoneVars(zone));
+  return (
+    <span
+      ref={ref}
+      className="crt-motion-zone"
+      data-effect={zone.effect}
+      aria-hidden="true"
+    />
+  );
 }
 
 /** A card with no text bands cannot host zones against bands; treat as empty. */
@@ -201,12 +221,17 @@ export function PixelCard({
   const classes = ["crt-pixel-card"];
   if (glitching) classes.push(GLITCH_CLASS);
 
-  const cardStyle = {
+  // SEC-08: card custom properties (scale/logical + glitch set in full motion)
+  // are applied through the CSSOM (useCssVars) instead of a CSP-blocked inline
+  // style attribute. The record is a plain string->string map.
+  const cardVars: Record<string, string> = {
     "--arcana-scale": String(scale),
     "--arcana-logical-w": String(asset.logical.w),
     "--arcana-logical-h": String(asset.logical.h),
     ...(glitching ? glitchStyle(glitch) : {}),
-  } as CSSProperties;
+  };
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  useCssVars(cardRef, cardVars);
 
   const zones = resolveZones(model, asset, motionMode);
 
@@ -227,10 +252,10 @@ export function PixelCard({
 
   return (
     <div
+      ref={cardRef}
       className={classes.join(" ")}
       data-card={model.card}
       data-orientation={model.orientation}
-      style={cardStyle}
       {...(burning ? { "data-burning": "true" } : {})}
       {...(glitching ? { "data-glitch-intensity": String(glitch.intensity) } : {})}
       {...(onActivate
@@ -264,19 +289,15 @@ export function PixelCard({
           src={src}
           alt={model.altText}
           loading={loading}
-          style={{ imageRendering: "pixelated" }}
           onError={() => setImageFailed(true)}
         />
       )}
 
       {/* Motion zones: valid zones (full motion) only; invalid ones omitted. */}
       {zones.map((zone, index) => (
-        <span
+        <MotionZoneSpan
           key={`${zone.card}-${zone.effect}-${index}`}
-          className="crt-motion-zone"
-          data-effect={zone.effect}
-          aria-hidden="true"
-          style={zoneStyle(zone)}
+          zone={zone}
         />
       ))}
 

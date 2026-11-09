@@ -143,6 +143,19 @@ export const SoulKeyInput = forwardRef<HTMLInputElement, SoulKeyInputProps>(
           autoCorrect="off"
           spellCheck={false}
           enterKeyHint="send"
+          // SEC-02: autofocus so the key goes into the masked field, never the
+          // command line; the shell mounts this only while `key set` is open.
+          autoFocus
+          onKeyDown={(event) => {
+            // Escape CANCELS: wipe the node's value first so the secret cannot
+            // linger in the DOM, store nothing, record no mirror, then dismiss.
+            // The shell returns focus to the Command_Line once this unmounts.
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.currentTarget.value = "";
+              onClose();
+            }
+          }}
         />
       </form>
     );

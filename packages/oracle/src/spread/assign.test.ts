@@ -203,16 +203,22 @@ describe("R17.3: necropsy selection rules", () => {
     const call = positions[4]!;
     expect(call.label).toBe("The Call");
     expect(call.draw).toBeNull();
-    expect(call.description).toContain("no ritual can be performed");
+    // Item 3: the reason names WHY — judgement was placed in a higher position.
+    expect(call.description?.toLowerCase()).toContain("no ritual can be performed");
+    expect(call.description).toContain("higher position");
+    expect((call.description ?? "").trim().length).toBeGreaterThan(0);
   });
 
-  it('The Call is void with "no ritual can be performed" when judgement is absent', () => {
+  it("The Call is void with a judgement-absent reason when judgement is not drawn", () => {
     const draws = [draw("tower", 2), draw("death", 2)];
     const positions = assignSpread(draws, "necropsy", SHA);
     const call = positions[4]!;
     expect(call.label).toBe("The Call");
     expect(call.draw).toBeNull();
-    expect(call.description).toContain("no ritual can be performed");
+    // Item 3: the reason names WHY — judgement was not drawn in this reading.
+    expect(call.description?.toLowerCase()).toContain("no ritual can be performed");
+    expect(call.description).toContain("not drawn");
+    expect((call.description ?? "").trim().length).toBeGreaterThan(0);
   });
 });
 
@@ -229,8 +235,10 @@ describe("R17.6: void sentinel fills positions with no candidate draw", () => {
       expect(typeof p.description).toBe("string");
       expect(p.description!.length).toBeGreaterThan(0);
     }
-    // The Call's void description is the ritual-specific override.
-    expect(positions[4]!.description).toContain("no ritual can be performed");
+    // The Call's void description is the ritual-specific override (item 3:
+    // zero draws => judgement not drawn => the not-drawn reason).
+    expect(positions[4]!.description?.toLowerCase()).toContain("no ritual can be performed");
+    expect(positions[4]!.description).toContain("not drawn");
     // Other void positions use the generic sign description.
     expect(positions[0]!.description).toBe(
       "This position holds no card — the void is a sign.",

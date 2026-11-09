@@ -131,7 +131,10 @@ describe("Landing Seer on the idle landing (R8.1, R8.4 — Part B bug 1 fix)", (
     const img = container.querySelector<HTMLImageElement>("img.crt-seer-img");
     expect(img).not.toBeNull();
     expect(img?.getAttribute("src")).toBe("/arcana/seer.webp");
-    expect(img?.style.imageRendering).toBe("pixelated");
+    // SEC-08: pixelated rendering is owned by the .crt-seer-img CSS class
+    // (arcana.css), not a CSP-blocked inline style; the img carries no inline
+    // imageRendering.
+    expect(img?.style.imageRendering).toBe("");
   });
 
   it("returns null (no Seer, no landing) once the landing is dismissed", () => {

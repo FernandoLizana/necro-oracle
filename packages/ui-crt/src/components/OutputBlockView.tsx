@@ -18,6 +18,8 @@
 //
 // _Requirements: R10.4, R14.1, R14.5, R15.1, R15.11_
 
+import { Fragment } from "react";
+
 import type { OutputBlock, OutputLine } from "../render/blocks.js";
 import { blockText } from "../render/blocks.js";
 import type { Segment } from "../text/wrap.js";
@@ -65,14 +67,24 @@ export function OutputBlockView({
   const revealing = revealedCount !== null;
 
   // When a block is NOT animating (reveal finished, or reduced motion), its
-  // lines are rendered directly — there is no separate live/reveal pairing.
+  // lines are rendered directly ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â there is no separate live/reveal pairing.
   // While it animates, the full text lives in a `.crt-live` copy (clipped with
   // `crt-sr-only`, still in the a11y tree so it was announced once at append),
   // and an aria-hidden `.crt-reveal` copy shows the typed prefix.
+  // Item 38: render each wrapped line as its own <p>, but interleave a newline
+  // TEXT NODE between adjacent lines. Two bare block <p> elements concatenate in
+  // `textContent` with NO separator ("...in your" + "stead." -> "yourstead"),
+  // dropping the word-break space `wrapText` removed at the wrap. The "\n" text
+  // node restores a word boundary in `textContent` (and the accessibility tree)
+  // so a sentence wrapped across lines still reads correctly; it is collapsed to
+  // nothing visually between block elements, so the layout is unchanged.
   const lines = (
     <>
       {block.lines.map((line, index) => (
-        <LineView key={index} line={line} />
+        <Fragment key={index}>
+          {index > 0 ? "\n" : null}
+          <LineView line={line} />
+        </Fragment>
       ))}
     </>
   );

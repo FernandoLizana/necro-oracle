@@ -67,7 +67,6 @@
 //  R27.1, R28.1, R28.2, R36.3, R36.4, R37.3, R40.2, R40.3_
 
 import {
-  installNetworkBlockGuard,
   type LedgerPort,
   type LlmCachePort,
   type LlmPort,
@@ -89,7 +88,8 @@ import {
 } from "../../protocol/lovers-stream.js";
 import type { LoversDeps, ResurrectedFile } from "../deps.js";
 import { mapError } from "../error-map.js";
-import { redactDeep } from "../redact.js";
+import { redactDeep, redactSecrets } from "../redact.js";
+import { NECRO_CANARY } from "../canary.js";
 import { parseUserKey, redactLine, USER_KEY_HEADER } from "../user-key.js";
 import { checkLimit, errorResponse, methodNotAllowed, readJsonBody } from "./guard.js";
 
@@ -199,8 +199,14 @@ const defaultSetTimer: SetTimer = (ms, cb) => {
   };
 };
 
-/** The card id THE LOVERS (VI) carries in the deck (mirrors `loversEligible`). */
-const LOVERS_CARD_ID = "lovers";
+/**
+ * Item 26 (CORRECTED): the Lovers bindability signal is the DRAW'S GRIMOIRE
+ * linkage, not an illegal "lovers" diagnosis card id (which no reading can
+ * legally carry -- `CardDrawSchema.card` is the 12-card enum). A draw whose
+ * `grimoires` includes "lovers-js" marks the repo as Lovers-bindable. Mirrors
+ * `loversEligible` in `@necro/ui-crt`.
+ */
+const LOVERS_GRIMOIRE_ID = "lovers-js";
 
 /**
  * Translate any coven-only machine code onto the oracle `NecroErrorCode` the
@@ -293,9 +299,14 @@ export async function handleLovers(
   //    the Response resolves immediately and a test can trip the Overall_Budget
   //    with a fake clock while a phase promise is pending.
   const encoder = new TextEncoder();
+  // Item 18: `finished` + the budget-timer canceller live in the handler scope
+  // so the ReadableStream's cancel() (client abort/disconnect) can stop the
+  // pipeline (mark finished + cancel the timer), the same way a terminal line
+  // does. `start` and `cancel` share this closure.
+  let finished = false;
+  let cancelBudgetTimer: (() => void) | null = null;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      let finished = false;
 
       // Serialize + validate + redact ONE line, then enqueue it. Returns true
       // when written, false when it failed validation (the caller then
@@ -304,7 +315,9 @@ export async function handleLovers(
         const redacted = redactDeep(line, githubToken);
         const reRedacted = redactDeep(redacted, llmKey);
         const scrubbed = redactLine(reRedacted, openrouterKey, userKey);
-        const parsed = LoversStreamLineSchema.safeParse(scrubbed);
+        // SEC-10: the leak canary is always scrubbed from outgoing lines.
+        const canaried = redactDeep(scrubbed, NECRO_CANARY);
+        const parsed = LoversStreamLineSchema.safeParse(canaried);
         if (!parsed.success) return false;
         controller.enqueue(encoder.encode(JSON.stringify(parsed.data) + "\n"));
         return true;
@@ -326,11 +339,12 @@ export async function handleLovers(
         // Log ONLY the stable tag, the NecroError code (when present), the
         // message and the stack — never tokens, env, request body, or the
         // mapped `userMessage` (which may echo caller input) (R19.4).
+        const logSecrets = [githubToken, llmKey, openrouterKey, userKey, NECRO_CANARY] as const;
         console.error(
           "[api/lovers] binding failed:",
           err instanceof NecroError ? err.code : undefined,
-          err instanceof Error ? err.message : String(err),
-          err instanceof Error ? err.stack : undefined,
+          redactSecrets(err instanceof Error ? err.message : String(err), logSecrets),
+          redactSecrets(err instanceof Error ? err.stack : undefined, logSecrets),
         );
         const mapped = mapError(mapEngineError(err), githubToken);
         finished = true;
@@ -372,6 +386,7 @@ export async function handleLovers(
         terminateError(new NecroError("NETWORK_TIMEOUT", OVERALL_TIMEOUT_MESSAGE));
       });
       const cancelOverall = (): void => overall.cancel();
+      cancelBudgetTimer = cancelOverall;
 
       void runBinding({
         deps,
@@ -388,6 +403,13 @@ export async function handleLovers(
         cancelOverall,
       });
     },
+    // Item 18: client aborted/disconnected. Stop the pipeline so the binding
+    // (resurrect runner, lovers runner, timer) does not keep running for a
+    // client that is gone.
+    cancel() {
+      finished = true;
+      if (cancelBudgetTimer !== null) cancelBudgetTimer();
+    },
   });
 
   return new Response(stream, {
@@ -396,6 +418,7 @@ export async function handleLovers(
       "Content-Type": "application/x-ndjson",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }
@@ -442,10 +465,11 @@ async function runBinding(args: {
     cancelOverall,
   } = args;
 
-  // A demo blocks outbound network for the whole run (R15.4); restored in
-  // `finally`. For a live run this is a no-op guard we never install.
-  let restoreNetwork: (() => void) | null = null;
-
+  // Item 15 (P0.5): a demo is network-free BY CONSTRUCTION - it runs on the
+  // Mock LlmPort with NO sandbox and the on-disk demo loader, so no adapter
+  // ever reaches the wire. We do NOT monkey-patch globalThis.fetch: a
+  // serverless isolate serves concurrent requests, so a global patch (and its
+  // finally-restore) could block or race another in-flight live request.
   try {
     const llmOpen = deps.breakers.llmOpen();
 
@@ -460,7 +484,6 @@ async function runBinding(args: {
       }
       resurrected = await deps.loadDemoLovers(now);
       if (isFinished()) return;
-      restoreNetwork = installNetworkBlockGuard();
     } else {
       // Live: summon the pinned ref, run the in-scope reading, enforce the
       // LOVERS-drawn precondition (R14.4), then resurrect the file to Python 3.
@@ -484,12 +507,13 @@ async function runBinding(args: {
         return;
       }
 
-      // R14.4 precondition: THE LOVERS (VI) must be in the reading. The
-      // `lovers` card id is matched as a widened string (mirrors
-      // `loversEligible`) so this stays forward-compatible with the deck's
-      // `lovers` detector. Not drawn => typed VALIDATION_FAILED, NO model call.
-      const loversDrawn = reading.draws.some(
-        (draw) => (draw.card as string) === LOVERS_CARD_ID,
+      // R14.4 precondition: THE LOVERS (VI) must be in the reading, signalled
+      // by a draw whose `grimoires` includes the Lovers grimoire id (item 26
+      // CORRECTED; mirrors `loversEligible`). THE LOVERS is not a diagnosis card
+      // id. Not drawn => typed VALIDATION_FAILED, NO model call.
+      const loversDrawn = reading.draws.some((draw) =>
+        // Defensive `?? []`: a draw may omit `grimoires`; absent => not linked.
+        (draw.grimoires ?? []).includes(LOVERS_GRIMOIRE_ID),
       );
       if (!loversDrawn) {
         terminateError(
@@ -642,7 +666,6 @@ async function runBinding(args: {
       terminateError(err);
     }
   } finally {
-    if (restoreNetwork !== null) restoreNetwork();
     cancelOverall();
   }
 }
@@ -654,7 +677,13 @@ async function runBinding(args: {
  * on a YOURS request is treated as the HARD BYOK auth failure.
  */
 function isByokAuthFailure(err: unknown): boolean {
-  return err instanceof NecroError && err.code === "UPSTREAM_UNAVAILABLE";
+  // SEC-09: the provider now maps 401 -> AUTH_INVALID and 402 (credit) ->
+  // UPSTREAM_UNAVAILABLE. Both, raised on a YOURS request, are the HARD BYOK
+  // case: a typed oracle-voice error with NO silent fallback to the server key.
+  return (
+    err instanceof NecroError &&
+    (err.code === "AUTH_INVALID" || err.code === "UPSTREAM_UNAVAILABLE")
+  );
 }
 
 /**

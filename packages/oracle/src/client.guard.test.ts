@@ -1,4 +1,4 @@
-// @necro/oracle — source-level import-closure guard (task 2.1).
+// @necro/oracle â€” source-level import-closure guard (task 2.1).
 //
 // This test proves the Client_Safe_Entry (src/client.ts) is browser-safe by
 // statically walking its import graph. It is a PURE static-analysis test: it
@@ -52,6 +52,9 @@ const ALLOWLIST: ReadonlySet<string> = new Set([
   "snapshot/types",
   "reading/schema",
   "util/errors",
+  "tarot/deck",
+  "tarot/draw",
+  "tarot/reading",
 ]);
 
 /** The only bare (package) specifier the closure may depend on. */

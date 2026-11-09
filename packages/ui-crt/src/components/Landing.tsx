@@ -2,15 +2,15 @@
 //
 // Feature: oracle-landing-polish, task 9.1.
 //
-// The screen-only DMG Landing_State region (design §"Component: Landing"). It
+// The screen-only DMG Landing_State region (design Â§"Component: Landing"). It
 // mounts inside the existing `<Terminal>` `Screen` as a sibling above the
 // `OutputLog`, gated by the single pure predicate `landingVisible(state)`:
 // `Landing` returns `null` whenever the landing is not visible, so it never
 // coexists with a reading spread, the ritual, or a populated log.
 //
 // It owns a small local `SelectionState` (the cursor index into `LANDING_ROWS`)
-// and composes the four screen-only pieces the design calls for — `HudBar`,
-// `LegacyRepoList`, `PreviewWindow`, `HintBar` — in the strict 4-shade DMG
+// and composes the four screen-only pieces the design calls for â€” `HudBar`,
+// `LegacyRepoList`, `PreviewWindow`, `HintBar` â€” in the strict 4-shade DMG
 // palette (`landing.css`, imported here as a side effect).
 //
 // Keyboard: the landing attaches an `onKeyDown` handler on its OWN root
@@ -19,7 +19,7 @@
 // `landingKeyAction` handler, which already returns `none` for any
 // Alt/Ctrl/Meta-modified or unmapped key. On `none` the handler does nothing
 // and does NOT call `preventDefault`/`stopPropagation`, so the key falls through
-// untouched — crucially, because the handler lives on the landing root and not
+// untouched â€” crucially, because the handler lives on the landing root and not
 // on `window`, a key typed into the `NECRO>` input (which is a sibling, outside
 // this subtree) never reaches this handler at all. The command line, the
 // command chips, and the `NECRO>` input therefore stay fully operable; focus is
@@ -59,7 +59,7 @@ import { LegacyRepoList } from "./LegacyRepoList.js";
 import { PreviewWindow } from "./PreviewWindow.js";
 import { HintBar } from "./HintBar.js";
 
-/** Props for the DMG Landing region (design §"Component: Landing"). */
+/** Props for the DMG Landing region (design Â§"Component: Landing"). */
 export interface LandingProps {
   /** The full session state; `landingVisible` gates the whole region. */
   readonly state: SessionState;
@@ -79,7 +79,7 @@ export interface LandingProps {
    * `summon <ref>` and chains `read fates` only once that summon has RESOLVED,
    * working around the reducer's single-in-flight guard (a synchronous second
    * `submit("read fates")` would hit `inflight !== null` and be rejected). The
-   * typed-command path is untouched — typing `summon x` then `read fates`
+   * typed-command path is untouched â€” typing `summon x` then `read fates`
    * yourself still behaves exactly as before.
    */
   readonly onSummonAndRead: (ref: string) => void;
@@ -102,9 +102,9 @@ export interface LandingProps {
 
 /**
  * A sensible default preview area before `PreviewWindow` measures its own panel
- * box (oracle-landing-polish R26). Sized so the Seer (256×144) and the three
- * card backs (120×160) already scale up to substantially fill the preview even
- * before the ResizeObserver reports the real panel rect — large enough for an
+ * box (oracle-landing-polish R26). Sized so the Seer (256Ã—144) and the three
+ * card backs (120Ã—160) already scale up to substantially fill the preview even
+ * before the ResizeObserver reports the real panel rect â€” large enough for an
  * integer scale > 1 on both the Seer and the 3-across card-back row.
  */
 const DEFAULT_PREVIEW_AREA: Size = { w: 768, h: 432 };
@@ -129,13 +129,13 @@ export function Landing({
   rows = LANDING_ROWS,
   listEmptyReason = "none",
 }: LandingProps): React.JSX.Element | null {
-  // The local cursor into the row list. The parent never owns this — the
-  // landing is a self-contained menu — so it starts at the first row (index 0)
+  // The local cursor into the row list. The parent never owns this â€” the
+  // landing is a self-contained menu â€” so it starts at the first row (index 0)
   // and moves only through `move()` (clamped, no wrap) or a mouse select.
   const [selection, setSelection] = useState<SelectionState>({ index: 0 });
 
   // Run the activation effect for a given row index: a concrete repo summons
-  // then reads fates (the host chains the read after the summon RESOLVES —
+  // then reads fates (the host chains the read after the summon RESOLVES â€”
   // R5.1); the ENTER row focuses the input (R5.2, R5.3). Pure
   // `activate(selectedRow(...))` decides which. The summon+read is NOT two raw
   // synchronous submits here: a second `submit("read fates")` fired in the same
@@ -240,7 +240,7 @@ export function Landing({
       // the region and drive the selectable LEGACY REPOS list with the arrow
       // keys / A / B / H bindings. The root-level `onKeyDown` only fires while
       // focus is inside this subtree, so a key typed into the sibling `NECRO>`
-      // input never reaches it; the region is NOT a modal and traps no focus —
+      // input never reaches it; the region is NOT a modal and traps no focus â€”
       // a subsequent Tab leaves it for the command line and chips (R7.8, R7.9).
       tabIndex={0}
       onKeyDown={onKeyDown}

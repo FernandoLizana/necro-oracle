@@ -165,6 +165,13 @@ export function renderCardBlock(
     lines.push(...textLines(draw.summary));
   }
   lines.push(...evidenceLines(draw.evidence, ctx));
+  // Item 3 (judge-ready-pass): a FILLED position may carry a `description` with
+  // the action it unlocks — today only the Necropsy "The Call" uses it, to name
+  // the `resurrect` command an allowed ritual can run. Render it when present so
+  // an allowed ritual prints its command, never just the heading.
+  if (position.description !== undefined && position.description !== "") {
+    lines.push(...textLines(position.description));
+  }
 
   return { kind: "oracle", demo: false, lines };
 }

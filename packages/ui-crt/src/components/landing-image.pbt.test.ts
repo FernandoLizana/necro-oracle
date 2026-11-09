@@ -132,9 +132,15 @@ describe("P9 (R11.1, R11.2): integer scaling and no smoothing on every landing i
         expect(imgs.length).toBeGreaterThanOrEqual(1);
 
         for (const img of imgs) {
-          // (1) Inline pixelated hint (survives even without the stylesheet).
-          expect(img.style.imageRendering).toBe("pixelated");
-          // (2) No colour/blur filter is set inline by the component.
+          // (1) SEC-08: pixelated is a STATIC rule owned by the img's CSS class
+          // (.crt-seer-img or .crt-landing-cardback, both carry
+          // `image-rendering: pixelated` + `filter: none` in CSS, proven by
+          // the source-scan above), NOT a CSP-blocked inline style. Every
+          // landing img must carry one of those pixelated-governing classes.
+          const cls = img.getAttribute("class") ?? "";
+          expect(/\bcrt-seer-img\b|\bcrt-landing-cardback\b/.test(cls)).toBe(true);
+          // (2) The component sets NO inline imageRendering and NO inline filter.
+          expect(img.style.imageRendering).toBe("");
           expect(img.style.filter === "" || img.style.filter === "none").toBe(
             true,
           );

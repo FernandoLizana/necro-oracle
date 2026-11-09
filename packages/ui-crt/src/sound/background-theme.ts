@@ -86,6 +86,28 @@ const BASS_NOTES_PER_BAR = 2;
  */
 const MINOR_SCALE_DEGREES = [0, 2, 3, 5, 7, 8, 10, 12] as const;
 
+/*
+ * Item 11: a fixed, original i-VI-III-VII A-minor chord progression, ONE
+ * chord per bar (Am, F, C, G) as semitone offsets from the voice root. The
+ * lead + harmony arpeggiate the chord sounding in each bar and the bass plays
+ * its root, so the loop outlines real harmony instead of wandering the scale.
+ */
+const CHORD_PROGRESSION: readonly (readonly number[])[] = [
+  [0, 3, 7],
+  [-4, 0, 3],
+  [3, 7, 10],
+  [-2, 2, 5],
+];
+
+/** Each bar's bass root offset (semitones from the voice root). */
+const CHORD_BASS_OFFSET: readonly number[] = [0, -4, 3, -2];
+
+/** Harmony voice notes per bar (a whole number keeps the loop gapless). */
+const HARMONY_NOTES_PER_BAR = 2;
+
+/** Harmony root: A3 (MIDI 57), between the lead and the bass. */
+const HARMONY_ROOT_MIDI = 57;
+
 /** Lead root: A4 (MIDI 69). The arpeggio hovers around the mid register. */
 const LEAD_ROOT_MIDI = 69;
 
@@ -120,24 +142,33 @@ function normaliseSeed(seed: number): number {
  * each draw onto a degree of the minor scale, offset from `root`. Returns the
  * notes and the advanced PRNG state so the next voice continues the sequence.
  */
-function composeVoiceNotes(
+function composeChordVoice(
   root: number,
-  count: number,
+  notesPerBar: number,
   state: number,
 ): { readonly notes: number[]; readonly state: number } {
   const notes: number[] = [];
   let s = state;
-  for (let i = 0; i < count; i += 1) {
-    const draw = nextRandom(s);
-    s = draw.state;
-    const index = Math.min(
-      MINOR_SCALE_DEGREES.length - 1,
-      Math.floor(draw.value * MINOR_SCALE_DEGREES.length),
-    );
-    const degree = MINOR_SCALE_DEGREES[index] ?? 0;
-    notes.push(root + degree);
+  for (let bar = 0; bar < LOOP_BARS; bar += 1) {
+    const chord = CHORD_PROGRESSION[bar % CHORD_PROGRESSION.length] ?? MINOR_SCALE_DEGREES;
+    for (let n = 0; n < notesPerBar; n += 1) {
+      const draw = nextRandom(s);
+      s = draw.state;
+      const tone = chord[Math.min(chord.length - 1, Math.floor(draw.value * chord.length))] ?? 0;
+      notes.push(root + (tone as number));
+    }
   }
   return { notes, state: s };
+}
+
+/** The bass voice: each bar's chord ROOT, anchoring the harmony (item 11). */
+function composeBassVoice(root: number, notesPerBar: number): readonly number[] {
+  const notes: number[] = [];
+  for (let bar = 0; bar < LOOP_BARS; bar += 1) {
+    const offset = CHORD_BASS_OFFSET[bar % CHORD_BASS_OFFSET.length] ?? 0;
+    for (let n = 0; n < notesPerBar; n += 1) notes.push(root + offset);
+  }
+  return notes;
 }
 
 /**
@@ -149,37 +180,37 @@ function composeVoiceNotes(
 export function composeTheme(seed: number): ThemeScore {
   let state = normaliseSeed(seed);
 
-  // Tempo wanders a little with the seed but stays in a calm 90-110 BPM band.
   const bpmDraw = nextRandom(state);
   state = bpmDraw.state;
   const bpm = 90 + Math.floor(bpmDraw.value * 21);
 
-  // Gains are chosen so their sum is always <= PEAK_GAIN_CEILING. The lead sits
-  // in [0.10, 0.13] and the bass in [0.04, 0.06]; the maximum possible sum is
-  // 0.13 + 0.06 = 0.19 <= 0.2, so the ceiling holds for every seed.
+  // Item 11: THREE voices now. Gain bands: lead [0.08,0.10], harmony
+  // [0.04,0.05], bass [0.04,0.05]; max sum 0.20 <= PEAK_GAIN_CEILING.
   const leadGainDraw = nextRandom(state);
   state = leadGainDraw.state;
-  const leadGain = 0.1 + leadGainDraw.value * 0.03;
+  const leadGain = 0.08 + leadGainDraw.value * 0.02;
+
+  const harmonyGainDraw = nextRandom(state);
+  state = harmonyGainDraw.state;
+  const harmonyGain = 0.04 + harmonyGainDraw.value * 0.01;
 
   const bassGainDraw = nextRandom(state);
   state = bassGainDraw.state;
-  const bassGain = 0.04 + bassGainDraw.value * 0.02;
+  const bassGain = 0.04 + bassGainDraw.value * 0.01;
 
-  const lead = composeVoiceNotes(LEAD_ROOT_MIDI, LOOP_BARS * LEAD_NOTES_PER_BAR, state);
+  const lead = composeChordVoice(LEAD_ROOT_MIDI, LEAD_NOTES_PER_BAR, state);
   state = lead.state;
 
-  const bass = composeVoiceNotes(BASS_ROOT_MIDI, LOOP_BARS * BASS_NOTES_PER_BAR, state);
-  state = bass.state;
+  const harmony = composeChordVoice(HARMONY_ROOT_MIDI, HARMONY_NOTES_PER_BAR, state);
+  state = harmony.state;
 
-  // Runtime invariant guard (R8.1): the summed gain of the simultaneously-
-  // sounding voices must never exceed the ceiling. For the current gain bands
-  // the max sum is 0.13 + 0.06 = 0.19 <= 0.2, so this never fires — it fails
-  // loudly only if a future edit to the bands breaks the ceiling.
-  const summedGain = leadGain + bassGain;
+  const bassNotes = composeBassVoice(BASS_ROOT_MIDI, BASS_NOTES_PER_BAR);
+
+  const summedGain = leadGain + harmonyGain + bassGain;
   if (summedGain > PEAK_GAIN_CEILING) {
     throw new NecroError(
       "VALIDATION_FAILED",
-      "The theme's voices rose too loud; the summoned chorus breaches the gain ward.",
+      "The theme\u2019s voices rose too loud; the summoned chorus breaches the gain ward.",
     );
   }
 
@@ -188,7 +219,8 @@ export function composeTheme(seed: number): ThemeScore {
     loopBars: LOOP_BARS,
     voices: [
       { wave: "square", notes: lead.notes, gain: leadGain },
-      { wave: "triangle", notes: bass.notes, gain: bassGain },
+      { wave: "triangle", notes: harmony.notes, gain: harmonyGain },
+      { wave: "triangle", notes: bassNotes, gain: bassGain },
     ],
   };
 }

@@ -82,6 +82,10 @@ export const FORBIDDEN_MARKERS = Object.freeze([
   "GITHUB_TOKEN",
   "tree-sitter-python.wasm",
   "tar-stream",
+  // SEC-11: the runtime leak canary (apps/web/src/server/canary.ts), a
+  // server-only sentinel; if it reaches a browser chunk, redaction or the
+  // client/server boundary failed. Kept in sync with NECRO_CANARY.
+  "NECRO_CANARY_dead0beef_do_not_ship_a1b2c3d4e5f6",
 ]);
 
 /**

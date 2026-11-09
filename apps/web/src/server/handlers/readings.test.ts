@@ -653,7 +653,10 @@ describe("handleReading — External_Sub_Budget 10 s (R6.20, R6.22)", () => {
 
     const resPromise = handleReading(postJson(validBody()), deps);
 
-    await Promise.resolve();
+    // Item 28: the external sub-budget is now ARMED at the EXTERNAL phase, so
+    // wait for the pipeline to reach EXTERNAL (its timer becomes pending) before
+    // tripping it. The overall timer is pending from entry; EXTERNAL adds a 2nd.
+    for (let i = 0; i < 20 && clock.pending() < 2; i++) await Promise.resolve();
     // Trip the 10 s external sub-budget (but stay under the 40 s overall one).
     clock.advance(EXTERNAL_SUB_BUDGET_MS + 1);
 
@@ -710,6 +713,53 @@ describe("handleReading — External_Sub_Budget 10 s (R6.20, R6.22)", () => {
     const deps = makeDeps({ github, runReading });
 
     const res = await handleReading(postJson(validBody()), deps);
+    const { lines } = await readStream(res);
+
+    expect(hasSkipNote(lines)).toBe(false);
+    const passedOpts = runReading.mock.mock.calls[0]![1] as ReadingOpts;
+    expect(passedOpts.registryData).toBe(registryData);
+    expect(passedOpts.osvData).toBe(osvData);
+    expect(resultOf(lines)).toBeDefined();
+  });
+
+  // Item 28 (R6.20): the External_Sub_Budget must start at the EXTERNAL phase,
+  // NOT at request receipt. A slow SUMMON/DOWNLOAD must not eat into external's
+  // 10 s window. Here SUMMON stays pending while the clock advances PAST 10 s;
+  // once SUMMON resolves and EXTERNAL begins, externalData resolves promptly
+  // and its data MUST still be used (no spurious skip), because its budget only
+  // started when EXTERNAL began.
+  it("(d) a slow SUMMON does not consume the external 10 s window (budget starts at EXTERNAL)", async () => {
+    const clock = makeFakeClock();
+    const registryData = new Map([["flask", { ecosystem: "pypi" } as never]]);
+    const osvData = [{ id: "GHSA-slow-summon" } as never];
+    const slowSummon = deferred<SummonResult>();
+    const slowExternal = deferred<ExternalDataResult>();
+    const github = fakeGithub({
+      summonPending: slowSummon.promise,
+      externalPending: slowExternal.promise,
+    });
+    const runReading = fakeRunReading();
+    const deps = makeDeps({ clock, github, runReading });
+
+    const resPromise = handleReading(postJson(validBody()), deps);
+    await Promise.resolve();
+
+    // SUMMON takes 8 s (under the 10 s external window and 40 s overall). If the
+    // external timer had started at request RECEIPT (the bug), only 2 s would
+    // remain for external by the time EXTERNAL begins.
+    clock.advance(8_000);
+    slowSummon.resolve(makeSummonResult());
+    // Wait for the pipeline to reach EXTERNAL and ARM the sub-budget (its timer
+    // becomes the 2nd pending timer alongside the overall one).
+    for (let i = 0; i < 20 && clock.pending() < 2; i++) await Promise.resolve();
+
+    // EXTERNAL now runs for 5 s before its data arrives: 5 s < the full 10 s
+    // window (so NO skip) IF the budget started at EXTERNAL. With the bug the
+    // 10 s-from-receipt timer (8 s + 5 s = 13 s) would have already tripped.
+    clock.advance(5_000);
+    slowExternal.resolve(makeExternalData({ registryData, osvData, skipped: [] }));
+
+    const res = await resPromise;
     const { lines } = await readStream(res);
 
     expect(hasSkipNote(lines)).toBe(false);

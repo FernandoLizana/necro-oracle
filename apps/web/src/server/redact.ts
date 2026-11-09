@@ -50,3 +50,21 @@ export function redactDeep(value: unknown, token?: string): unknown {
   }
   return value;
 }
+
+/**
+ * SEC-04: redact EVERY in-scope secret out of a single string before it is
+ * logged. Applies {@link redactString} once per token (`undefined`/empty
+ * tokens are no-ops), so a thrown error's `message`/`stack` can be logged
+ * for observability without ever leaking the GitHub token, the server/legacy
+ * LLM keys, or a per-request BYOK user key. `undefined` in -> `undefined`
+ * out, so an absent `err.stack` stays absent in the log.
+ */
+export function redactSecrets(
+  s: string | undefined,
+  tokens: readonly (string | undefined)[],
+): string | undefined {
+  if (s === undefined) return undefined;
+  let out = s;
+  for (const token of tokens) out = redactString(out, token);
+  return out;
+}

@@ -20,7 +20,9 @@ import "server-only";
 //
 // _Requirements: R12.10, R12.12, R16.4, R16.6_
 
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   createSystemFetchPort,
@@ -76,6 +78,41 @@ import {
 } from "./deps.js";
 import { createRateLimitChain } from "./limiter/chain.js";
 import { FallbackLimiter } from "./limiter/fallback.js";
+
+/**
+ * Resolve the `fixtures/graveyard` directory the demo loader reads. Item 2
+ * (judge-ready-pass): on Vercel the serverless function contains only TRACED
+ * files, laid out relative to the `outputFileTracingRoot` (the monorepo root),
+ * so a plain `process.cwd()/fixtures/graveyard` can miss. Probe candidate roots
+ * and return the first whose `lich-py2` fixture directory actually exists:
+ *   1. module-anchored: walk up from this file to the traced root (robust to
+ *      whatever cwd the runtime uses);
+ *   2. `process.cwd()` (local `pnpm dev` / tests run from the repo root);
+ *   3. one and two levels up from cwd (app-dir cwd layouts).
+ * If none exists the first candidate is returned unchanged so the loader
+ * surfaces the canonical DEMO_FIXTURE_MISSING error rather than a path guess.
+ */
+function resolveFixturesRoot(): string {
+  const candidates: string[] = [];
+  try {
+    // From apps/web/src/server/composition.ts, the monorepo root is five levels
+    // up (server -> src -> web -> apps -> root). The traced layout mirrors that.
+    const here = dirname(fileURLToPath(import.meta.url));
+    candidates.push(join(here, "..", "..", "..", "..", "fixtures", "graveyard"));
+    candidates.push(join(here, "..", "..", "..", "fixtures", "graveyard"));
+  } catch {
+    // import.meta.url may be unavailable in some bundling modes; fall through.
+  }
+  candidates.push(join(process.cwd(), "fixtures", "graveyard"));
+  candidates.push(join(process.cwd(), "..", "..", "fixtures", "graveyard"));
+
+  for (const root of candidates) {
+    if (existsSync(join(root, "lich-py2"))) {
+      return root;
+    }
+  }
+  return candidates[0] ?? join(process.cwd(), "fixtures", "graveyard");
+}
 
 /** The one cached RouteDeps for this (warm) module instance; built on first call. */
 let cached: RouteDeps | undefined;
@@ -167,8 +204,13 @@ export function getResurrectDeps(
 
   // The single runner for this warm instance, with the shipped grimoire
   // registered (R15.4). This is the sanctioned grimoire import point.
+  // SEC-06: plumb the validated per-reading LLM call cap
+  // (NECRO_LLM_MAX_CALLS_PER_READING, A.8 / R36.1) into the runner so the
+  // configured ceiling is actually applied; previously the runner was built
+  // with no options and silently used its internal default of 12.
   const runner: CovenRunner = new LocalCovenRunner(
     createDefaultRegistry({ py2to3: py2to3Grimoire }),
+    { maxLlmCallsPerReading: base.env.get("NECRO_LLM_MAX_CALLS_PER_READING") },
   );
 
   // Per-Ritual append-only ledger. A minimal in-memory implementation that
@@ -218,6 +260,11 @@ export function getResurrectDeps(
   // by every provider built here.
   const serverKey = base.env.get("OPENROUTER_API_KEY");
   const fallbackModels = base.env.get("NECRO_LLM_MODEL_FALLBACKS");
+  // SEC-03: the configured public URL is wired as the OpenRouter `HTTP-Referer`
+  // for attribution. It is server-only config (never user-controlled); when
+  // absent the provider keeps its hardcoded fallback. The user supplies NO base
+  // URL and NO referer; the only user transport input is `X-Necro-User-Key`.
+  const publicUrl = base.env.get("NECRO_PUBLIC_URL");
   const providerModels = fallbackModels !== undefined && fallbackModels.length > 0
     ? fallbackModels
     : undefined;
@@ -234,6 +281,7 @@ export function getResurrectDeps(
     serverKey !== undefined
       ? createOpenRouterLlmPort({
           apiKey: serverKey,
+          ...(publicUrl !== undefined ? { referer: publicUrl } : {}),
           ...(providerModels !== undefined ? { models: providerModels } : {}),
         })
       : undefined;
@@ -247,6 +295,7 @@ export function getResurrectDeps(
   const makeUserLlm = (userKey: string): LlmPort =>
     createOpenRouterLlmPort({
       apiKey: userKey,
+      ...(publicUrl !== undefined ? { referer: publicUrl } : {}),
       ...(providerModels !== undefined ? { models: providerModels } : {}),
     });
 
@@ -257,10 +306,14 @@ export function getResurrectDeps(
   };
 
   // The demo Ritual loader, bound to the graveyard fixtures root and the Mock
-  // provider. The fixtures live at `<repo>/fixtures/graveyard`; from the web
-  // app's runtime CWD (the repo root under Next) that is a stable relative
-  // join. The loader itself resolves `<root>/lich-py2/...`.
-  const fixturesRoot = join(process.cwd(), "fixtures", "graveyard");
+  // provider. Item 2 (judge-ready-pass): `process.cwd()` alone is NOT enough on
+  // Vercel — the serverless function only contains TRACED files, placed
+  // relative to the `outputFileTracingRoot` (the monorepo root). next.config.ts
+  // traces `fixtures/graveyard/lich-py2/**` into the resurrect/lovers functions,
+  // so we probe several candidate roots and use the first whose lich-py2
+  // directory actually exists: the module-anchored traced layout first (walking
+  // up from this file to the traced root), then the repo-root cwd for local dev.
+  const fixturesRoot = resolveFixturesRoot();
   const loadDemoInput = (now: string): Promise<RitualInput> =>
     loadDemoRitualInput({ fixturesRoot, now });
   const demoLlm: LlmPort = createMockLlmPort();

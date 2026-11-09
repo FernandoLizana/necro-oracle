@@ -262,11 +262,14 @@ function makeReading(snapshot: RepoSnapshot, readOpts: ReadingOpts, card: string
     },
     draws: [
       {
-        card,
+        // Item 26 (CORRECTED): the Lovers signal is a grimoire linkage on a
+        // LEGAL card; the "__lovers_signal__" sentinel -> judgement + lovers-js.
+        card: card === "__lovers_signal__" ? "judgement" : card,
         orientation: "upright",
         severity: 2,
         position: 1,
         evidence: [{ path: "src/app.py", line: 1, detail: "x" }],
+        grimoires: card === "__lovers_signal__" ? ["lovers-js"] : [],
       },
     ],
     spread: [{ position: 1, label: "The Corpse", draw: null, description: "nothing stirs" }],
@@ -402,7 +405,7 @@ function makeLoversDeps(over: {
     fetch: fakeFetch(),
     limiter: fakeLimiter(),
     github: fakeGithub(),
-    runReading: fakeRunReading(over.card ?? "lovers"),
+    runReading: fakeRunReading(over.card ?? "__lovers_signal__"),
     loversRunner: over.loversRunner,
     resurrectRunner: fakeResurrectRunner(),
     makeLedger: fakeMakeLedger(),
