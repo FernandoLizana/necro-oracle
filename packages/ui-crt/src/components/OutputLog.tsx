@@ -27,6 +27,12 @@ export interface OutputLogProps {
   readonly revealedCountFor: (blockId: number, fullLength: number) => number | null;
   /** Whether to append the in-world "speakers are silent" notice (R19.14). */
   readonly engineFailed: boolean;
+  /**
+   * Extra content rendered inside the scroll container after the log blocks
+   * (e.g. the resurrect/lovers result views). These must live INSIDE the
+   * scroll pane, not as siblings after the command bar, or the page overflows.
+   */
+  readonly children?: React.ReactNode;
 }
 
 /** The complete text length of a block (used for the reveal fraction). */
@@ -38,7 +44,7 @@ function textLength(block: OutputBlock): number {
 /** The live Oracle output log (`role="log"`). */
 export const OutputLog = forwardRef<HTMLDivElement, OutputLogProps>(
   function OutputLog(
-    { blocks, ariaBusy, revealedCountFor, engineFailed },
+    { blocks, ariaBusy, revealedCountFor, engineFailed, children },
     ref,
   ): React.JSX.Element {
     return (
@@ -66,6 +72,7 @@ export const OutputLog = forwardRef<HTMLDivElement, OutputLogProps>(
             </div>
           </section>
         ) : null}
+        {children}
       </div>
     );
   },

@@ -154,6 +154,10 @@ export function parseCommand(input: string): Command | null {
     case "explain": {
       if (args.length !== 1) return unknown(trimmed);
       const target = args[0]!.toLowerCase();
+      // Word aliases for the first three spread positions (fates spread).
+      if (target === "past") return { kind: "explain", target: { kind: "position", position: 1 } };
+      if (target === "present") return { kind: "explain", target: { kind: "position", position: 2 } };
+      if (target === "future") return { kind: "explain", target: { kind: "position", position: 3 } };
       // Positive integer position (1-based).
       if (/^[0-9]+$/.test(target)) {
         const position = Number.parseInt(target, 10);

@@ -639,7 +639,27 @@ export function Terminal({
           ariaBusy={ariaBusy}
           revealedCountFor={revealedCountFor}
           engineFailed={engineFailed}
-        />
+        >
+          {/* The resurrection patch-download control lives INSIDE the scroll
+              pane so it never pushes the page past 100vh. The authoritative
+              diff / Vitality_Delta stay in the log blocks above. */}
+          {ritual !== null ? (
+            <ResurrectResultView
+              port={ports.resurrectView}
+              patch={ritual.patch}
+              ritualId={ritual.ritualId}
+              onDownload={downloadPatch}
+            />
+          ) : null}
+          {/* The DMG Lovers split view: the Python / contract / JS split + the
+              Download pair. Inside the scroll pane for the same reason. */}
+          {state.lastLovers !== null ? (
+            <LoversResultView
+              port={ports.loversView}
+              result={state.lastLovers}
+            />
+          ) : null}
+        </OutputLog>
         {/* Card layer. With an Arcana_Visions manifest covering the reading's
             drawn cards, the pixel-art `SpreadPixelView` renders the spread as
             integer-scaled Pixel_Cards (each with its own ASCII + no-JS fallback)
@@ -765,39 +785,10 @@ export function Terminal({
             : {})}
           resurrectEligible={canResurrect}
         />
-        {/* The resurrection result view's patch-download control. Mounted
-            through the `resurrectView` port (oracle-landing-polish, Part B bug
-            2): once a Ritual settles with a non-empty patch and a host wired the
-            port, the concrete `ResurrectionResult` is lazily loaded from its own
-            bundler chunk and renders its own download control here — the piece
-            not already in the authoritative log — keeping that chunk live and
-            off the initial route (R9.2-R9.5). Until it resolves (and whenever no
-            port is wired) the plain inline `DOWNLOAD PATCH` button renders, so
-            the download is always reachable and a port-less host behaves exactly
-            as before. The authoritative diff / Vitality_Delta stay in the log. */}
-        {ritual !== null ? (
-          <ResurrectResultView
-            port={ports.resurrectView}
-            patch={ritual.patch}
-            ritualId={ritual.ritualId}
-            onDownload={downloadPatch}
-          />
-        ) : null}
-        {/* The DMG Lovers split view (lovers-binding R22.1, R31.1). Mounted
-            through the `loversView` port exactly as the resurrection result view
-            is mounted through `resurrectView`: once a `lovers` binding settles
-            (`state.lastLovers`), the concrete `LoversView` is lazily loaded from
-            its own `lovers-view` chunk and renders the Python / contract / JS
-            split + Download pair here — the piece not already in the
-            authoritative log — keeping that chunk off the initial route. When no
-            port is wired (every `@necro/ui-crt` unit test) nothing mounts and
-            the log summary stands alone. */}
-        {state.lastLovers !== null ? (
-          <LoversResultView
-            port={ports.loversView}
-            result={state.lastLovers}
-          />
-        ) : null}
+        {/* ResurrectResultView and LoversResultView now render INSIDE the
+            OutputLog scroll pane (above) so they never push the page past
+            100vh. The old render sites here (after ButtonRow) caused a
+            duplicate: once inside the pane and once after the command bar. */}
       </Screen>
       <noscript>{`${BOOT_PHRASE} — The terminal requires JavaScript.`}</noscript>
     </main>

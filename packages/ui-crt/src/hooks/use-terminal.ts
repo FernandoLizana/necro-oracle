@@ -743,13 +743,31 @@ export function useTerminal(
   // when `state.log` changes, exactly as before.
   const userScrolledUpRef = useRef(false);
 
+  // Also fire when lastRitual/lastLovers change so the lazy-loaded result
+  // views (inside the scroll pane) trigger a scroll-to-bottom.
   useLayoutEffect(() => {
     const log = logRef.current;
     if (log === null) return;
     // If the user scrolled up, respect that and do not force-scroll down.
     if (userScrolledUpRef.current) return;
     log.scrollTop = log.scrollHeight;
-  }, [state.log]);
+  }, [state.log, state.lastRitual, state.lastLovers]);
+
+  // A short deferred re-scroll: the lazy result-view chunks load a few ticks
+  // after the state changes, so the initial scroll may land before their
+  // content arrives. When the chunk loads and grows the scroll height, the
+  // scroll handler sees the pane is no longer at the bottom and sets
+  // userScrolledUpRef=true ? but that was NOT a user scroll. So the deferred
+  // scroll FORCES to bottom (resets the flag) to catch the lazy content.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const log = logRef.current;
+      if (log === null) return;
+      userScrolledUpRef.current = false;
+      log.scrollTop = log.scrollHeight;
+    }, 300);
+    return () => clearTimeout(t);
+  }, [state.lastRitual, state.lastLovers]);
 
   // Detect the user scrolling up: when the gap between scrollTop and the
   // scrollable bottom exceeds 2 px, the user has scrolled up. When they

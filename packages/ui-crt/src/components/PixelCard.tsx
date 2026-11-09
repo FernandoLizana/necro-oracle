@@ -261,6 +261,7 @@ export function PixelCard({
       className={classes.join(" ")}
       data-card={model.card}
       data-orientation={model.orientation}
+      data-loaded={imageLoaded ? "true" : "false"}
       {...(burning ? { "data-burning": "true" } : {})}
       {...(glitching ? { "data-glitch-intensity": String(glitch.intensity) } : {})}
       {...(onActivate
@@ -295,6 +296,14 @@ export function PixelCard({
           alt={model.altText}
           loading={loading}
           data-loaded={imageLoaded ? "true" : "false"}
+          ref={(el: HTMLImageElement | null): void => {
+            // Cached images may be already complete before React attaches
+            // onLoad; check .complete to flip the loaded flag so the image
+            // and motion zones show immediately.
+            if (el !== null && el.complete && !imageLoaded) {
+              setImageLoaded(true);
+            }
+          }}
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageFailed(true)}
         />

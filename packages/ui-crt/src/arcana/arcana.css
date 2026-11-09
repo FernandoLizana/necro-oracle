@@ -117,7 +117,14 @@
  * onLoad handler; this rule hides the placeholder box.
  */
 .crt .crt-pixel-card-img[data-loaded="false"] {
-  opacity: 0;
+  opacity: 0 !important;
+}
+
+/* Hide motion zones until the image has loaded so they do not paint a
+ * solid green block over the placeholder. The card root carries the same
+ * data-loaded attribute as the image. */
+.crt .crt-pixel-card[data-loaded="false"] .crt-motion-zone {
+  display: none;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -275,8 +282,11 @@
   /* Nothing animated inside may paint beyond the declared rectangle (R4.6). */
   overflow: hidden;
   pointer-events: none;
-  /* Static by default: no animation unless full motion opts in below (R4.7). */
-  opacity: 1;
+  /* Static by default: no animation unless full motion opts in below (R4.7).
+     The animation cycles background-color through bright asset shades; a
+     resting opacity < 1 keeps the peak a SUBTLE tint over the art rather than
+     a solid block that occludes the card image (prod UX fix). */
+  opacity: 0.25;
 }
 
 /*

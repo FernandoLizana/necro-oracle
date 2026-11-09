@@ -1409,7 +1409,7 @@ function unknownBlock(raw: string): BlockDraft {
 /** The demo-catalog listing block (R18.2, R18.4). */
 function catalogBlock(): BlockDraft {
   const header = "The crypt holds these recorded readings:";
-  const entries = DEMO_CATALOG.map((entry) => `  ${entry.name} â€” ${entry.description}`);
+  const entries = DEMO_CATALOG.map((entry) => `  ${entry.name} - ${entry.description}`);
   const hint = "Type demo <name> to replay one.";
   const text = [header, ...entries, hint].join("\n");
   return oracleBlock(text);
