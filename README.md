@@ -6,6 +6,10 @@ A retro CRT terminal that performs **tarot readings on GitHub repositories**: ev
 
 Built with [Kiro](https://kiro.dev) for **Kiroween 2026** -- *Frankenstein* category.
 
+## Demo
+- [Watch the demo video (2:44)](https://youtu.be/LqITM5tS1Oo)
+- [Try it live](https://necro-oracle.vercel.app)
+
 ## Docs
 - [Design](docs/DESIGN.md)
 - [Compliance checklist](docs/COMPLIANCE.md)
