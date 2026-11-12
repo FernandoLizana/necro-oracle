@@ -16,6 +16,9 @@ Built with [Kiro](https://kiro.dev) for **Kiroween 2026** -- *Frankenstein* cate
 - [Spec prompts](docs/KIRO_SPEC_PROMPT.md)
 - [How Kiro was used](docs/KIRO_USAGE.md)
 - [Disclosures](docs/DISCLOSURES.md)
+- [Kiroween write-up (PDF)](docs/necro-oracle-kiroween-writeup.pdf)
+- [User manual, English (PDF)](docs/necro-oracle-manual-en.pdf)
+- [Manual de usuario, español (PDF)](docs/necro-oracle-manual-es.pdf)
 
 ## Kiro setup
 Steering lives in [`.kiro/steering`](.kiro/steering); MCP config in `.kiro/settings/mcp.json` (secrets via env vars, e.g. `GITHUB_PAT`).
